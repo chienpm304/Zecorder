@@ -10,8 +10,6 @@
     android:padding="10dp"
     >
 
-
-
         <ImageView
             android:id="@+id/imgRec"
             android:layout_width="48dp"
@@ -85,7 +83,7 @@
             app:layout_constraintCircle="@+id/imgRec"
             app:layout_constraintCircleAngle="300"
             app:layout_constraintCircleRadius="@dimen/recording_button_distance"
-            />
+            tools:ignore="MissingConstraints" />
 
 
 </android.support.constraint.ConstraintLayout>
