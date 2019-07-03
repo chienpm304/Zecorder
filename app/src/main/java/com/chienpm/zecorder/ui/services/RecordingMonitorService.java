@@ -54,7 +54,7 @@ public class RecordingMonitorService extends Service {
         String action = intent.getAction();
 
         if(action != null){
-            if(TextUtils.equals(action, "Camera_On")){
+            if(TextUtils.equals(action, "Camera_Available")){
                 initCameraView();
             }
         }
@@ -247,9 +247,9 @@ public class RecordingMonitorService extends Service {
         mImgLive.setVisibility(viewMode);
         mImgClose.setVisibility(viewMode);
         if(viewMode == View.GONE){
-            mViewRoot.setPadding(50, 50, 50, 50);
+            mViewRoot.setPadding(32, 32, 32, 32);
         }else{
-            mViewRoot.setPadding(75, 50, 75, 50);
+            mViewRoot.setPadding(48, 32, 48, 32);
         }
     }
 

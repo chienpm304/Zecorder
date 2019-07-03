@@ -9,6 +9,8 @@ import android.os.Build;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
+import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -16,7 +18,7 @@ import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Toast;
+import android.widget.ImageView;
 
 import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.ui.adapters.ViewPaperAdapter;
@@ -26,13 +28,14 @@ import com.chienpm.zecorder.ui.fragments.VideoManagerFragment;
 import com.chienpm.zecorder.ui.services.RecordingMonitorService;
 
 public class MainActivity extends AppCompatActivity {
-
-    private static final int CODE_DRAW_OVER_OTHER_APP_PERMISSION = 1312;
     private static final String TAG = "chienpm";
-    private static final int MY_PERMISSIONS_REQUEST_CAMERA_PERMISSION = 1231;
-    private static final int MY_PERMISSIONS_REQUEST_RECORD_AUDIO_PERMISSION = 2120;
-    private boolean mCameraPermissionGranted = false;
-    private boolean mRecordAudioPermissionGranted = false;
+    private static final int PERMISSION_REQUEST_CODE = 3004;
+    private static final int PERMISSION_DRAW_OVER_WINDOW = 3005;
+    private static String[] mPermission = new String[]{
+            Manifest.permission.CAMERA,
+            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+    };
 
     private TabLayout mTabLayout;
     private ViewPager mViewPager;
@@ -45,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
     };
 
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -52,9 +56,12 @@ public class MainActivity extends AppCompatActivity {
 
         initViews();
 
-        checkPermissions();
+        if(!hasPermission())
+            requestPermissions();
 
     }
+
+    ImageView mImgRec;
 
     private void initViews() {
 
@@ -68,14 +75,29 @@ public class MainActivity extends AppCompatActivity {
         /*
          * View initization
          */
-        findViewById(R.id.fab_rec).setOnClickListener(new View.OnClickListener() {
+        mImgRec =  findViewById(R.id.fab_rec);
+        mImgRec.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startRecordingActivity();
+                if(hasPermission()) {
+
+                    startRecordingActivity();
+                }
+                else{
+                    showSnackBarNotification("You need to granted all Permissions to record screen.", Snackbar.LENGTH_LONG);
+                    requestPermissions();
+                }
+
             }
         });
 
+
     }
+
+    private void showSnackBarNotification(String msg, int length) {
+        Snackbar.make(mImgRec, msg, length).show();
+    }
+
 
     private void setupTabIcon() {
         mTabLayout.getTabAt(0).setIcon(tabIcons[0]);
@@ -92,29 +114,17 @@ public class MainActivity extends AppCompatActivity {
         mViewPager.setAdapter(mAdapter);
     }
 
-    private void checkPermissions() {
+    private void requestPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            //Permission to draw Overlay
+
+            // PERMISSION DRAW OVER
             if(!Settings.canDrawOverlays(this)){
                 Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                         Uri.parse("package:" + getPackageName()));
-                startActivityForResult(intent, CODE_DRAW_OVER_OTHER_APP_PERMISSION);
+                startActivityForResult(intent, PERMISSION_DRAW_OVER_WINDOW);
             }
-            //Permission to use camera
-            if(checkCameraHardware(this)) {
-                if (ContextCompat.checkSelfPermission(this,
-                        Manifest.permission.CAMERA)
-                        != PackageManager.PERMISSION_GRANTED) {
-                    ActivityCompat.requestPermissions(this,
-                            new String[]{Manifest.permission.CAMERA},
-                            MY_PERMISSIONS_REQUEST_CAMERA_PERMISSION);
-                } else {
-                    mCameraPermissionGranted = true;
-                }
-            }
-            else {
-                mCameraPermissionGranted = false;
-            }
+
+            ActivityCompat.requestPermissions(this, mPermission, PERMISSION_REQUEST_CODE);
 
         }
     }
@@ -123,31 +133,37 @@ public class MainActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode,
                                            @NonNull String[] permissions, @NonNull int[] grantResults) {
         switch (requestCode) {
-            case MY_PERMISSIONS_REQUEST_CAMERA_PERMISSION: {
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    mCameraPermissionGranted = true;
-                } else {
-                    Toast.makeText(this,
-                            "User denied Camera permission", Toast.LENGTH_SHORT).show();
-                    mCameraPermissionGranted = false;
+            case PERMISSION_REQUEST_CODE: {
+                if (grantResults.length > 0) {
+                    int granted = PackageManager.PERMISSION_GRANTED;
+                    for(int i = 0; i < grantResults.length; i++) {
+                        if (grantResults[0] != granted) {
+                            showSnackBarNotification("Please grant all permission to record screen.", Snackbar.LENGTH_LONG);
+                            return;
+                        }
+                    }
+
+                    if(hasPermission()) {
+                        showSnackBarNotification( "Permissions Granted!", Snackbar.LENGTH_SHORT);
+                        startRecordingActivity();
+                    }
                 }
-                return;
+
+
+                break;
             }
+
+
         }
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        if (requestCode == CODE_DRAW_OVER_OTHER_APP_PERMISSION) {
+        if (requestCode == PERMISSION_DRAW_OVER_WINDOW) {
 
             //Check if the permission is granted or not.
             if (resultCode != RESULT_OK) { //Permission is not available
-                Toast.makeText(this,
-                        "Draw over other app permission not available. Closing the application",
-                        Toast.LENGTH_SHORT).show();
-
-                finish();
+                showSnackBarNotification("Draw over other app permission not available.",Snackbar.LENGTH_SHORT);
             }
         }
         else {
@@ -158,20 +174,14 @@ public class MainActivity extends AppCompatActivity {
     private void startRecordingActivity() {
         Intent serviceIntent = new Intent(MainActivity.this, RecordingMonitorService.class);
 
-        if(mCameraPermissionGranted){
-            //Todo: un-comment the line of code below
-//            serviceIntent.setAction("Camera_On"); //Camera_Off
+        if(checkCameraHardware(this)){
+            serviceIntent.setAction("Camera_Available");
         }
-        if(mRecordAudioPermissionGranted){
-            //Todo: setup audio
-
-        }
-
         startService(serviceIntent);
         finish();
     }
 
-    /** Check if this device has a camera */
+     /** Check if this device has a camera */
     private boolean checkCameraHardware(Context context) {
         if (context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA)){
             // this device has a camera
@@ -180,5 +190,15 @@ public class MainActivity extends AppCompatActivity {
             // no camera on this device
             return false;
         }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    private boolean hasPermission(){
+        int granted = PackageManager.PERMISSION_GRANTED;
+
+        return ContextCompat.checkSelfPermission(this, mPermission[0]) == granted
+                && ContextCompat.checkSelfPermission(this, mPermission[1]) == granted
+                    && ContextCompat.checkSelfPermission(this, mPermission[2]) == granted
+                        && Settings.canDrawOverlays(this);
     }
 }
