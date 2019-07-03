@@ -4,10 +4,8 @@ import android.app.Service;
 import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.hardware.Camera;
-import android.net.Uri;
 import android.os.IBinder;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -18,7 +16,8 @@ import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.chienpm.zecorder.R;
-import com.chienpm.zecorder.ui.Utils.CameraPreview;
+import com.chienpm.zecorder.ui.activities.RecordScreenActivity;
+import com.chienpm.zecorder.ui.utils.CameraPreview;
 import com.chienpm.zecorder.ui.activities.MainActivity;
 
 public class RecordingMonitorService extends Service {
@@ -97,6 +96,11 @@ public class RecordingMonitorService extends Service {
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         mWindowManager.addView(mCameraLayout, paramCam);
         mCamera.startPreview();
+
+        //re-inflate controller
+        mWindowManager.removeViewImmediate(mViewRoot);
+        mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        mWindowManager.addView(mViewRoot, params);
     }
 
 
@@ -147,6 +151,8 @@ public class RecordingMonitorService extends Service {
             @Override
             public void onClick(View v) {
                 Toast.makeText(getApplicationContext(), "Start/Stop clicked", Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(getApplicationContext(), RecordScreenActivity.class));
+
             }
         });
 
@@ -213,6 +219,13 @@ public class RecordingMonitorService extends Service {
                 }
 
                 return false;
+            }
+        });
+        mViewRoot.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if(!hasFocus)
+                    togleNavigationButton(View.GONE);
             }
         });
     }

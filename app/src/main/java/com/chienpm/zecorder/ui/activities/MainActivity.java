@@ -6,18 +6,23 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
-import android.provider.MediaStore;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
 
 import com.chienpm.zecorder.R;
+import com.chienpm.zecorder.ui.adapters.ViewPaperAdapter;
+import com.chienpm.zecorder.ui.fragments.LiveStreamFragment;
+import com.chienpm.zecorder.ui.fragments.SettingFragment;
+import com.chienpm.zecorder.ui.fragments.VideoManagerFragment;
 import com.chienpm.zecorder.ui.services.RecordingMonitorService;
 
 public class MainActivity extends AppCompatActivity {
@@ -26,14 +31,62 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "chienpm";
     private static final int MY_PERMISSIONS_REQUEST_CAMERA_PERMISSION = 1231;
     private boolean mCameraPermissionGranted = false;
+
+    private TabLayout mTabLayout;
+    private ViewPager mViewPager;
+    private ViewPaperAdapter mAdapter;
+
+    private int [] tabIcons = {
+            R.drawable.ic_video,
+            R.drawable.ic_live,
+            R.drawable.ic_setting
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        initViews();
+
         checkPermissions();
 
-        initViewAndStartRecordingService();
+    }
+
+    private void initViews() {
+
+        mViewPager = findViewById(R.id.viewpaper);
+        setupViewPaper();
+
+        mTabLayout = findViewById(R.id.tabLayout);
+        mTabLayout.setupWithViewPager(mViewPager);
+        setupTabIcon();
+
+        /*
+         * View initization
+         */
+        findViewById(R.id.fab_rec).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startRecordingActivity();
+            }
+        });
+
+    }
+
+    private void setupTabIcon() {
+        mTabLayout.getTabAt(0).setIcon(tabIcons[0]);
+        mTabLayout.getTabAt(1).setIcon(tabIcons[1]);
+        mTabLayout.getTabAt(2).setIcon(tabIcons[2]);
+        mTabLayout.getTabAt(1).select();
+    }
+
+    private void setupViewPaper() {
+        mAdapter = new ViewPaperAdapter(getSupportFragmentManager());
+        mAdapter.addFragment(new VideoManagerFragment(), "Video");
+        mAdapter.addFragment(new LiveStreamFragment(), "Live");
+        mAdapter.addFragment(new SettingFragment(), "Setting");
+        mViewPager.setAdapter(mAdapter);
     }
 
     private void checkPermissions() {
@@ -59,6 +112,7 @@ public class MainActivity extends AppCompatActivity {
 
         }
     }
+
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -94,22 +148,15 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void initViewAndStartRecordingService() {
-        findViewById(R.id.notify_me).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
+    private void startRecordingActivity() {
+        Intent serviceIntent = new Intent(MainActivity.this, RecordingMonitorService.class);
 
-                //Todo: check camera setting here
-
-                Intent serviceIntent = new Intent(MainActivity.this, RecordingMonitorService.class);
-
-                if(mCameraPermissionGranted){
-                    serviceIntent.setAction("Camera_On"); //Camera_Off
-                }
-                startService(serviceIntent);
-                finish();
-            }
-        });
+        if(mCameraPermissionGranted){
+            //Todo: un-comment the line of code below
+//            serviceIntent.setAction("Camera_On"); //Camera_Off
+        }
+        startService(serviceIntent);
+        finish();
     }
 
     /** Check if this device has a camera */
