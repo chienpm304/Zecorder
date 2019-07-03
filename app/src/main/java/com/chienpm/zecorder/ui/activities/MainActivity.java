@@ -30,7 +30,9 @@ public class MainActivity extends AppCompatActivity {
     private static final int CODE_DRAW_OVER_OTHER_APP_PERMISSION = 1312;
     private static final String TAG = "chienpm";
     private static final int MY_PERMISSIONS_REQUEST_CAMERA_PERMISSION = 1231;
+    private static final int MY_PERMISSIONS_REQUEST_RECORD_AUDIO_PERMISSION = 2120;
     private boolean mCameraPermissionGranted = false;
+    private boolean mRecordAudioPermissionGranted = false;
 
     private TabLayout mTabLayout;
     private ViewPager mViewPager;
@@ -41,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
             R.drawable.ic_live,
             R.drawable.ic_setting
     };
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,11 +94,13 @@ public class MainActivity extends AppCompatActivity {
 
     private void checkPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            //Permission to draw Overlay
             if(!Settings.canDrawOverlays(this)){
                 Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                         Uri.parse("package:" + getPackageName()));
                 startActivityForResult(intent, CODE_DRAW_OVER_OTHER_APP_PERMISSION);
             }
+            //Permission to use camera
             if(checkCameraHardware(this)) {
                 if (ContextCompat.checkSelfPermission(this,
                         Manifest.permission.CAMERA)
@@ -107,8 +112,9 @@ public class MainActivity extends AppCompatActivity {
                     mCameraPermissionGranted = true;
                 }
             }
-            else
+            else {
                 mCameraPermissionGranted = false;
+            }
 
         }
     }
@@ -122,11 +128,12 @@ public class MainActivity extends AppCompatActivity {
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     mCameraPermissionGranted = true;
                 } else {
+                    Toast.makeText(this,
+                            "User denied Camera permission", Toast.LENGTH_SHORT).show();
                     mCameraPermissionGranted = false;
                 }
                 return;
             }
-
         }
     }
 
@@ -155,6 +162,11 @@ public class MainActivity extends AppCompatActivity {
             //Todo: un-comment the line of code below
 //            serviceIntent.setAction("Camera_On"); //Camera_Off
         }
+        if(mRecordAudioPermissionGranted){
+            //Todo: setup audio
+
+        }
+
         startService(serviceIntent);
         finish();
     }
