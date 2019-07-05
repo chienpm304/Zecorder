@@ -4,8 +4,8 @@
 
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <uses-feature
         android:name="android.hardware.camera"
@@ -21,10 +21,17 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".ui.activities.RecordScreenActivity"></activity>
+        <activity android:name=".ui.activities.DummyActivity"></activity>
 
         <service
-            android:name=".ui.services.RecordingMonitorService"
+            android:name=".ui.services.RecordingService"
+            android:enabled="true"
+            android:exported="true" />
+
+        <activity android:name=".ui.activities.RecordScreenActivity" />
+
+        <service
+            android:name=".ui.services.RecordingControllerService"
             android:enabled="true"
             android:exported="true" />
 

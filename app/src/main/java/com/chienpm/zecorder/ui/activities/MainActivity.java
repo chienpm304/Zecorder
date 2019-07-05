@@ -25,7 +25,8 @@ import com.chienpm.zecorder.ui.adapters.ViewPaperAdapter;
 import com.chienpm.zecorder.ui.fragments.LiveStreamFragment;
 import com.chienpm.zecorder.ui.fragments.SettingFragment;
 import com.chienpm.zecorder.ui.fragments.VideoManagerFragment;
-import com.chienpm.zecorder.ui.services.RecordingMonitorService;
+import com.chienpm.zecorder.ui.services.RecordingControllerService;
+import com.chienpm.zecorder.ui.utils.UiUtils;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "chienpm";
@@ -84,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
                     startRecordingActivity();
                 }
                 else{
-                    showSnackBarNotification("You need to granted all Permissions to record screen.", Snackbar.LENGTH_LONG);
+                    UiUtils.showSnackBarNotification(mImgRec,"You need to granted all Permissions to record screen.", Snackbar.LENGTH_LONG);
                     requestPermissions();
                 }
 
@@ -94,9 +95,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void showSnackBarNotification(String msg, int length) {
-        Snackbar.make(mImgRec, msg, length).show();
-    }
+
 
 
     private void setupTabIcon() {
@@ -138,13 +137,13 @@ public class MainActivity extends AppCompatActivity {
                     int granted = PackageManager.PERMISSION_GRANTED;
                     for(int i = 0; i < grantResults.length; i++) {
                         if (grantResults[0] != granted) {
-                            showSnackBarNotification("Please grant all permission to record screen.", Snackbar.LENGTH_LONG);
+                            UiUtils.showSnackBarNotification(mImgRec,"Please grant all permission to record screen.", Snackbar.LENGTH_LONG);
                             return;
                         }
                     }
 
                     if(hasPermission()) {
-                        showSnackBarNotification( "Permissions Granted!", Snackbar.LENGTH_SHORT);
+                        UiUtils.showSnackBarNotification(mImgRec, "Permissions Granted!", Snackbar.LENGTH_SHORT);
                         startRecordingActivity();
                     }
                 }
@@ -163,7 +162,7 @@ public class MainActivity extends AppCompatActivity {
 
             //Check if the permission is granted or not.
             if (resultCode != RESULT_OK) { //Permission is not available
-                showSnackBarNotification("Draw over other app permission not available.",Snackbar.LENGTH_SHORT);
+                UiUtils.showSnackBarNotification(mImgRec, "Draw over other app permission not available.",Snackbar.LENGTH_SHORT);
             }
         }
         else {
@@ -172,10 +171,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startRecordingActivity() {
-        Intent serviceIntent = new Intent(MainActivity.this, RecordingMonitorService.class);
+        Intent serviceIntent = new Intent(MainActivity.this, RecordingControllerService.class);
 
         if(checkCameraHardware(this)){
-            serviceIntent.setAction("Camera_Available");
+//            serviceIntent.setAction("Camera_Available");
         }
         startService(serviceIntent);
         finish();
