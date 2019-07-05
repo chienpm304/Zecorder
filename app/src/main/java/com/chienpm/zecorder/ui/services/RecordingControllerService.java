@@ -1,10 +1,12 @@
 package com.chienpm.zecorder.ui.services;
 
 import android.app.Service;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.graphics.PixelFormat;
 import android.hardware.Camera;
-import android.net.Uri;
 import android.os.IBinder;
 import android.text.TextUtils;
 import android.util.Log;
@@ -18,11 +20,17 @@ import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.chienpm.zecorder.R;
-import com.chienpm.zecorder.ui.Utils.CameraPreview;
+import com.chienpm.zecorder.ui.utils.CameraPreview;
 import com.chienpm.zecorder.ui.activities.MainActivity;
+import com.chienpm.zecorder.ui.utils.UiUtils;
+import com.chienpm.zecorder.ui.services.RecordingService.*;
 
-public class RecordingMonitorService extends Service {
+
+public class RecordingControllerService extends Service {
     private static final String TAG = "chienpm";
+
+    private RecordingService mRecordingService;
+    private Boolean mRecordingServiceBound = false;
 
     private View mViewRoot;
     private View mCameraLayout;
@@ -44,8 +52,11 @@ public class RecordingMonitorService extends Service {
             PixelFormat.TRANSLUCENT
     );
 
+    private Intent mScreenCaptureIntent = null;
 
-    private ImageView mImgClose, mImgRec, mImgStarStop, mImgPauseResume, mImgCapture, mImgLive, mImgSetting;
+    private ImageView mImgClose, mImgRec, mImgStart, mImgStop, mImgPause, mImgResume, mImgCapture, mImgLive, mImgSetting;
+    private Boolean mRecordingStarted = false;
+    private Boolean mRecordingPaused = false;
     private Camera mCamera;
     private LinearLayout cameraPreview;
     private CameraPreview mPreview;
@@ -53,17 +64,27 @@ public class RecordingMonitorService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         String action = intent.getAction();
-
+        Log.d(TAG, "RecordingControllerService: onStartCommand()");
         if(action != null){
-            if(TextUtils.equals(action, "Camera_On")){
+            if(TextUtils.equals(action, "Camera_Available")){
                 initCameraView();
             }
-        }
 
+        }
+        mScreenCaptureIntent = intent.getParcelableExtra(Intent.EXTRA_INTENT);
+
+        if(mScreenCaptureIntent == null){
+            Log.d(TAG, "mScreenCaptureIntent is NULL");
+            stopSelf();
+        }
+        else{
+            Log.d(TAG, "RecordingControllerService: before run bindRecordingService()");
+            bindRecordingService();
+        }
         return super.onStartCommand(intent, flags, startId);
     }
 
-    public RecordingMonitorService() {
+    public RecordingControllerService() {
 
     }
 
@@ -77,11 +98,14 @@ public class RecordingMonitorService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-
+        Log.d(TAG, "RecordingControllerService: onCreate");
         initializeViews();
+
+
     }
 
     private void initCameraView() {
+        Log.d(TAG, "RecordingControllerService: initializeCamera()");
         mCameraLayout = LayoutInflater.from(this).inflate(R.layout.layout_camera_view, null);
 
         mCamera =  Camera.open();
@@ -89,7 +113,7 @@ public class RecordingMonitorService extends Service {
         cameraPreview = (LinearLayout) mCameraLayout.findViewById(R.id.camera_preview);
         mPreview = new CameraPreview(this, mCamera);
 
-        paramCam.gravity = Gravity.BOTTOM | Gravity.RIGHT;
+        paramCam.gravity = Gravity.BOTTOM | Gravity.END;
         paramCam.x = 50;
         paramCam.y = 50;
 
@@ -97,13 +121,19 @@ public class RecordingMonitorService extends Service {
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         mWindowManager.addView(mCameraLayout, paramCam);
         mCamera.startPreview();
+
+        //re-inflate controller
+        mWindowManager.removeViewImmediate(mViewRoot);
+        mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        mWindowManager.addView(mViewRoot, params);
     }
 
 
     private void initializeViews() {
+        Log.d(TAG, "RecordingControllerService: initializeViews()");
         mViewRoot = LayoutInflater.from(this).inflate(R.layout.layout_recording, null);
 
-        params.gravity = Gravity.TOP | Gravity.LEFT;
+        params.gravity = Gravity.TOP | Gravity.START;
         params.x = 0;
         params.y = 100;
 
@@ -114,39 +144,86 @@ public class RecordingMonitorService extends Service {
         mImgCapture = mViewRoot.findViewById(R.id.imgCapture);
         mImgClose = mViewRoot.findViewById(R.id.imgClose);
         mImgLive = mViewRoot.findViewById(R.id.imgLive);
-        mImgPauseResume = mViewRoot.findViewById(R.id.imgPauseResume);
-        mImgStarStop = mViewRoot.findViewById(R.id.imgStartStop);
+        mImgPause = mViewRoot.findViewById(R.id.imgPause);
+        mImgStart = mViewRoot.findViewById(R.id.imgStart);
         mImgSetting = mViewRoot.findViewById(R.id.imgSetting);
+        mImgStop = mViewRoot.findViewById(R.id.imgStop);
+        mImgResume = mViewRoot.findViewById(R.id.imgResume);
 
-        togleNavigationButton(View.GONE);
+        mImgResume.setVisibility(View.GONE);
+        mImgStop.setVisibility(View.GONE);
+
+
+        toggleNavigationButton(View.GONE);
 
         mImgCapture.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(getApplicationContext(), "Capture clicked", Toast.LENGTH_SHORT).show();
+                UiUtils.toast(getApplicationContext(), "Capture clicked", Toast.LENGTH_SHORT);
+                toggleNavigationButton(View.GONE);
             }
         });
 
-        mImgPauseResume.setOnClickListener(new View.OnClickListener() {
+        mImgPause.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(getApplicationContext(), "Pause/Resume recording!", Toast.LENGTH_SHORT).show();
+                UiUtils.toast(getApplicationContext(), "Pause recording!", Toast.LENGTH_SHORT);
+                toggleNavigationButton(View.GONE);
+
+                mRecordingPaused = true;
             }
         });
 
+        mImgResume.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                UiUtils.toast(getApplicationContext(), "Resume recording!", Toast.LENGTH_SHORT);
+                toggleNavigationButton(View.GONE);
+                mRecordingPaused = false;
+            }
+        });
 
         mImgSetting.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(getApplicationContext(), "Setting clicked", Toast.LENGTH_SHORT).show();
+                UiUtils.toast(getApplicationContext(), "Setting clicked", Toast.LENGTH_SHORT);
+                toggleNavigationButton(View.GONE);
             }
         });
 
-
-        mImgStarStop.setOnClickListener(new View.OnClickListener() {
+        mImgStart.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(getApplicationContext(), "Start/Stop clicked", Toast.LENGTH_SHORT).show();
+                toggleNavigationButton(View.GONE);
+
+                if(mRecordingServiceBound){
+                    //Todo: start recording
+                    mRecordingStarted = true;
+                    mRecordingService.startRecording();
+                }
+                else{
+                    mRecordingStarted = false;
+                    UiUtils.toast(getApplicationContext(), "Recording Service connection has not been established", Toast.LENGTH_LONG);
+                }
+            }
+        });
+
+        mImgStop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+//                UiUtils.toast(getApplicationContext(), "Stop recording!", Toast.LENGTH_SHORT);
+                toggleNavigationButton(View.GONE);
+
+                if(mRecordingServiceBound){
+                    //Todo: stop and save recording
+                    mRecordingStarted = false;
+                    mRecordingService.stopRecording();
+//                    UiUtils.toast(getApplicationContext(), String.valueOf(mRecordingService.startRecording()), Toast.LENGTH_SHORT);
+                }
+                else{
+                    mRecordingStarted = true;
+                    UiUtils.toast(getApplicationContext(), "Recording Service connection has not been established", Toast.LENGTH_LONG);
+                }
             }
         });
 
@@ -155,6 +232,7 @@ public class RecordingMonitorService extends Service {
             @Override
             public void onClick(View v) {
                 Toast.makeText(getApplicationContext(), "Live clicked", Toast.LENGTH_SHORT).show();
+                toggleNavigationButton(View.GONE);
             }
         });
 
@@ -171,6 +249,7 @@ public class RecordingMonitorService extends Service {
             private int initialY;
             private float initialTouchX;
             private float initialTouchY;
+
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
@@ -195,10 +274,10 @@ public class RecordingMonitorService extends Service {
                                 //When user clicks on the image view of the collapsed layout,
                                 //visibility of the collapsed layout will be changed to "View.GONE"
                                 //and expanded view will become visible.
-                                togleNavigationButton(View.VISIBLE);
+                                toggleNavigationButton(View.VISIBLE);
                             }
                             else {
-                                togleNavigationButton(View.GONE);
+                                toggleNavigationButton(View.GONE);
                             }
                         }
                         return true;
@@ -215,23 +294,72 @@ public class RecordingMonitorService extends Service {
                 return false;
             }
         });
+        mViewRoot.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if(!hasFocus)
+                    toggleNavigationButton(View.GONE);
+            }
+        });
     }
+
+    private void bindRecordingService() {
+        Log.d(TAG, "RecordingControllerService: bindRecordingService()");
+        Intent mRecordingServiceIntent = new Intent(getApplicationContext(), RecordingService.class);
+        mRecordingServiceIntent.putExtra(Intent.EXTRA_INTENT, mScreenCaptureIntent);
+        bindService(mRecordingServiceIntent, mRecordingServiceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    private ServiceConnection mRecordingServiceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            RecordingBinder binder = (RecordingBinder) service;
+            mRecordingService = binder.getService();
+            mRecordingServiceBound = true;
+
+            UiUtils.toast(getApplicationContext(), "Recording service connected", Toast.LENGTH_SHORT);
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            mRecordingServiceBound = false;
+            UiUtils.toast(getApplicationContext(), "Recording service disconnected", Toast.LENGTH_SHORT);
+        }
+    };
 
     private boolean isViewCollapsed() {
         return mViewRoot == null || mViewRoot.findViewById(R.id.imgSetting).getVisibility() == View.GONE;
     }
 
-    void togleNavigationButton(int viewMode){
-        mImgStarStop.setVisibility(viewMode);
+    void toggleNavigationButton(int viewMode){
+        //Todo: make animation here
+
+        mImgStart.setVisibility(viewMode);
         mImgSetting.setVisibility(viewMode);
-        mImgPauseResume.setVisibility(viewMode);
+        mImgPause.setVisibility(viewMode);
         mImgCapture.setVisibility(viewMode);
         mImgLive.setVisibility(viewMode);
         mImgClose.setVisibility(viewMode);
+        mImgStop.setVisibility(viewMode);
+        mImgResume.setVisibility(viewMode);
+
         if(viewMode == View.GONE){
-            mViewRoot.setPadding(50, 50, 50, 50);
+            mViewRoot.setPadding(32,32, 32, 32);
         }else{
-            mViewRoot.setPadding(75, 50, 75, 50);
+            if(mRecordingStarted){
+                mImgStart.setVisibility(View.GONE);
+            }
+            else{
+                mImgStop.setVisibility(View.GONE);
+            }
+
+            if(mRecordingPaused){
+                mImgPause.setVisibility(View.GONE);
+            }
+            else{
+                mImgResume.setVisibility(View.GONE);
+            }
+            mViewRoot.setPadding(32,48, 32, 48);
         }
     }
 
@@ -244,6 +372,7 @@ public class RecordingMonitorService extends Service {
             mCamera = null;
         }
     }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -254,6 +383,10 @@ public class RecordingMonitorService extends Service {
             mWindowManager.removeViewImmediate(mCameraLayout);
             releaseCamera();
         }
+        if(mRecordingService!=null && mRecordingServiceBound) {
+            unbindService(mRecordingServiceConnection);
+            mRecordingServiceBound = false;
 
+        }
     }
 }

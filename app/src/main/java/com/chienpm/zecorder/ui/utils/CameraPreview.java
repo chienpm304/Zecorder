@@ -1,4 +1,4 @@
-package com.chienpm.zecorder.ui.Utils;
+package com.chienpm.zecorder.ui.utils;
 
 import android.content.Context;
 import android.hardware.Camera;

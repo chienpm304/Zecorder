@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+<<<<<<< HEAD
     <dimen name="recording_icon_square">40dp</dimen>
     <dimen name="recording_button_distance">80dp</dimen>
     <dimen name="text_margin">16dp</dimen>
+=======
+    <dimen name="recording_icon_square">32dp</dimen>
+    <dimen name="recording_button_distance">56dp</dimen>
+>>>>>>> 3bc12ce7a9a51236aaf17f47e0ea7c8ab70c0b7a
 </resources>
