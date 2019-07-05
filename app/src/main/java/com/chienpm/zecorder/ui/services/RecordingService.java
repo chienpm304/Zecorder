@@ -1,10 +1,8 @@
 package com.chienpm.zecorder.ui.services;
 
-import android.app.Activity;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.media.MediaRecorder;
@@ -17,28 +15,18 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.SparseIntArray;
 import android.view.Surface;
-import android.view.SurfaceView;
-import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.AdapterView;
-import android.widget.Spinner;
-import android.widget.ToggleButton;
 
-import com.chienpm.zecorder.ui.activities.DummyActivity;
-import com.chienpm.zecorder.ui.activities.RecordScreenActivity;
 import com.chienpm.zecorder.ui.utils.UiUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 public class RecordingService extends Service {
     private final IBinder mIBinder = new RecordingBinder();
 
     private static final String TAG = "chienpm";
-//    private static final int PERMISSION_RECORD_DISPLAY = 1;
     private static final List<Resolution> RESOLUTIONS = new ArrayList<Resolution>() {{
         add(new Resolution(640,360));
         add(new Resolution(960,540));
@@ -52,9 +40,6 @@ public class RecordingService extends Service {
     private boolean mScreenSharing;
     private MediaProjection mMediaProjection;
     private VirtualDisplay mVirtualDisplay;
-//    private Surface mSurface;
-//    private SurfaceView mSurfaceView;
-//    private ToggleButton mToggleButton;
     private MediaProjectionCallback mMediaProjectionCallback;
     private MediaRecorder mMediaRecorder;
     WindowManager mWindowManager;
@@ -69,31 +54,19 @@ public class RecordingService extends Service {
     }
 
     private Resolution mResolution;
+    private Intent mScreenCaptureIntent;
+    private int mScreenCaptureResultCode;
 
-
-    public void notifyRequestProjectionData(Intent data, int resultCode) {
-        if(data!=null){
-            mMediaProjectionCallback = new MediaProjectionCallback();
-            mMediaProjection = mProjectionManager.getMediaProjection(resultCode, data);
-            mMediaProjection.registerCallback(mMediaProjectionCallback, null);
-//            mVirtualDisplay = createVirtualDisplay();
-//            mMediaRecorder.start();
-            Log.d(TAG, "notifyRequestProjectionData: DONE");
-        }
-        else{
-            if(resultCode == UiUtils.PERMISSION_SCREEN_SHARE_DENIED)
-                Log.d(TAG, "notifyRequestProjectionData: PERMISSION SHARE SCREEN DENIED");
-            Log.d(TAG, "notifyRequestProjectionData: FAILED");
-        }
-    }
 
     public void prepareToRecording() {
+        Log.d(TAG, "RecordingService: prepareToRecording()");
         initRecorder();
         shareScreen();
     }
 
     public void startRecording(){
         mIsRecording = true;
+        prepareToRecording();
         mVirtualDisplay = createVirtualDisplay();
         mMediaRecorder.start();
     }
@@ -101,7 +74,7 @@ public class RecordingService extends Service {
     public void stopRecording(){
         mMediaRecorder.stop();
         mMediaRecorder.reset();
-        Log.v(TAG, "Stopping Recording");
+        Log.d(TAG, "Stopping Recording");
         stopScreenSharing();
     }
 
@@ -117,12 +90,17 @@ public class RecordingService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
+        Log.d(TAG, "RecordingService: onBind()");
+        mScreenCaptureIntent = intent.getParcelableExtra(Intent.EXTRA_INTENT);
+        mScreenCaptureResultCode = mScreenCaptureIntent.getIntExtra(UiUtils.SCREEN_CAPTURE_INTENT_RESULT_CODE, UiUtils.RESULT_CODE_FAILED);
+        Log.d(TAG, "onBind: "+ mScreenCaptureIntent);
         return mIBinder;
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
+        Log.d(TAG, "RecordingService: onCreate()");
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 
         DisplayMetrics metrics = new DisplayMetrics();
@@ -136,7 +114,7 @@ public class RecordingService extends Service {
                 (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
 
         //TOdo: chooose resolution and orientation
-        mResolution = RESOLUTIONS.get(1);
+        mResolution = RESOLUTIONS.get(3);
         mDisplayWidth = mResolution.y;
         mDisplayHeight = mResolution.x;
     }
@@ -145,6 +123,7 @@ public class RecordingService extends Service {
 
 
     private void stopScreenSharing() {
+        Log.d(TAG, "RecordingService: stopScreenSharing()");
         //Todo: Save file here
         mScreenSharing = false;
         if (mVirtualDisplay == null) {
@@ -155,6 +134,7 @@ public class RecordingService extends Service {
     }
 
     private void initRecorder() {
+        Log.d(TAG, "RecordingService: initRecorder()");
         try {
             mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.DEFAULT);
             mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
@@ -177,25 +157,21 @@ public class RecordingService extends Service {
     }
 
     private void shareScreen() {
+        Log.d(TAG, "RecordingService: initRecorder()");
         mScreenSharing = true;
         if (mMediaProjection == null) {
-            startDummyActiviyForResult();
-            return;
+            mMediaProjectionCallback = new MediaProjectionCallback();
+            mMediaProjection = mProjectionManager.getMediaProjection(mScreenCaptureResultCode, mScreenCaptureIntent);
+            mMediaProjection.registerCallback(mMediaProjectionCallback, null);
+
         }
 
     }
 
-    private void startDummyActiviyForResult() {
-        Intent intent = new Intent(getApplicationContext(), DummyActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        intent.putExtra(Intent.EXTRA_INTENT, mProjectionManager.createScreenCaptureIntent());
-
-        startActivities(new Intent[]{intent});
-//        getApplicationContext().startActivityForResult(mProjectionManager.createScreenCaptureIntent(), PERMISSION_RECORD_DISPLAY);
-    }
 
 
     private VirtualDisplay createVirtualDisplay() {
+        Log.d(TAG, "RecordingService: createVirtualDisplay()");
         return mMediaProjection.createVirtualDisplay("ScreenSharingDemo",
                 mDisplayWidth, mDisplayHeight, mScreenDensity,
                 DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
@@ -210,6 +186,7 @@ public class RecordingService extends Service {
     }
 
     private void destroyMediaProjection() {
+        Log.d(TAG, "RecordingService: destroyMediaProjection()");
         if (mMediaProjection != null) {
             mMediaProjection.unregisterCallback(mMediaProjectionCallback);
             mMediaProjection.stop();

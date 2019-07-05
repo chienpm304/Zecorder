@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
@@ -32,11 +33,14 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "chienpm";
     private static final int PERMISSION_REQUEST_CODE = 3004;
     private static final int PERMISSION_DRAW_OVER_WINDOW = 3005;
+    private static final int PERMISSION_RECORD_DISPLAY = 3006;
     private static String[] mPermission = new String[]{
             Manifest.permission.CAMERA,
             Manifest.permission.RECORD_AUDIO,
             Manifest.permission.WRITE_EXTERNAL_STORAGE
     };
+
+    private Intent mScreenCaptureIntent = null;
 
     private TabLayout mTabLayout;
     private ViewPager mViewPager;
@@ -48,6 +52,7 @@ public class MainActivity extends AppCompatActivity {
             R.drawable.ic_setting
     };
 
+    private int mScreenCaptureResultCode = UiUtils.RESULT_CODE_FAILED;
 
 
     @Override
@@ -57,9 +62,17 @@ public class MainActivity extends AppCompatActivity {
 
         initViews();
 
-        if(!hasPermission())
+        if(!hasPermission()) {
             requestPermissions();
+            requestScreenCaptureIntent();
+        }
+    }
 
+    private void requestScreenCaptureIntent() {
+        if(mScreenCaptureIntent == null){
+            MediaProjectionManager mediaProjectionManager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+            startActivityForResult(mediaProjectionManager.createScreenCaptureIntent(), PERMISSION_RECORD_DISPLAY);
+        }
     }
 
     ImageView mImgRec;
@@ -80,23 +93,21 @@ public class MainActivity extends AppCompatActivity {
         mImgRec.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if(mScreenCaptureIntent == null || mScreenCaptureResultCode == UiUtils.RESULT_CODE_FAILED)
+                    requestScreenCaptureIntent();
                 if(hasPermission()) {
-
-                    startRecordingActivity();
+                    startRecordingControllerService();
                 }
                 else{
                     UiUtils.showSnackBarNotification(mImgRec,"You need to granted all Permissions to record screen.", Snackbar.LENGTH_LONG);
                     requestPermissions();
+                    requestScreenCaptureIntent();
                 }
-
             }
         });
 
 
     }
-
-
-
 
     private void setupTabIcon() {
         mTabLayout.getTabAt(0).setIcon(tabIcons[0]);
@@ -122,7 +133,6 @@ public class MainActivity extends AppCompatActivity {
                         Uri.parse("package:" + getPackageName()));
                 startActivityForResult(intent, PERMISSION_DRAW_OVER_WINDOW);
             }
-
             ActivityCompat.requestPermissions(this, mPermission, PERMISSION_REQUEST_CODE);
 
         }
@@ -144,11 +154,9 @@ public class MainActivity extends AppCompatActivity {
 
                     if(hasPermission()) {
                         UiUtils.showSnackBarNotification(mImgRec, "Permissions Granted!", Snackbar.LENGTH_SHORT);
-                        startRecordingActivity();
+//                        startRecordingControllerService();
                     }
                 }
-
-
                 break;
             }
 
@@ -165,18 +173,37 @@ public class MainActivity extends AppCompatActivity {
                 UiUtils.showSnackBarNotification(mImgRec, "Draw over other app permission not available.",Snackbar.LENGTH_SHORT);
             }
         }
-        else {
+        else if( requestCode == PERMISSION_RECORD_DISPLAY) {
+            if(resultCode != RESULT_OK){
+                UiUtils.showSnackBarNotification(mImgRec, "Recording display permission not available.",Snackbar.LENGTH_SHORT);
+                mScreenCaptureIntent = null;
+            }
+            else{
+                mScreenCaptureIntent = data;
+                mScreenCaptureIntent.putExtra(UiUtils.SCREEN_CAPTURE_INTENT_RESULT_CODE, resultCode);
+                mScreenCaptureResultCode = resultCode;
+                if(hasPermission()) {
+                    UiUtils.showSnackBarNotification(mImgRec, "Permissions Granted!", Snackbar.LENGTH_SHORT);
+//                    startRecordingControllerService();
+                }
+            }
+        }
+        else{
             super.onActivityResult(requestCode, resultCode, data);
         }
     }
 
-    private void startRecordingActivity() {
-        Intent serviceIntent = new Intent(MainActivity.this, RecordingControllerService.class);
+    private void startRecordingControllerService() {
+        Intent recordingControllerService = new Intent(MainActivity.this, RecordingControllerService.class);
 
         if(checkCameraHardware(this)){
 //            serviceIntent.setAction("Camera_Available");
         }
-        startService(serviceIntent);
+
+        recordingControllerService.putExtra(Intent.EXTRA_INTENT, mScreenCaptureIntent);
+
+        startService(recordingControllerService);
+
         finish();
     }
 
@@ -198,6 +225,8 @@ public class MainActivity extends AppCompatActivity {
         return ContextCompat.checkSelfPermission(this, mPermission[0]) == granted
                 && ContextCompat.checkSelfPermission(this, mPermission[1]) == granted
                     && ContextCompat.checkSelfPermission(this, mPermission[2]) == granted
-                        && Settings.canDrawOverlays(this);
+                        && Settings.canDrawOverlays(this)
+                            && mScreenCaptureIntent != null
+                                && mScreenCaptureResultCode != UiUtils.RESULT_CODE_FAILED;
     }
 }

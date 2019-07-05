@@ -21,14 +21,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".ui.activities.DummyActivity"></activity>
 
         <service
             android:name=".ui.services.RecordingService"
             android:enabled="true"
             android:exported="true" />
-
-        <activity android:name=".ui.activities.RecordScreenActivity" />
 
         <service
             android:name=".ui.services.RecordingControllerService"

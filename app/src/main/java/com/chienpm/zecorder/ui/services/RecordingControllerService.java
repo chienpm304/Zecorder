@@ -9,6 +9,7 @@ import android.graphics.PixelFormat;
 import android.hardware.Camera;
 import android.os.IBinder;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -51,6 +52,7 @@ public class RecordingControllerService extends Service {
             PixelFormat.TRANSLUCENT
     );
 
+    private Intent mScreenCaptureIntent = null;
 
     private ImageView mImgClose, mImgRec, mImgStart, mImgStop, mImgPause, mImgResume, mImgCapture, mImgLive, mImgSetting;
     private Boolean mRecordingStarted = false;
@@ -62,13 +64,23 @@ public class RecordingControllerService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         String action = intent.getAction();
-
+        Log.d(TAG, "RecordingControllerService: onStartCommand()");
         if(action != null){
             if(TextUtils.equals(action, "Camera_Available")){
                 initCameraView();
             }
-        }
 
+        }
+        mScreenCaptureIntent = intent.getParcelableExtra(Intent.EXTRA_INTENT);
+
+        if(mScreenCaptureIntent == null){
+            Log.d(TAG, "mScreenCaptureIntent is NULL");
+            stopSelf();
+        }
+        else{
+            Log.d(TAG, "RecordingControllerService: before run bindRecordingService()");
+            bindRecordingService();
+        }
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -86,12 +98,14 @@ public class RecordingControllerService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-
+        Log.d(TAG, "RecordingControllerService: onCreate");
         initializeViews();
-        bindRecordingService();
+
+
     }
 
     private void initCameraView() {
+        Log.d(TAG, "RecordingControllerService: initializeCamera()");
         mCameraLayout = LayoutInflater.from(this).inflate(R.layout.layout_camera_view, null);
 
         mCamera =  Camera.open();
@@ -116,6 +130,7 @@ public class RecordingControllerService extends Service {
 
 
     private void initializeViews() {
+        Log.d(TAG, "RecordingControllerService: initializeViews()");
         mViewRoot = LayoutInflater.from(this).inflate(R.layout.layout_recording, null);
 
         params.gravity = Gravity.TOP | Gravity.START;
@@ -180,8 +195,6 @@ public class RecordingControllerService extends Service {
             @Override
             public void onClick(View v) {
                 toggleNavigationButton(View.GONE);
-
-
 
                 if(mRecordingServiceBound){
                     //Todo: start recording
@@ -291,7 +304,9 @@ public class RecordingControllerService extends Service {
     }
 
     private void bindRecordingService() {
+        Log.d(TAG, "RecordingControllerService: bindRecordingService()");
         Intent mRecordingServiceIntent = new Intent(getApplicationContext(), RecordingService.class);
+        mRecordingServiceIntent.putExtra(Intent.EXTRA_INTENT, mScreenCaptureIntent);
         bindService(mRecordingServiceIntent, mRecordingServiceConnection, Context.BIND_AUTO_CREATE);
     }
 
@@ -301,7 +316,7 @@ public class RecordingControllerService extends Service {
             RecordingBinder binder = (RecordingBinder) service;
             mRecordingService = binder.getService();
             mRecordingServiceBound = true;
-            mRecordingService.prepareToRecording();
+
             UiUtils.toast(getApplicationContext(), "Recording service connected", Toast.LENGTH_SHORT);
         }
 
