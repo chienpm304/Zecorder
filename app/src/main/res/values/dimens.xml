@@ -2,4 +2,5 @@
 <resources>
     <dimen name="recording_icon_square">40dp</dimen>
     <dimen name="recording_button_distance">80dp</dimen>
+    <dimen name="text_margin">16dp</dimen>
 </resources>
