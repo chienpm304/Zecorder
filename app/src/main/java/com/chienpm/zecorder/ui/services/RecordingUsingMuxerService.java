@@ -43,10 +43,10 @@ public class RecordingUsingMuxerService extends Service {
     private MediaMuxer muxer;
     private Surface inputSurface;
     private MediaCodec videoEncoder;
+
     private boolean muxerStarted;
     private int trackIndex = -1;
 
-    private static final int REQUEST_CODE_CAPTURE_PERM = 1234;
     private static final String VIDEO_MIME_TYPE = "video/avc";
 
     private android.media.MediaCodec.Callback encoderCallback;
@@ -153,7 +153,7 @@ public class RecordingUsingMuxerService extends Service {
 
         try {
             File outputFile = new File(Environment.getExternalStoragePublicDirectory(
-                    Environment.DIRECTORY_PICTURES) + "/grafika", "Screen-record-" +
+                    Environment.DIRECTORY_PICTURES) + "/Zecorder", "Screen-record-" +
                     Long.toHexString(System.currentTimeMillis()) + ".mp4");
             if (!outputFile.getParentFile().exists()) {
                 outputFile.getParentFile().mkdirs();
