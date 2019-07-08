@@ -1,6 +1,6 @@
 package com.chienpm.zecorder.ui.services;
 
-import android.app.Service;
+import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
 import android.hardware.display.DisplayManager;
@@ -11,6 +11,7 @@ import android.media.projection.MediaProjectionManager;
 import android.os.Binder;
 import android.os.Environment;
 import android.os.IBinder;
+import android.support.annotation.Nullable;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.SparseIntArray;
@@ -20,19 +21,22 @@ import android.view.WindowManager;
 import com.chienpm.zecorder.ui.utils.UiUtils;
 
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
-public class RecordingService extends Service {
+public class RecordingService extends IntentService {
     private final IBinder mIBinder = new RecordingBinder();
 
     private static final String TAG = "chienpm";
     private static final List<Resolution> RESOLUTIONS = new ArrayList<Resolution>() {{
-        add(new Resolution(640,360));
-        add(new Resolution(960,540));
-        add(new Resolution(1366,768));
-        add(new Resolution(1600,900));
+        add(new Resolution(320,180, 30, 800*1000));
+        add(new Resolution(640, 360, 30, 2*1000*1000));
+        add(new Resolution(1280,720, 30, 4*1000*1000));
+        add(new Resolution(1920, 1080, 30, 10*1000*1000));
     }};
+
     private int mScreenDensity;
     private MediaProjectionManager mProjectionManager;
     private int mDisplayWidth;
@@ -57,6 +61,10 @@ public class RecordingService extends Service {
     private Intent mScreenCaptureIntent;
     private int mScreenCaptureResultCode;
 
+
+    public RecordingService(){
+        super(UiUtils.RECORDING_INTENT_SERVICE_NAME);
+    }
 
     public void prepareToRecording() {
         Log.d(TAG, "RecordingService: prepareToRecording()");
@@ -85,8 +93,6 @@ public class RecordingService extends Service {
         }
 
     }
-    public RecordingService() {
-    }
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -95,6 +101,11 @@ public class RecordingService extends Service {
         mScreenCaptureResultCode = mScreenCaptureIntent.getIntExtra(UiUtils.SCREEN_CAPTURE_INTENT_RESULT_CODE, UiUtils.RESULT_CODE_FAILED);
         Log.d(TAG, "onBind: "+ mScreenCaptureIntent);
         return mIBinder;
+    }
+
+    @Override
+    protected void onHandleIntent(@Nullable Intent intent) {
+
     }
 
     @Override
@@ -114,13 +125,10 @@ public class RecordingService extends Service {
                 (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
 
         //TOdo: chooose resolution and orientation
-        mResolution = RESOLUTIONS.get(3);
-        mDisplayWidth = mResolution.y;
-        mDisplayHeight = mResolution.x;
+        mResolution = RESOLUTIONS.get(2);
+        mDisplayWidth = mResolution.x;
+        mDisplayHeight = mResolution.y;
     }
-
-
-
 
     private void stopScreenSharing() {
         Log.d(TAG, "RecordingService: stopScreenSharing()");
@@ -136,17 +144,19 @@ public class RecordingService extends Service {
     private void initRecorder() {
         Log.d(TAG, "RecordingService: initRecorder()");
         try {
+            Timestamp timestamp = new Timestamp(new Date().getTime());
+
             mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.DEFAULT);
             mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
             mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
             mMediaRecorder.setOutputFile(Environment
                     .getExternalStoragePublicDirectory(Environment
-                            .DIRECTORY_DOWNLOADS) + "/video1.mp4");
+                            .DIRECTORY_DOWNLOADS) + "/Zecorder-"+timestamp+".mp4");
             mMediaRecorder.setVideoSize(mDisplayWidth, mDisplayHeight);
             mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-            mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-            mMediaRecorder.setVideoEncodingBitRate(512 * 1000);
-            mMediaRecorder.setVideoFrameRate(30);
+            mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+            mMediaRecorder.setVideoEncodingBitRate(mResolution.bitrate);
+            mMediaRecorder.setVideoFrameRate(mResolution.fps);
             int rotation = mWindowManager.getDefaultDisplay().getRotation();
             int orientation = ORIENTATIONS.get(rotation + 90);
             mMediaRecorder.setOrientationHint(orientation);
@@ -212,9 +222,14 @@ public class RecordingService extends Service {
     private static class Resolution {
         int x;
         int y;
-        public Resolution(int x, int y) {
+        int fps;
+        int bitrate;
+
+        public Resolution(int x, int y, int fps, int bitrate) {
             this.x = x;
             this.y = y;
+            this.fps = fps;
+            this.bitrate = bitrate;
         }
         @Override
         public String toString() {

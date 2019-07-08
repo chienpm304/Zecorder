@@ -69,7 +69,6 @@ public class RecordingControllerService extends Service {
             if(TextUtils.equals(action, "Camera_Available")){
                 initCameraView();
             }
-
         }
         mScreenCaptureIntent = intent.getParcelableExtra(Intent.EXTRA_INTENT);
 
@@ -127,7 +126,6 @@ public class RecordingControllerService extends Service {
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         mWindowManager.addView(mViewRoot, params);
     }
-
 
     private void initializeViews() {
         Log.d(TAG, "RecordingControllerService: initializeViews()");
@@ -304,10 +302,17 @@ public class RecordingControllerService extends Service {
     }
 
     private void bindRecordingService() {
-        Log.d(TAG, "RecordingControllerService: bindRecordingService()");
-        Intent mRecordingServiceIntent = new Intent(getApplicationContext(), RecordingService.class);
-        mRecordingServiceIntent.putExtra(Intent.EXTRA_INTENT, mScreenCaptureIntent);
-        bindService(mRecordingServiceIntent, mRecordingServiceConnection, Context.BIND_AUTO_CREATE);
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                //
+                Log.d(TAG, "RecordingControllerService: bindRecordingService()");
+                Intent mRecordingServiceIntent = new Intent(getApplicationContext(), RecordingService.class);
+                mRecordingServiceIntent.putExtra(Intent.EXTRA_INTENT, mScreenCaptureIntent);
+                bindService(mRecordingServiceIntent, mRecordingServiceConnection, Context.BIND_AUTO_CREATE);
+            }
+        });
+        thread.start();
     }
 
     private ServiceConnection mRecordingServiceConnection = new ServiceConnection() {
@@ -385,6 +390,7 @@ public class RecordingControllerService extends Service {
         }
         if(mRecordingService!=null && mRecordingServiceBound) {
             unbindService(mRecordingServiceConnection);
+//            stopService()
             mRecordingServiceBound = false;
 
         }

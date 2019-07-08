@@ -21,12 +21,10 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-
         <service
             android:name=".ui.services.RecordingService"
             android:enabled="true"
             android:exported="true" />
-
         <service
             android:name=".ui.services.RecordingControllerService"
             android:enabled="true"
