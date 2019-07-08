@@ -3,14 +3,11 @@ package com.chienpm.zecorder.ui.services;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.hardware.display.DisplayManager;
-import android.hardware.display.VirtualDisplay;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 import android.media.MediaMuxer;
-import android.media.MediaRecorder;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.os.Binder;
@@ -19,40 +16,30 @@ import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.util.SparseIntArray;
 import android.view.Display;
 import android.view.Surface;
-import android.view.WindowManager;
 
 import com.chienpm.zecorder.ui.utils.UiUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 
 public class RecordingUsingMuxerService extends Service {
     private final IBinder mIBinder = new RecordingUsingMuxerBinder();
 
     private static final String TAG = "chienpm";
-    private MediaProjectionManager mediaProjectionManager;
-    private MediaProjection mediaProjection;
-    private MediaMuxer muxer;
-    private Surface inputSurface;
-    private MediaCodec videoEncoder;
+    private MediaProjectionManager mMediaProjectionManager;
+    private MediaProjection mMediaProjection;
+    private MediaMuxer mVideoMuxer;
+    private Surface mInputSurface;
+    private MediaCodec mVideoCodec;
 
-    private boolean muxerStarted;
-    private int trackIndex = -1;
+    private boolean mMuxerStarted;
+    private int mVideoTrackIndex = -1;
 
     private static final String VIDEO_MIME_TYPE = "video/avc";
-
-    private android.media.MediaCodec.Callback encoderCallback;
-
-
-
+    private android.media.MediaCodec.Callback mVideoCodecCallback;
     private Intent mScreenCaptureIntent;
     private int mScreenCaptureResultCode;
 
@@ -60,7 +47,6 @@ public class RecordingUsingMuxerService extends Service {
         public RecordingUsingMuxerService getService(){
             return RecordingUsingMuxerService.this;
         }
-
     }
 
     public RecordingUsingMuxerService() {
@@ -70,9 +56,9 @@ public class RecordingUsingMuxerService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        mediaProjectionManager = (MediaProjectionManager) getSystemService(
+        mMediaProjectionManager = (MediaProjectionManager) getSystemService(
                 android.content.Context.MEDIA_PROJECTION_SERVICE);
-        encoderCallback = new MediaCodec.Callback() {
+        mVideoCodecCallback = new MediaCodec.Callback() {
             @Override
             public void onInputBufferAvailable(@NonNull MediaCodec codec, int index) {
                 Log.d(TAG, "Input Buffer Avail");
@@ -80,7 +66,7 @@ public class RecordingUsingMuxerService extends Service {
 
             @Override
             public void onOutputBufferAvailable(@NonNull MediaCodec codec, int index, @NonNull MediaCodec.BufferInfo info) {
-                ByteBuffer encodedData = videoEncoder.getOutputBuffer(index);
+                ByteBuffer encodedData = mVideoCodec.getOutputBuffer(index);
                 if (encodedData == null) {
                     throw new RuntimeException("couldn't fetch buffer at index " + index);
                 }
@@ -90,14 +76,14 @@ public class RecordingUsingMuxerService extends Service {
                 }
 
                 if (info.size != 0) {
-                    if (muxerStarted) {
+                    if (mMuxerStarted) {
                         encodedData.position(info.offset);          //update current video position
                         encodedData.limit(info.offset + info.size);
-                        muxer.writeSampleData(trackIndex, encodedData, info);
+                        mVideoMuxer.writeSampleData(mVideoTrackIndex, encodedData, info);
                     }
                 }
 
-                videoEncoder.releaseOutputBuffer(index, false);
+                mVideoCodec.releaseOutputBuffer(index, false);
 
             }
 
@@ -109,13 +95,13 @@ public class RecordingUsingMuxerService extends Service {
             @Override
             public void onOutputFormatChanged(@NonNull MediaCodec codec, @NonNull MediaFormat format) {
                 Log.d(TAG, "Output Format changed");
-                if (trackIndex >= 0) {
+                if (mVideoTrackIndex >= 0) {
                     throw new RuntimeException("format changed twice");
                 }
-                trackIndex = muxer.addTrack(videoEncoder.getOutputFormat());
-                if (!muxerStarted && trackIndex >= 0) {
-                    muxer.start();
-                    muxerStarted = true;
+                mVideoTrackIndex = mVideoMuxer.addTrack(mVideoCodec.getOutputFormat());
+                if (!mMuxerStarted && mVideoTrackIndex >= 0) {
+                    mVideoMuxer.start();
+                    mMuxerStarted = true;
                 }
             }
         };
@@ -131,7 +117,7 @@ public class RecordingUsingMuxerService extends Service {
     }
 
     public void startRecording() {
-        mediaProjection = mediaProjectionManager.getMediaProjection(mScreenCaptureResultCode, mScreenCaptureIntent);
+        mMediaProjection = mMediaProjectionManager.getMediaProjection(mScreenCaptureResultCode, mScreenCaptureIntent);
         DisplayManager dm = (DisplayManager) getSystemService(Context.DISPLAY_SERVICE);
         Display defaultDisplay;
         if (dm != null) {
@@ -158,15 +144,15 @@ public class RecordingUsingMuxerService extends Service {
             if (!outputFile.getParentFile().exists()) {
                 outputFile.getParentFile().mkdirs();
             }
-            muxer = new MediaMuxer(outputFile.getCanonicalPath(), MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+            mVideoMuxer = new MediaMuxer(outputFile.getCanonicalPath(), MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
         } catch (IOException ioe) {
             throw new RuntimeException("MediaMuxer creation failed", ioe);
         }
 
 
         // Start the video input.
-        mediaProjection.createVirtualDisplay("Recording Display", screenWidth,
-                screenHeight, screenDensity, DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR/* flags */, inputSurface,
+        mMediaProjection.createVirtualDisplay("Recording Display", screenWidth,
+                screenHeight, screenDensity, DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR/* flags */, mInputSurface,
                 null /* callback */, null /* handler */);
     }
 
@@ -186,11 +172,11 @@ public class RecordingUsingMuxerService extends Service {
 
         // Create a MediaCodec encoder and configure it. Get a Surface we can use for recording into.
         try {
-            videoEncoder = MediaCodec.createEncoderByType(VIDEO_MIME_TYPE);
-            videoEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-            inputSurface = videoEncoder.createInputSurface();
-            videoEncoder.setCallback(encoderCallback);
-            videoEncoder.start();
+            mVideoCodec = MediaCodec.createEncoderByType(VIDEO_MIME_TYPE);
+            mVideoCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+            mInputSurface = mVideoCodec.createInputSurface();
+            mVideoCodec.setCallback(mVideoCodecCallback);
+            mVideoCodec.start();
         } catch (IOException e) {
             releaseEncoders();
         }
@@ -202,28 +188,28 @@ public class RecordingUsingMuxerService extends Service {
 
 
     private void releaseEncoders() {
-        if (muxer != null) {
-            if (muxerStarted) {
-                muxer.stop();
+        if (mVideoMuxer != null) {
+            if (mMuxerStarted) {
+                mVideoMuxer.stop();
             }
-            muxer.release();
-            muxer = null;
-            muxerStarted = false;
+            mVideoMuxer.release();
+            mVideoMuxer = null;
+            mMuxerStarted = false;
         }
-        if (videoEncoder != null) {
-            videoEncoder.stop();
-            videoEncoder.release();
-            videoEncoder = null;
+        if (mVideoCodec != null) {
+            mVideoCodec.stop();
+            mVideoCodec.release();
+            mVideoCodec = null;
         }
-        if (inputSurface != null) {
-            inputSurface.release();
-            inputSurface = null;
+        if (mInputSurface != null) {
+            mInputSurface.release();
+            mInputSurface = null;
         }
-        if (mediaProjection != null) {
-            mediaProjection.stop();
-            mediaProjection = null;
+        if (mMediaProjection != null) {
+            mMediaProjection.stop();
+            mMediaProjection = null;
         }
-        trackIndex = -1;
+        mVideoTrackIndex = -1;
     }
 
 
