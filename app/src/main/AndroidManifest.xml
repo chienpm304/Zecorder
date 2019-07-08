@@ -24,13 +24,26 @@
         <service
             android:name=".ui.services.RecordingService"
             android:enabled="true"
-            android:exported="true" />
+            android:exported="false" />
+
         <service
             android:name=".ui.services.RecordingControllerService"
             android:enabled="true"
-            android:exported="true" />
+            android:exported="false" />
 
-        <activity android:name=".ui.activities.MainActivity">
+        <service
+            android:name=".ui.services.RecordingUsingMuxerService"
+            android:enabled="true"
+            android:exported="false" />
+
+        <service
+            android:name=".ui.services.RecordingUsingMuxerControllerService"
+            android:enabled="true"
+            android:exported="false" />
+
+
+        <activity
+            android:name=".ui.activities.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

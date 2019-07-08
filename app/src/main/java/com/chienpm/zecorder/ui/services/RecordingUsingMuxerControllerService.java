@@ -20,16 +20,16 @@ import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.chienpm.zecorder.R;
-import com.chienpm.zecorder.ui.utils.CameraPreview;
 import com.chienpm.zecorder.ui.activities.MainActivity;
+import com.chienpm.zecorder.ui.services.RecordingUsingMuxerService.RecordingUsingMuxerBinder;
+import com.chienpm.zecorder.ui.utils.CameraPreview;
 import com.chienpm.zecorder.ui.utils.UiUtils;
-import com.chienpm.zecorder.ui.services.RecordingService.*;
 
 
-public class RecordingControllerService extends Service {
+public class RecordingUsingMuxerControllerService extends Service {
     private static final String TAG = "chienpm";
 
-    private RecordingService mRecordingService;
+    private RecordingUsingMuxerService mRecordingService;
     private Boolean mRecordingServiceBound = false;
 
     private View mViewRoot;
@@ -69,6 +69,7 @@ public class RecordingControllerService extends Service {
             if(TextUtils.equals(action, "Camera_Available")){
                 initCameraView();
             }
+
         }
         mScreenCaptureIntent = intent.getParcelableExtra(Intent.EXTRA_INTENT);
 
@@ -83,7 +84,7 @@ public class RecordingControllerService extends Service {
         return super.onStartCommand(intent, flags, startId);
     }
 
-    public RecordingControllerService() {
+    public RecordingUsingMuxerControllerService() {
 
     }
 
@@ -126,6 +127,7 @@ public class RecordingControllerService extends Service {
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         mWindowManager.addView(mViewRoot, params);
     }
+
 
     private void initializeViews() {
         Log.d(TAG, "RecordingControllerService: initializeViews()");
@@ -303,23 +305,16 @@ public class RecordingControllerService extends Service {
     }
 
     private void bindRecordingService() {
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                //
-                Log.d(TAG, "RecordingControllerService: bindRecordingService()");
-                Intent mRecordingServiceIntent = new Intent(getApplicationContext(), RecordingService.class);
-                mRecordingServiceIntent.putExtra(Intent.EXTRA_INTENT, mScreenCaptureIntent);
-                bindService(mRecordingServiceIntent, mRecordingServiceConnection, Context.BIND_AUTO_CREATE);
-            }
-        });
-        thread.start();
+        Log.d(TAG, "RecordingControllerService: bindRecordingService()");
+        Intent mRecordingServiceIntent = new Intent(getApplicationContext(), RecordingUsingMuxerService.class);
+        mRecordingServiceIntent.putExtra(Intent.EXTRA_INTENT, mScreenCaptureIntent);
+        bindService(mRecordingServiceIntent, mRecordingServiceConnection, Context.BIND_AUTO_CREATE);
     }
 
     private ServiceConnection mRecordingServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            RecordingBinder binder = (RecordingBinder) service;
+            RecordingUsingMuxerBinder binder = (RecordingUsingMuxerBinder) service;
             mRecordingService = binder.getService();
             mRecordingServiceBound = true;
 
@@ -391,7 +386,6 @@ public class RecordingControllerService extends Service {
         }
         if(mRecordingService!=null && mRecordingServiceBound) {
             unbindService(mRecordingServiceConnection);
-//            stopService()
             mRecordingServiceBound = false;
 
         }
