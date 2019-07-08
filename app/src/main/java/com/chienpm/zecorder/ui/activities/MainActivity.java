@@ -27,6 +27,8 @@ import com.chienpm.zecorder.ui.fragments.LiveStreamFragment;
 import com.chienpm.zecorder.ui.fragments.SettingFragment;
 import com.chienpm.zecorder.ui.fragments.VideoManagerFragment;
 import com.chienpm.zecorder.ui.services.RecordingControllerService;
+import com.chienpm.zecorder.ui.services.RecordingUsingMuxerControllerService;
+import com.chienpm.zecorder.ui.services.RecordingUsingMuxerService;
 import com.chienpm.zecorder.ui.utils.UiUtils;
 
 public class MainActivity extends AppCompatActivity {
@@ -194,7 +196,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startRecordingControllerService() {
-        Intent recordingControllerService = new Intent(MainActivity.this, RecordingControllerService.class);
+
+//        Intent recordingControllerService = new Intent(MainActivity.this, RecordingControllerService.class);
+        Intent recordingControllerService = new Intent(MainActivity.this, RecordingUsingMuxerControllerService.class);
 
         if(checkCameraHardware(this)){
 //            serviceIntent.setAction("Camera_Available");

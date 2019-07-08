@@ -3,6 +3,7 @@ package com.chienpm.zecorder.ui.services;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.media.MediaRecorder;
@@ -20,7 +21,9 @@ import android.view.WindowManager;
 import com.chienpm.zecorder.ui.utils.UiUtils;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class RecordingService extends Service {
@@ -115,12 +118,31 @@ public class RecordingService extends Service {
 
         //TOdo: chooose resolution and orientation
         mResolution = RESOLUTIONS.get(3);
-        mDisplayWidth = mResolution.y;
-        mDisplayHeight = mResolution.x;
+
+        if(getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE){
+            mDisplayHeight = mResolution.y;
+            mDisplayWidth = mResolution.x;
+        }
+        else{
+            mDisplayHeight = mResolution.x;
+            mDisplayWidth = mResolution.y;
+        }
+
     }
 
 
-
+//    @Override
+//    public void onConfigurationChanged(Configuration newConfig) {
+//        Log.d(TAG, "onConfigurationChanged: ");
+//        if(newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE){
+//            mDisplayHeight = mResolution.y;
+//            mDisplayWidth = mResolution.x;
+//        } else {
+//            mDisplayHeight = mResolution.x;
+//            mDisplayWidth = mResolution.y;
+//        }
+//        resizeVirtualDisplay();
+//    }
 
     private void stopScreenSharing() {
         Log.d(TAG, "RecordingService: stopScreenSharing()");
@@ -135,17 +157,19 @@ public class RecordingService extends Service {
 
     private void initRecorder() {
         Log.d(TAG, "RecordingService: initRecorder()");
+        String timeStamp = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date());
         try {
             mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.DEFAULT);
             mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
-            mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+            mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             mMediaRecorder.setOutputFile(Environment
                     .getExternalStoragePublicDirectory(Environment
-                            .DIRECTORY_DOWNLOADS) + "/video1.mp4");
+                            .DIRECTORY_DOWNLOADS) + "/Zecorder-"+timeStamp+".mp4");
+
             mMediaRecorder.setVideoSize(mDisplayWidth, mDisplayHeight);
             mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
             mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-            mMediaRecorder.setVideoEncodingBitRate(512 * 1000);
+            mMediaRecorder.setVideoEncodingBitRate(mDisplayHeight * mDisplayWidth);
             mMediaRecorder.setVideoFrameRate(30);
             int rotation = mWindowManager.getDefaultDisplay().getRotation();
             int orientation = ORIENTATIONS.get(rotation + 90);
@@ -194,6 +218,7 @@ public class RecordingService extends Service {
         }
         Log.i(TAG, "MediaProjection Stopped");
     }
+
 
     private class MediaProjectionCallback extends MediaProjection.Callback {
         @Override
