@@ -4,6 +4,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.hardware.display.DisplayManager;
+import android.media.AudioFormat;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
@@ -19,29 +20,36 @@ import android.util.Log;
 import android.view.Display;
 import android.view.Surface;
 
-import com.chienpm.zecorder.ui.utils.UiUtils;
+import com.chienpm.zecorder.ui.utils.MyUtils;
+import com.chienpm.zecorder.ui.utils.MyUtils.*;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public class RecordingService extends Service {
+
     private final IBinder mIBinder = new RecordingUsingMuxerBinder();
 
     private static final String TAG = "chienpm";
     private MediaProjectionManager mMediaProjectionManager;
     private MediaProjection mMediaProjection;
-    private MediaMuxer mVideoMuxer;
+    private MediaMuxer mMuxer;
     private Surface mInputSurface;
     private MediaCodec mVideoCodec;
+    private MediaCodec mAudioCodec;
 
     private boolean mMuxerStarted;
     private int mVideoTrackIndex = -1;
+    private int mAudioTrackIndex = -1;
 
     private static final String VIDEO_MIME_TYPE = "video/avc";
-    private android.media.MediaCodec.Callback mVideoCodecCallback;
+    private static final String AUDIO_MIME_TYPE = "audio/mp4a-latm";
+    private MediaCodec.Callback mVideoCodecCallback;
     private Intent mScreenCaptureIntent;
     private int mScreenCaptureResultCode;
+    private MediaCodec.Callback mAudioCodecCallback;
+
 
     public class RecordingUsingMuxerBinder extends Binder{
         public RecordingService getService(){
@@ -58,6 +66,7 @@ public class RecordingService extends Service {
         super.onCreate();
         mMediaProjectionManager = (MediaProjectionManager) getSystemService(
                 android.content.Context.MEDIA_PROJECTION_SERVICE);
+
         mVideoCodecCallback = new MediaCodec.Callback() {
             @Override
             public void onInputBufferAvailable(@NonNull MediaCodec codec, int index) {
@@ -79,7 +88,7 @@ public class RecordingService extends Service {
                     if (mMuxerStarted) {
                         encodedData.position(info.offset);          //update current video position
                         encodedData.limit(info.offset + info.size);
-                        mVideoMuxer.writeSampleData(mVideoTrackIndex, encodedData, info);
+                        mMuxer.writeSampleData(mVideoTrackIndex, encodedData, info);
                     }
                 }
 
@@ -89,29 +98,78 @@ public class RecordingService extends Service {
 
             @Override
             public void onError(@NonNull MediaCodec codec, @NonNull MediaCodec.CodecException e) {
-                Log.e(TAG, "MediaCodec " + codec.getName() + " onError:", e);
+                Log.e(TAG, "VIDEO MediaCodec " + codec.getName() + " onError:", e);
             }
 
             @Override
             public void onOutputFormatChanged(@NonNull MediaCodec codec, @NonNull MediaFormat format) {
-                Log.d(TAG, "Output Format changed");
+                Log.d(TAG, "VIDEO Output Format changed");
                 if (mVideoTrackIndex >= 0) {
-                    throw new RuntimeException("format changed twice");
+                    throw new RuntimeException("VIDEO format changed twice");
                 }
-                mVideoTrackIndex = mVideoMuxer.addTrack(mVideoCodec.getOutputFormat());
+                mVideoTrackIndex = mMuxer.addTrack(mVideoCodec.getOutputFormat());
                 if (!mMuxerStarted && mVideoTrackIndex >= 0) {
-                    mVideoMuxer.start();
+                    mMuxer.start();
                     mMuxerStarted = true;
                 }
             }
         };
+
+        mAudioCodecCallback = new MediaCodec.Callback() {
+            @Override
+            public void onInputBufferAvailable(@NonNull MediaCodec codec, int index) {
+                Log.d(TAG, "AUDIO Input Buffer Avail");
+            }
+
+            @Override
+            public void onOutputBufferAvailable(@NonNull MediaCodec codec, int index, @NonNull MediaCodec.BufferInfo info) {
+                ByteBuffer encodedData = mAudioCodec.getOutputBuffer(index);
+                if (encodedData == null) {
+                    throw new RuntimeException("AUDIO couldn't fetch buffer at index " + index);
+                }
+
+                if ((info.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
+                    info.size = 0;
+                }
+
+                if (info.size != 0) {
+                    if (mMuxerStarted) {
+                        encodedData.position(info.offset);          //update current video position
+                        encodedData.limit(info.offset + info.size);
+                        mMuxer.writeSampleData(mAudioTrackIndex, encodedData, info);
+                    }
+                }
+
+                mAudioCodec.releaseOutputBuffer(index, false);
+
+            }
+
+            @Override
+            public void onError(@NonNull MediaCodec codec, @NonNull MediaCodec.CodecException e) {
+                Log.e(TAG, "Audio MediaCodec " + codec.getName() + " onError:", e);
+            }
+
+            @Override
+            public void onOutputFormatChanged(@NonNull MediaCodec codec, @NonNull MediaFormat format) {
+                Log.d(TAG, "AUDIO Output Format changed");
+                if (mAudioTrackIndex >= 0) {
+                    throw new RuntimeException("AUDIO format changed twice");
+                }
+                mAudioTrackIndex = mMuxer.addTrack(mAudioCodec.getOutputFormat());
+                if (!mMuxerStarted && mAudioTrackIndex >= 0) {
+                    mMuxer.start();
+                    mMuxerStarted = true;
+                }
+            }
+        };
+
     }
 
     @Override
     public IBinder onBind(Intent intent) {
         Log.d(TAG, "RecordingService: onBind()");
         mScreenCaptureIntent = intent.getParcelableExtra(Intent.EXTRA_INTENT);
-        mScreenCaptureResultCode = mScreenCaptureIntent.getIntExtra(UiUtils.SCREEN_CAPTURE_INTENT_RESULT_CODE, UiUtils.RESULT_CODE_FAILED);
+        mScreenCaptureResultCode = mScreenCaptureIntent.getIntExtra(MyUtils.SCREEN_CAPTURE_INTENT_RESULT_CODE, MyUtils.RESULT_CODE_FAILED);
         Log.d(TAG, "onBind: "+ mScreenCaptureIntent);
         return mIBinder;
     }
@@ -136,6 +194,7 @@ public class RecordingService extends Service {
         int screenDensity = metrics.densityDpi;
 
         prepareVideoEncoder(screenWidth, screenHeight);
+        prepareAudioEncoder();
 
         try {
             File outputFile = new File(Environment.getExternalStoragePublicDirectory(
@@ -144,10 +203,14 @@ public class RecordingService extends Service {
             if (!outputFile.getParentFile().exists()) {
                 outputFile.getParentFile().mkdirs();
             }
-            mVideoMuxer = new MediaMuxer(outputFile.getCanonicalPath(), MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+            mMuxer = new MediaMuxer(outputFile.getCanonicalPath(), MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
         } catch (IOException ioe) {
             throw new RuntimeException("MediaMuxer creation failed", ioe);
         }
+
+        prepareVideoEncoder(screenWidth, screenHeight);
+        prepareAudioEncoder();
+
 
 
         // Start the video input.
@@ -182,24 +245,52 @@ public class RecordingService extends Service {
         }
     }
 
+    private void prepareAudioEncoder() {
+        MediaFormat audioFormat = MediaFormat.createAudioFormat(AUDIO_MIME_TYPE,
+                MediaUtils.AUDIO_SAMPLING_RATE, MediaUtils.AUDIO_CHANNEL);
+
+        audioFormat.setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC);
+        audioFormat.setInteger(MediaFormat.KEY_CHANNEL_MASK, AudioFormat.CHANNEL_IN_STEREO);
+        audioFormat.setInteger(MediaFormat.KEY_BIT_RATE, MediaUtils.AUDIO_BITRATE);
+        audioFormat.setInteger(MediaFormat.KEY_CHANNEL_COUNT, MediaUtils.AUDIO_CHANNEL);
+        audioFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1);
+
+        try{
+            mAudioCodec = MediaCodec.createEncoderByType(AUDIO_MIME_TYPE);
+            mAudioCodec.configure(audioFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+
+            mAudioCodec.setCallback(mAudioCodecCallback);
+
+            mAudioCodec.start();
+        }
+        catch (IOException e){
+            releaseEncoders();
+        }
+    }
+
     public void stopRecording() {
         releaseEncoders();
     }
 
 
     private void releaseEncoders() {
-        if (mVideoMuxer != null) {
+        if (mMuxer != null) {
             if (mMuxerStarted) {
-                mVideoMuxer.stop();
+                mMuxer.stop();
             }
-            mVideoMuxer.release();
-            mVideoMuxer = null;
+            mMuxer.release();
+            mMuxer = null;
             mMuxerStarted = false;
         }
         if (mVideoCodec != null) {
             mVideoCodec.stop();
             mVideoCodec.release();
             mVideoCodec = null;
+        }
+        if(mAudioCodec != null){
+            mAudioCodec.stop();
+            mAudioCodec.release();
+            mAudioCodec = null;
         }
         if (mInputSurface != null) {
             mInputSurface.release();

@@ -28,7 +28,7 @@ import com.chienpm.zecorder.ui.fragments.LiveStreamFragment;
 import com.chienpm.zecorder.ui.fragments.SettingFragment;
 import com.chienpm.zecorder.ui.fragments.VideoManagerFragment;
 import com.chienpm.zecorder.ui.services.RecordingControllerService;
-import com.chienpm.zecorder.ui.utils.UiUtils;
+import com.chienpm.zecorder.ui.utils.MyUtils;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "chienpm";
@@ -53,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
             R.drawable.ic_setting
     };
 
-    private int mScreenCaptureResultCode = UiUtils.RESULT_CODE_FAILED;
+    private int mScreenCaptureResultCode = MyUtils.RESULT_CODE_FAILED;
 
 
     @Override
@@ -90,7 +90,7 @@ public class MainActivity extends AppCompatActivity {
         mImgRec.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(mScreenCaptureIntent == null || mScreenCaptureResultCode == UiUtils.RESULT_CODE_FAILED)
+                if(mScreenCaptureIntent == null || mScreenCaptureResultCode == MyUtils.RESULT_CODE_FAILED)
                     requestScreenCaptureIntent();
                 if(hasPermission()) {
                     startRecordingControllerService();
@@ -143,7 +143,7 @@ public class MainActivity extends AppCompatActivity {
                     int granted = PackageManager.PERMISSION_GRANTED;
                     for(int i = 0; i < grantResults.length; i++) {
                         if (grantResults[i] != granted) {
-                            UiUtils.showSnackBarNotification(mImgRec,"Please grant all permissions to record screen.", Snackbar.LENGTH_LONG);
+                            MyUtils.showSnackBarNotification(mImgRec,"Please grant all permissions to record screen.", Snackbar.LENGTH_LONG);
                             return;
                         }
                     }
@@ -159,7 +159,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void shouldStartRecordingControllerSerivce() {
         if (hasPermission() && !isMyServiceRunning(RecordingControllerService.class)) {
-            UiUtils.showSnackBarNotification(mImgRec, "Permissions Granted!", Snackbar.LENGTH_SHORT);
+            MyUtils.showSnackBarNotification(mImgRec, "Permissions Granted!", Snackbar.LENGTH_SHORT);
             startRecordingControllerService();
         }
     }
@@ -170,17 +170,17 @@ public class MainActivity extends AppCompatActivity {
 
             //Check if the permission is granted or not.
             if (resultCode != RESULT_OK) { //Permission is not available
-                UiUtils.showSnackBarNotification(mImgRec, "Draw over other app permission not available.",Snackbar.LENGTH_SHORT);
+                MyUtils.showSnackBarNotification(mImgRec, "Draw over other app permission not available.",Snackbar.LENGTH_SHORT);
             }
         }
         else if( requestCode == PERMISSION_RECORD_DISPLAY) {
             if(resultCode != RESULT_OK){
-                UiUtils.showSnackBarNotification(mImgRec, "Recording display permission not available.",Snackbar.LENGTH_SHORT);
+                MyUtils.showSnackBarNotification(mImgRec, "Recording display permission not available.",Snackbar.LENGTH_SHORT);
                 mScreenCaptureIntent = null;
             }
             else{
                 mScreenCaptureIntent = data;
-                mScreenCaptureIntent.putExtra(UiUtils.SCREEN_CAPTURE_INTENT_RESULT_CODE, resultCode);
+                mScreenCaptureIntent.putExtra(MyUtils.SCREEN_CAPTURE_INTENT_RESULT_CODE, resultCode);
                 mScreenCaptureResultCode = resultCode;
 
                 shouldStartRecordingControllerSerivce();
@@ -226,7 +226,7 @@ public class MainActivity extends AppCompatActivity {
                     && ContextCompat.checkSelfPermission(this, mPermission[2]) == granted
                         && Settings.canDrawOverlays(this)
                             && mScreenCaptureIntent != null
-                                && mScreenCaptureResultCode != UiUtils.RESULT_CODE_FAILED;
+                                && mScreenCaptureResultCode != MyUtils.RESULT_CODE_FAILED;
     }
 
     private boolean isMyServiceRunning(Class<?> serviceClass) {

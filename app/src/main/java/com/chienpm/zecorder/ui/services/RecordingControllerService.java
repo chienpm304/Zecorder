@@ -24,7 +24,7 @@ import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.ui.activities.MainActivity;
 import com.chienpm.zecorder.ui.services.RecordingService.RecordingUsingMuxerBinder;
 import com.chienpm.zecorder.ui.utils.CameraPreview;
-import com.chienpm.zecorder.ui.utils.UiUtils;
+import com.chienpm.zecorder.ui.utils.MyUtils;
 
 
 public class RecordingControllerService extends Service {
@@ -167,7 +167,7 @@ public class RecordingControllerService extends Service {
         mImgCapture.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                UiUtils.toast(getApplicationContext(), "Capture clicked", Toast.LENGTH_SHORT);
+                MyUtils.toast(getApplicationContext(), "Capture clicked", Toast.LENGTH_SHORT);
                 toggleNavigationButton(View.GONE);
                 if(cameraPreview.getVisibility() == View.GONE){
                     cameraPreview.setVisibility(View.VISIBLE);
@@ -181,7 +181,7 @@ public class RecordingControllerService extends Service {
         mImgPause.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                UiUtils.toast(getApplicationContext(), "Pause recording!", Toast.LENGTH_SHORT);
+                MyUtils.toast(getApplicationContext(), "Pause recording!", Toast.LENGTH_SHORT);
                 toggleNavigationButton(View.GONE);
 
                 mRecordingPaused = true;
@@ -191,7 +191,7 @@ public class RecordingControllerService extends Service {
         mImgResume.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                UiUtils.toast(getApplicationContext(), "Resume recording!", Toast.LENGTH_SHORT);
+                MyUtils.toast(getApplicationContext(), "Resume recording!", Toast.LENGTH_SHORT);
                 toggleNavigationButton(View.GONE);
                 mRecordingPaused = false;
             }
@@ -200,7 +200,7 @@ public class RecordingControllerService extends Service {
         mImgSetting.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                UiUtils.toast(getApplicationContext(), "Setting clicked", Toast.LENGTH_SHORT);
+                MyUtils.toast(getApplicationContext(), "Setting clicked", Toast.LENGTH_SHORT);
                 toggleNavigationButton(View.GONE);
             }
         });
@@ -214,11 +214,11 @@ public class RecordingControllerService extends Service {
                     //Todo: start recording
                     mRecordingStarted = true;
                     mRecordingService.startRecording();
-                    UiUtils.toast(getApplicationContext(), "Recording Started", Toast.LENGTH_LONG);
+                    MyUtils.toast(getApplicationContext(), "Recording Started", Toast.LENGTH_LONG);
                 }
                 else{
                     mRecordingStarted = false;
-                    UiUtils.toast(getApplicationContext(), "Recording Service connection has not been established", Toast.LENGTH_LONG);
+                    MyUtils.toast(getApplicationContext(), "Recording Service connection has not been established", Toast.LENGTH_LONG);
                 }
             }
         });
@@ -226,18 +226,18 @@ public class RecordingControllerService extends Service {
         mImgStop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//                UiUtils.toast(getApplicationContext(), "Stop recording!", Toast.LENGTH_SHORT);
+//                MyUtils.toast(getApplicationContext(), "Stop recording!", Toast.LENGTH_SHORT);
                 toggleNavigationButton(View.GONE);
 
                 if(mRecordingServiceBound){
                     //Todo: stop and save recording
                     mRecordingStarted = false;
                     mRecordingService.stopRecording();
-                    UiUtils.toast(getApplicationContext(), "Recording Stopped", Toast.LENGTH_LONG);
+                    MyUtils.toast(getApplicationContext(), "Recording Stopped", Toast.LENGTH_LONG);
                 }
                 else{
                     mRecordingStarted = true;
-                    UiUtils.toast(getApplicationContext(), "Recording Service connection has not been established", Toast.LENGTH_LONG);
+                    MyUtils.toast(getApplicationContext(), "Recording Service connection has not been established", Toast.LENGTH_LONG);
                 }
             }
         });
@@ -344,13 +344,13 @@ public class RecordingControllerService extends Service {
             mRecordingService = binder.getService();
             mRecordingServiceBound = true;
 
-            UiUtils.toast(getApplicationContext(), "Recording service connected", Toast.LENGTH_SHORT);
+            MyUtils.toast(getApplicationContext(), "Recording service connected", Toast.LENGTH_SHORT);
         }
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
             mRecordingServiceBound = false;
-            UiUtils.toast(getApplicationContext(), "Recording service disconnected", Toast.LENGTH_SHORT);
+            MyUtils.toast(getApplicationContext(), "Recording service disconnected", Toast.LENGTH_SHORT);
         }
     };
 

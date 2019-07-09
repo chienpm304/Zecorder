@@ -5,7 +5,7 @@ import android.support.design.widget.Snackbar;
 import android.view.View;
 import android.widget.Toast;
 
-public class UiUtils {
+public class MyUtils {
     public static final int PERMISSION_SCREEN_SHARE_DENIED = 9876;
     public static final int RESULT_CODE_FAILED = -999999;
     public static final String SCREEN_CAPTURE_INTENT_RESULT_CODE = "SCREEN_CAPTURE_INTENT_RESULT_CODE";
@@ -18,5 +18,11 @@ public class UiUtils {
 
     public static void toast(Context mContext, String msg, int length) {
         Toast.makeText(mContext, msg, length).show();
+    }
+    public class MediaUtils{
+
+        public static final int AUDIO_SAMPLING_RATE = 44100 ;
+        public static final int AUDIO_CHANNEL = 2;
+        public static final int AUDIO_BITRATE = 64*1024;
     }
 }
