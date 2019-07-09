@@ -1,6 +1,7 @@
 package com.chienpm.zecorder.ui.activities;
 
 import android.Manifest;
+import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -27,8 +28,6 @@ import com.chienpm.zecorder.ui.fragments.LiveStreamFragment;
 import com.chienpm.zecorder.ui.fragments.SettingFragment;
 import com.chienpm.zecorder.ui.fragments.VideoManagerFragment;
 import com.chienpm.zecorder.ui.services.RecordingControllerService;
-import com.chienpm.zecorder.ui.services.RecordingUsingMuxerControllerService;
-import com.chienpm.zecorder.ui.services.RecordingUsingMuxerService;
 import com.chienpm.zecorder.ui.utils.UiUtils;
 
 public class MainActivity extends AppCompatActivity {
@@ -64,10 +63,6 @@ public class MainActivity extends AppCompatActivity {
 
         initViews();
 
-        if(!hasPermission()) {
-            requestPermissions();
-            requestScreenCaptureIntent();
-        }
     }
 
     private void requestScreenCaptureIntent() {
@@ -101,7 +96,6 @@ public class MainActivity extends AppCompatActivity {
                     startRecordingControllerService();
                 }
                 else{
-                    UiUtils.showSnackBarNotification(mImgRec,"You need to granted all Permissions to record screen.", Snackbar.LENGTH_LONG);
                     requestPermissions();
                     requestScreenCaptureIntent();
                 }
@@ -148,21 +142,25 @@ public class MainActivity extends AppCompatActivity {
                 if (grantResults.length > 0) {
                     int granted = PackageManager.PERMISSION_GRANTED;
                     for(int i = 0; i < grantResults.length; i++) {
-                        if (grantResults[0] != granted) {
-                            UiUtils.showSnackBarNotification(mImgRec,"Please grant all permission to record screen.", Snackbar.LENGTH_LONG);
+                        if (grantResults[i] != granted) {
+                            UiUtils.showSnackBarNotification(mImgRec,"Please grant all permissions to record screen.", Snackbar.LENGTH_LONG);
                             return;
                         }
                     }
 
-                    if(hasPermission()) {
-                        UiUtils.showSnackBarNotification(mImgRec, "Permissions Granted!", Snackbar.LENGTH_SHORT);
-//                        startRecordingControllerService();
-                    }
+                    shouldStartRecordingControllerSerivce();
                 }
                 break;
             }
 
 
+        }
+    }
+
+    private void shouldStartRecordingControllerSerivce() {
+        if (hasPermission() && !isMyServiceRunning(RecordingControllerService.class)) {
+            UiUtils.showSnackBarNotification(mImgRec, "Permissions Granted!", Snackbar.LENGTH_SHORT);
+            startRecordingControllerService();
         }
     }
 
@@ -184,10 +182,8 @@ public class MainActivity extends AppCompatActivity {
                 mScreenCaptureIntent = data;
                 mScreenCaptureIntent.putExtra(UiUtils.SCREEN_CAPTURE_INTENT_RESULT_CODE, resultCode);
                 mScreenCaptureResultCode = resultCode;
-                if(hasPermission()) {
-                    UiUtils.showSnackBarNotification(mImgRec, "Permissions Granted!", Snackbar.LENGTH_SHORT);
-//                    startRecordingControllerService();
-                }
+
+                shouldStartRecordingControllerSerivce();
             }
         }
         else{
@@ -197,11 +193,10 @@ public class MainActivity extends AppCompatActivity {
 
     private void startRecordingControllerService() {
 
-//        Intent recordingControllerService = new Intent(MainActivity.this, RecordingControllerService.class);
-        Intent recordingControllerService = new Intent(MainActivity.this, RecordingUsingMuxerControllerService.class);
+        Intent recordingControllerService = new Intent(MainActivity.this, RecordingControllerService.class);
 
         if(checkCameraHardware(this)){
-//            serviceIntent.setAction("Camera_Available");
+            recordingControllerService.setAction("Camera_Available");
         }
 
         recordingControllerService.putExtra(Intent.EXTRA_INTENT, mScreenCaptureIntent);
@@ -233,4 +228,15 @@ public class MainActivity extends AppCompatActivity {
                             && mScreenCaptureIntent != null
                                 && mScreenCaptureResultCode != UiUtils.RESULT_CODE_FAILED;
     }
+
+    private boolean isMyServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
+

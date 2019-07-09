@@ -1,99 +1,110 @@
 package com.chienpm.zecorder.ui.services;
 
-import android.app.IntentService;
+import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.hardware.display.DisplayManager;
-import android.hardware.display.VirtualDisplay;
-import android.media.MediaRecorder;
+import android.media.MediaCodec;
+import android.media.MediaCodecInfo;
+import android.media.MediaFormat;
+import android.media.MediaMuxer;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.os.Binder;
 import android.os.Environment;
 import android.os.IBinder;
-import android.support.annotation.Nullable;
+import android.support.annotation.NonNull;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.util.SparseIntArray;
+import android.view.Display;
 import android.view.Surface;
-import android.view.WindowManager;
 
 import com.chienpm.zecorder.ui.utils.UiUtils;
 
+import java.io.File;
 import java.io.IOException;
-import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.nio.ByteBuffer;
 
-public class RecordingService extends IntentService {
-    private final IBinder mIBinder = new RecordingBinder();
+public class RecordingService extends Service {
+    private final IBinder mIBinder = new RecordingUsingMuxerBinder();
 
     private static final String TAG = "chienpm";
-    private static final List<Resolution> RESOLUTIONS = new ArrayList<Resolution>() {{
-        add(new Resolution(320,180, 30, 800*1000));
-        add(new Resolution(640, 360, 30, 2*1000*1000));
-        add(new Resolution(1280,720, 30, 4*1000*1000));
-        add(new Resolution(1920, 1080, 30, 10*1000*1000));
-    }};
-
-    private int mScreenDensity;
-    private MediaProjectionManager mProjectionManager;
-    private int mDisplayWidth;
-    private int mDisplayHeight;
-    private boolean mScreenSharing;
+    private MediaProjectionManager mMediaProjectionManager;
     private MediaProjection mMediaProjection;
-    private VirtualDisplay mVirtualDisplay;
-    private MediaProjectionCallback mMediaProjectionCallback;
-    private MediaRecorder mMediaRecorder;
-    WindowManager mWindowManager;
-    private boolean mIsRecording = false;
+    private MediaMuxer mVideoMuxer;
+    private Surface mInputSurface;
+    private MediaCodec mVideoCodec;
 
-    private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
-    static {
-        ORIENTATIONS.append(Surface.ROTATION_0, 90);
-        ORIENTATIONS.append(Surface.ROTATION_90, 0);
-        ORIENTATIONS.append(Surface.ROTATION_180, 270);
-        ORIENTATIONS.append(Surface.ROTATION_270, 180);
-    }
+    private boolean mMuxerStarted;
+    private int mVideoTrackIndex = -1;
 
-    private Resolution mResolution;
+    private static final String VIDEO_MIME_TYPE = "video/avc";
+    private android.media.MediaCodec.Callback mVideoCodecCallback;
     private Intent mScreenCaptureIntent;
     private int mScreenCaptureResultCode;
 
-
-    public RecordingService(){
-        super(UiUtils.RECORDING_INTENT_SERVICE_NAME);
-    }
-
-    public void prepareToRecording() {
-        Log.d(TAG, "RecordingService: prepareToRecording()");
-        initRecorder();
-        shareScreen();
-    }
-
-    public void startRecording(){
-        mIsRecording = true;
-        prepareToRecording();
-        mVirtualDisplay = createVirtualDisplay();
-        mMediaRecorder.start();
-    }
-
-    public void stopRecording(){
-        mMediaRecorder.stop();
-        mMediaRecorder.reset();
-        Log.d(TAG, "Stopping Recording");
-        stopScreenSharing();
-    }
-
-
-    public class RecordingBinder extends Binder{
+    public class RecordingUsingMuxerBinder extends Binder{
         public RecordingService getService(){
             return RecordingService.this;
         }
+    }
 
+    public RecordingService() {
+
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        mMediaProjectionManager = (MediaProjectionManager) getSystemService(
+                android.content.Context.MEDIA_PROJECTION_SERVICE);
+        mVideoCodecCallback = new MediaCodec.Callback() {
+            @Override
+            public void onInputBufferAvailable(@NonNull MediaCodec codec, int index) {
+                Log.d(TAG, "Input Buffer Avail");
+            }
+
+            @Override
+            public void onOutputBufferAvailable(@NonNull MediaCodec codec, int index, @NonNull MediaCodec.BufferInfo info) {
+                ByteBuffer encodedData = mVideoCodec.getOutputBuffer(index);
+                if (encodedData == null) {
+                    throw new RuntimeException("couldn't fetch buffer at index " + index);
+                }
+
+                if ((info.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
+                    info.size = 0;
+                }
+
+                if (info.size != 0) {
+                    if (mMuxerStarted) {
+                        encodedData.position(info.offset);          //update current video position
+                        encodedData.limit(info.offset + info.size);
+                        mVideoMuxer.writeSampleData(mVideoTrackIndex, encodedData, info);
+                    }
+                }
+
+                mVideoCodec.releaseOutputBuffer(index, false);
+
+            }
+
+            @Override
+            public void onError(@NonNull MediaCodec codec, @NonNull MediaCodec.CodecException e) {
+                Log.e(TAG, "MediaCodec " + codec.getName() + " onError:", e);
+            }
+
+            @Override
+            public void onOutputFormatChanged(@NonNull MediaCodec codec, @NonNull MediaFormat format) {
+                Log.d(TAG, "Output Format changed");
+                if (mVideoTrackIndex >= 0) {
+                    throw new RuntimeException("format changed twice");
+                }
+                mVideoTrackIndex = mVideoMuxer.addTrack(mVideoCodec.getOutputFormat());
+                if (!mMuxerStarted && mVideoTrackIndex >= 0) {
+                    mVideoMuxer.start();
+                    mMuxerStarted = true;
+                }
+            }
+        };
     }
 
     @Override
@@ -105,154 +116,103 @@ public class RecordingService extends IntentService {
         return mIBinder;
     }
 
-    @Override
-    protected void onHandleIntent(@Nullable Intent intent) {
-
-    }
-
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        Log.d(TAG, "RecordingService: onCreate()");
-        mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-
-        DisplayMetrics metrics = new DisplayMetrics();
-        mWindowManager.getDefaultDisplay().getMetrics(metrics);
-
-        mMediaRecorder = new MediaRecorder();
-
-        mScreenDensity = metrics.densityDpi;
-
-        mProjectionManager =
-                (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-
-        //TOdo: chooose resolution and orientation
-        mResolution = RESOLUTIONS.get(2);
-        mDisplayWidth = mResolution.x;
-        mDisplayHeight = mResolution.y;
-    }
-
-
-//    @Override
-//    public void onConfigurationChanged(Configuration newConfig) {
-//        Log.d(TAG, "onConfigurationChanged: ");
-//        if(newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE){
-//            mDisplayHeight = mResolution.y;
-//            mDisplayWidth = mResolution.x;
-//        } else {
-//            mDisplayHeight = mResolution.x;
-//            mDisplayWidth = mResolution.y;
-//        }
-//        resizeVirtualDisplay();
-//    }
-
-    private void stopScreenSharing() {
-        Log.d(TAG, "RecordingService: stopScreenSharing()");
-        //Todo: Save file here
-        mScreenSharing = false;
-        if (mVirtualDisplay == null) {
-            return;
+    public void startRecording() {
+        mMediaProjection = mMediaProjectionManager.getMediaProjection(mScreenCaptureResultCode, mScreenCaptureIntent);
+        DisplayManager dm = (DisplayManager) getSystemService(Context.DISPLAY_SERVICE);
+        Display defaultDisplay;
+        if (dm != null) {
+            defaultDisplay = dm.getDisplay(Display.DEFAULT_DISPLAY);
+        } else {
+            throw new IllegalStateException("Cannot display manager?!?");
         }
-        mVirtualDisplay.release();
-        destroyMediaProjection();
-    }
+        if (defaultDisplay == null) {
+            throw new RuntimeException("No display found.");
+        }
 
-    private void initRecorder() {
-        Log.d(TAG, "RecordingService: initRecorder()");
-        String timeStamp = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date());
+        // Get the display size and density.
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        int screenWidth = metrics.widthPixels;
+        int screenHeight = metrics.heightPixels;
+        int screenDensity = metrics.densityDpi;
+
+        prepareVideoEncoder(screenWidth, screenHeight);
+
         try {
-            Timestamp timestamp = new Timestamp(new Date().getTime());
+            File outputFile = new File(Environment.getExternalStoragePublicDirectory(
+                    Environment.DIRECTORY_PICTURES) + "/Zecorder", "Screen-record-" +
+                    Long.toHexString(System.currentTimeMillis()) + ".mp4");
+            if (!outputFile.getParentFile().exists()) {
+                outputFile.getParentFile().mkdirs();
+            }
+            mVideoMuxer = new MediaMuxer(outputFile.getCanonicalPath(), MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+        } catch (IOException ioe) {
+            throw new RuntimeException("MediaMuxer creation failed", ioe);
+        }
 
-            mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.DEFAULT);
-            mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
-            mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-            mMediaRecorder.setOutputFile(Environment
-                    .getExternalStoragePublicDirectory(Environment
-                            .DIRECTORY_DOWNLOADS) + "/Zecorder-"+timestamp+".mp4");
-            mMediaRecorder.setVideoSize(mDisplayWidth, mDisplayHeight);
-            mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-            mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-            mMediaRecorder.setVideoEncodingBitRate(mResolution.bitrate);
-            mMediaRecorder.setVideoFrameRate(mResolution.fps);
-            int rotation = mWindowManager.getDefaultDisplay().getRotation();
-            int orientation = ORIENTATIONS.get(rotation + 90);
-            mMediaRecorder.setOrientationHint(orientation);
-            mMediaRecorder.prepare();
+
+        // Start the video input.
+        mMediaProjection.createVirtualDisplay("Recording Display", screenWidth,
+                screenHeight, screenDensity, DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR/* flags */, mInputSurface,
+                null /* callback */, null /* handler */);
+    }
+
+    private void prepareVideoEncoder(int width, int height) {
+        MediaFormat format = MediaFormat.createVideoFormat(VIDEO_MIME_TYPE, width, height);
+        int frameRate = 30; // 30 fps
+
+        // Set some required properties. The media codec may fail if these aren't defined.
+        format.setInteger(MediaFormat.KEY_COLOR_FORMAT,
+                MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
+        format.setInteger(MediaFormat.KEY_BIT_RATE, 6000000); // 6Mbps
+        format.setInteger(MediaFormat.KEY_FRAME_RATE, frameRate);
+        format.setInteger(MediaFormat.KEY_CAPTURE_RATE, frameRate);
+        format.setInteger(MediaFormat.KEY_REPEAT_PREVIOUS_FRAME_AFTER, 1000000 / frameRate);
+        format.setInteger(MediaFormat.KEY_CHANNEL_COUNT, 1);
+        format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1); // 1 seconds between I-frames
+
+        // Create a MediaCodec encoder and configure it. Get a Surface we can use for recording into.
+        try {
+            mVideoCodec = MediaCodec.createEncoderByType(VIDEO_MIME_TYPE);
+            mVideoCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+            mInputSurface = mVideoCodec.createInputSurface();
+            mVideoCodec.setCallback(mVideoCodecCallback);
+            mVideoCodec.start();
         } catch (IOException e) {
-            e.printStackTrace();
+            releaseEncoders();
         }
     }
 
-    private void shareScreen() {
-        Log.d(TAG, "RecordingService: initRecorder()");
-        mScreenSharing = true;
-        if (mMediaProjection == null) {
-            mMediaProjectionCallback = new MediaProjectionCallback();
-            mMediaProjection = mProjectionManager.getMediaProjection(mScreenCaptureResultCode, mScreenCaptureIntent);
-            mMediaProjection.registerCallback(mMediaProjectionCallback, null);
+    public void stopRecording() {
+        releaseEncoders();
+    }
 
+
+    private void releaseEncoders() {
+        if (mVideoMuxer != null) {
+            if (mMuxerStarted) {
+                mVideoMuxer.stop();
+            }
+            mVideoMuxer.release();
+            mVideoMuxer = null;
+            mMuxerStarted = false;
         }
-
-    }
-
-
-
-    private VirtualDisplay createVirtualDisplay() {
-        Log.d(TAG, "RecordingService: createVirtualDisplay()");
-        return mMediaProjection.createVirtualDisplay("ScreenSharingDemo",
-                mDisplayWidth, mDisplayHeight, mScreenDensity,
-                DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-                mMediaRecorder.getSurface(), null /*Callbacks*/, null /*Handler*/);
-    }
-
-    private void resizeVirtualDisplay() {
-        if (mVirtualDisplay == null) {
-            return;
+        if (mVideoCodec != null) {
+            mVideoCodec.stop();
+            mVideoCodec.release();
+            mVideoCodec = null;
         }
-        mVirtualDisplay.resize(mDisplayWidth, mDisplayHeight, mScreenDensity);
-    }
-
-    private void destroyMediaProjection() {
-        Log.d(TAG, "RecordingService: destroyMediaProjection()");
+        if (mInputSurface != null) {
+            mInputSurface.release();
+            mInputSurface = null;
+        }
         if (mMediaProjection != null) {
-            mMediaProjection.unregisterCallback(mMediaProjectionCallback);
             mMediaProjection.stop();
             mMediaProjection = null;
         }
-        Log.i(TAG, "MediaProjection Stopped");
+        mVideoTrackIndex = -1;
     }
 
 
-    private class MediaProjectionCallback extends MediaProjection.Callback {
-        @Override
-        public void onStop() {
-            if (mIsRecording) {
-                mIsRecording = false;
-                mMediaRecorder.stop();
-                mMediaRecorder.reset();
-                Log.v(TAG, "Recording Stopped");
-            }
-            mMediaProjection = null;
-            stopRecording();
-        }
-    }
 
-    private static class Resolution {
-        int x;
-        int y;
-        int fps;
-        int bitrate;
-
-        public Resolution(int x, int y, int fps, int bitrate) {
-            this.x = x;
-            this.y = y;
-            this.fps = fps;
-            this.bitrate = bitrate;
-        }
-        @Override
-        public String toString() {
-            return x + "x" + y;
-        }
-    }
 
 }

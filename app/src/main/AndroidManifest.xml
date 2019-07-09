@@ -21,6 +21,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
         <service
             android:name=".ui.services.RecordingService"
             android:enabled="true"
@@ -28,16 +29,6 @@
 
         <service
             android:name=".ui.services.RecordingControllerService"
-            android:enabled="true"
-            android:exported="false" />
-
-        <service
-            android:name=".ui.services.RecordingUsingMuxerService"
-            android:enabled="true"
-            android:exported="false" />
-
-        <service
-            android:name=".ui.services.RecordingUsingMuxerControllerService"
             android:enabled="true"
             android:exported="false" />
 

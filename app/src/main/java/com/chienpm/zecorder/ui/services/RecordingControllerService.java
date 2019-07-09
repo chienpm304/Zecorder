@@ -9,6 +9,7 @@ import android.graphics.PixelFormat;
 import android.hardware.Camera;
 import android.os.IBinder;
 import android.text.TextUtils;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -20,10 +21,10 @@ import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.chienpm.zecorder.R;
-import com.chienpm.zecorder.ui.utils.CameraPreview;
 import com.chienpm.zecorder.ui.activities.MainActivity;
+import com.chienpm.zecorder.ui.services.RecordingService.RecordingUsingMuxerBinder;
+import com.chienpm.zecorder.ui.utils.CameraPreview;
 import com.chienpm.zecorder.ui.utils.UiUtils;
-import com.chienpm.zecorder.ui.services.RecordingService.*;
 
 
 public class RecordingControllerService extends Service {
@@ -60,6 +61,7 @@ public class RecordingControllerService extends Service {
     private Camera mCamera;
     private LinearLayout cameraPreview;
     private CameraPreview mPreview;
+    private int mScreenWidth, mScreenHeight;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -69,6 +71,7 @@ public class RecordingControllerService extends Service {
             if(TextUtils.equals(action, "Camera_Available")){
                 initCameraView();
             }
+
         }
         mScreenCaptureIntent = intent.getParcelableExtra(Intent.EXTRA_INTENT);
 
@@ -99,8 +102,14 @@ public class RecordingControllerService extends Service {
         super.onCreate();
         Log.d(TAG, "RecordingControllerService: onCreate");
         initializeViews();
+        updateScreenSize();
 
+    }
 
+    private void updateScreenSize() {
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        mScreenWidth = metrics.widthPixels;
+        mScreenHeight = metrics.heightPixels;
     }
 
     private void initCameraView() {
@@ -108,7 +117,7 @@ public class RecordingControllerService extends Service {
         mCameraLayout = LayoutInflater.from(this).inflate(R.layout.layout_camera_view, null);
 
         mCamera =  Camera.open();
-//        mCamera.setDisplayOrientation(90);
+        mCamera.setDisplayOrientation(90);
         cameraPreview = (LinearLayout) mCameraLayout.findViewById(R.id.camera_preview);
         mPreview = new CameraPreview(this, mCamera);
 
@@ -126,6 +135,7 @@ public class RecordingControllerService extends Service {
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         mWindowManager.addView(mViewRoot, params);
     }
+
 
     private void initializeViews() {
         Log.d(TAG, "RecordingControllerService: initializeViews()");
@@ -159,6 +169,12 @@ public class RecordingControllerService extends Service {
             public void onClick(View v) {
                 UiUtils.toast(getApplicationContext(), "Capture clicked", Toast.LENGTH_SHORT);
                 toggleNavigationButton(View.GONE);
+                if(cameraPreview.getVisibility() == View.GONE){
+                    cameraPreview.setVisibility(View.VISIBLE);
+                }
+                else{
+                    cameraPreview.setVisibility(View.GONE);
+                }
             }
         });
 
@@ -263,6 +279,18 @@ public class RecordingControllerService extends Service {
                         initialTouchY = event.getRawY();
                         return true;
                     case MotionEvent.ACTION_UP:
+                        if(event.getRawX() < mScreenWidth/2) {
+                            params.x = 0;
+                        }
+                        else {
+                            params.x = mScreenWidth;
+                        }
+                        params.y = initialY + (int) (event.getRawY() - initialTouchY);
+
+                        //Update the layout with new X & Y coordinate
+                        mWindowManager.updateViewLayout(mViewRoot, params);
+
+
                         int Xdiff = (int) (event.getRawX() - initialTouchX);
                         int Ydiff = (int) (event.getRawY() - initialTouchY);
 
@@ -303,23 +331,16 @@ public class RecordingControllerService extends Service {
     }
 
     private void bindRecordingService() {
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                //
-                Log.d(TAG, "RecordingControllerService: bindRecordingService()");
-                Intent mRecordingServiceIntent = new Intent(getApplicationContext(), RecordingService.class);
-                mRecordingServiceIntent.putExtra(Intent.EXTRA_INTENT, mScreenCaptureIntent);
-                bindService(mRecordingServiceIntent, mRecordingServiceConnection, Context.BIND_AUTO_CREATE);
-            }
-        });
-        thread.start();
+        Log.d(TAG, "RecordingControllerService: bindRecordingService()");
+        Intent mRecordingServiceIntent = new Intent(getApplicationContext(), RecordingService.class);
+        mRecordingServiceIntent.putExtra(Intent.EXTRA_INTENT, mScreenCaptureIntent);
+        bindService(mRecordingServiceIntent, mRecordingServiceConnection, Context.BIND_AUTO_CREATE);
     }
 
     private ServiceConnection mRecordingServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            RecordingBinder binder = (RecordingBinder) service;
+            RecordingUsingMuxerBinder binder = (RecordingUsingMuxerBinder) service;
             mRecordingService = binder.getService();
             mRecordingServiceBound = true;
 
@@ -391,7 +412,6 @@ public class RecordingControllerService extends Service {
         }
         if(mRecordingService!=null && mRecordingServiceBound) {
             unbindService(mRecordingServiceConnection);
-//            stopService()
             mRecordingServiceBound = false;
 
         }
