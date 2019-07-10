@@ -5,10 +5,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.hardware.display.DisplayManager;
 import android.media.AudioFormat;
+import android.media.AudioRecord;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 import android.media.MediaMuxer;
+import android.media.MediaRecorder;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.os.Binder;
@@ -29,7 +31,8 @@ import java.nio.ByteBuffer;
 
 public class RecordingService extends Service {
 
-    private final IBinder mIBinder = new RecordingUsingMuxerBinder();
+    private static final long TIMEOUT_USEC = 10000;
+    private final IBinder mIBinder = new RecordingBinder();
 
     private static final String TAG = "chienpm";
     private MediaProjectionManager mMediaProjectionManager;
@@ -45,13 +48,18 @@ public class RecordingService extends Service {
 
     private static final String VIDEO_MIME_TYPE = "video/avc";
     private static final String AUDIO_MIME_TYPE = "audio/mp4a-latm";
+    private static final int SAMPLE_RATE = 44100;	// 44.1[KHz] is only setting guaranteed to be available on all devices.
+    private static final int BIT_RATE = 64000;
+    public static final int SAMPLES_PER_FRAME = 1024;	// AAC, bytes/frame/channel
+    public static final int FRAMES_PER_BUFFER = 25; 	// AAC, frame/buffer/sec
+
     private MediaCodec.Callback mVideoCodecCallback;
     private Intent mScreenCaptureIntent;
     private int mScreenCaptureResultCode;
     private MediaCodec.Callback mAudioCodecCallback;
 
 
-    public class RecordingUsingMuxerBinder extends Binder{
+    public class RecordingBinder extends Binder{
         public RecordingService getService(){
             return RecordingService.this;
         }
@@ -104,11 +112,12 @@ public class RecordingService extends Service {
             @Override
             public void onOutputFormatChanged(@NonNull MediaCodec codec, @NonNull MediaFormat format) {
                 Log.d(TAG, "VIDEO Output Format changed");
-                if (mVideoTrackIndex >= 0) {
+                if (mVideoTrackIndex > 0) {
                     throw new RuntimeException("VIDEO format changed twice");
                 }
                 mVideoTrackIndex = mMuxer.addTrack(mVideoCodec.getOutputFormat());
-                if (!mMuxerStarted && mVideoTrackIndex >= 0) {
+                Log.d(TAG, "VideoTrackIndex: "+mVideoTrackIndex);
+                if (!mMuxerStarted && mVideoTrackIndex > 0) {
                     mMuxer.start();
                     mMuxerStarted = true;
                 }
@@ -152,11 +161,12 @@ public class RecordingService extends Service {
             @Override
             public void onOutputFormatChanged(@NonNull MediaCodec codec, @NonNull MediaFormat format) {
                 Log.d(TAG, "AUDIO Output Format changed");
-                if (mAudioTrackIndex >= 0) {
+                if (mAudioTrackIndex > 0) {
                     throw new RuntimeException("AUDIO format changed twice");
                 }
                 mAudioTrackIndex = mMuxer.addTrack(mAudioCodec.getOutputFormat());
-                if (!mMuxerStarted && mAudioTrackIndex >= 0) {
+                Log.d(TAG, "AudioTrackIndex: "+mAudioTrackIndex);
+                if (!mMuxerStarted && mAudioTrackIndex > 0) {
                     mMuxer.start();
                     mMuxerStarted = true;
                 }
@@ -193,6 +203,8 @@ public class RecordingService extends Service {
         int screenHeight = metrics.heightPixels;
         int screenDensity = metrics.densityDpi;
 
+        Object hence = new Object();
+
         prepareVideoEncoder(screenWidth, screenHeight);
         prepareAudioEncoder();
 
@@ -208,16 +220,147 @@ public class RecordingService extends Service {
             throw new RuntimeException("MediaMuxer creation failed", ioe);
         }
 
-        prepareVideoEncoder(screenWidth, screenHeight);
-        prepareAudioEncoder();
-
-
-
         // Start the video input.
         mMediaProjection.createVirtualDisplay("Recording Display", screenWidth,
                 screenHeight, screenDensity, DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR/* flags */, mInputSurface,
                 null /* callback */, null /* handler */);
+
+        //start audio input
+        synchronized (mSync) {
+            mIsCapturing = true;
+            mRequestStop = false;
+            mSync.notifyAll();
+        }
+        startAudioInput();
+
     }
+
+    private static final int[] AUDIO_SOURCES = new int[] {
+            MediaRecorder.AudioSource.MIC,
+            MediaRecorder.AudioSource.DEFAULT,
+            MediaRecorder.AudioSource.CAMCORDER,
+            MediaRecorder.AudioSource.VOICE_COMMUNICATION,
+            MediaRecorder.AudioSource.VOICE_RECOGNITION,
+    };
+
+    final Object mSync = new Object();
+    boolean mIsCapturing, mRequestStop, mIsEOS;
+
+
+    private void startAudioInput() {
+        final int min_buffer_size = AudioRecord.getMinBufferSize(
+                SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT);
+        int buffer_size = SAMPLES_PER_FRAME * FRAMES_PER_BUFFER;
+        if (buffer_size < min_buffer_size)
+            buffer_size = ((min_buffer_size / SAMPLES_PER_FRAME) + 1) * SAMPLES_PER_FRAME * 2;
+
+        AudioRecord audioRecord = null;
+        for (final int source : AUDIO_SOURCES) {
+            try {
+                audioRecord = new AudioRecord(
+                        source, SAMPLE_RATE,
+                        AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, buffer_size);
+                if (audioRecord.getState() != AudioRecord.STATE_INITIALIZED)
+                    audioRecord = null;
+            } catch (final Exception e) {
+                audioRecord = null;
+            }
+            if (audioRecord != null) break;
+        }
+
+        if (audioRecord != null) {
+            try {
+                if (mIsCapturing) {
+                    Log.d(TAG, "AudioThread:start audio recording");
+                    final ByteBuffer buf = ByteBuffer.allocateDirect(SAMPLES_PER_FRAME);
+                    int readBytes;
+                    audioRecord.startRecording();
+                    try {
+                        for (; mIsCapturing && !mRequestStop && !mIsEOS ;) {
+                            // read audio data from internal mic
+                            buf.clear();
+                            readBytes = audioRecord.read(buf, SAMPLES_PER_FRAME);
+                            if (readBytes > 0) {
+                                // set audio data to encoder
+                                buf.position(readBytes);
+                                buf.flip();
+                                encode(buf, readBytes, getPTSUs());
+                                frameAvailableSoon();
+                            }
+                        }
+                        frameAvailableSoon();
+                    } finally {
+                        audioRecord.stop();
+                    }
+                }
+            } finally {
+                audioRecord.release();
+            }
+        } else {
+            Log.e(TAG, "failed to initialize AudioRecord");
+        }
+    }
+
+    private long prevOutputPTSUs = 0;
+    long getPTSUs() {
+        long result = System.nanoTime() / 1000L;
+        // presentationTimeUs should be monotonic
+        // otherwise muxer fail to write
+        if (result < prevOutputPTSUs)
+            result = (prevOutputPTSUs - result) + result;
+        return result;
+    }
+
+    public boolean frameAvailableSoon() {
+//    	if (DEBUG) Log.v(TAG, "frameAvailableSoon");
+        synchronized (mSync) {
+            if (!mIsCapturing || mRequestStop) {
+                return false;
+            }
+//            mRequestDrain++;
+            mSync.notifyAll();
+        }
+        return true;
+    }
+
+    protected void encode(final ByteBuffer buffer, final int length, final long presentationTimeUs) {
+        if (!mIsCapturing) return;
+//        final ByteBuffer[] inputBuffers = mAudioCodec.getInputBuffers();
+        while (mIsCapturing) {
+            final int inputBufferIndex = mAudioCodec.dequeueInputBuffer(TIMEOUT_USEC);
+            if (inputBufferIndex >= 0) {
+//                final ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
+                final ByteBuffer inputBuffer = mAudioCodec.getInputBuffer(inputBufferIndex);
+                inputBuffer.clear();
+                if (buffer != null) {
+                    inputBuffer.put(buffer);
+                }
+//	            if (DEBUG) Log.v(TAG, "encode:queueInputBuffer");
+                if (length <= 0) {
+                    // send EOS
+                    mIsEOS = true;
+                    Log.d(TAG, "send BUFFER_FLAG_END_OF_STREAM");
+                    mAudioCodec.queueInputBuffer(inputBufferIndex, 0, 0,
+                            presentationTimeUs, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+                    break;
+                } else {
+                    mAudioCodec.queueInputBuffer(inputBufferIndex, 0, length,
+                            presentationTimeUs, 0);
+                }
+                break;
+            } else if (inputBufferIndex == MediaCodec.INFO_TRY_AGAIN_LATER) {
+                // wait for MediaCodec encoder is ready to encode
+                // nothing to do here because MediaCodec#dequeueInputBuffer(TIMEOUT_USEC)
+                // will wait for maximum TIMEOUT_USEC(10msec) on each call
+            }
+        }
+    }
+
+
+
+
+
 
     private void prepareVideoEncoder(int width, int height) {
         MediaFormat format = MediaFormat.createVideoFormat(VIDEO_MIME_TYPE, width, height);
@@ -247,20 +390,17 @@ public class RecordingService extends Service {
 
     private void prepareAudioEncoder() {
         MediaFormat audioFormat = MediaFormat.createAudioFormat(AUDIO_MIME_TYPE,
-                MediaUtils.AUDIO_SAMPLING_RATE, MediaUtils.AUDIO_CHANNEL);
+                SAMPLE_RATE, 1); //todo change to 2 channel
 
         audioFormat.setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC);
-        audioFormat.setInteger(MediaFormat.KEY_CHANNEL_MASK, AudioFormat.CHANNEL_IN_STEREO);
-        audioFormat.setInteger(MediaFormat.KEY_BIT_RATE, MediaUtils.AUDIO_BITRATE);
-        audioFormat.setInteger(MediaFormat.KEY_CHANNEL_COUNT, MediaUtils.AUDIO_CHANNEL);
-        audioFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1);
+        audioFormat.setInteger(MediaFormat.KEY_CHANNEL_MASK, AudioFormat.CHANNEL_IN_MONO);
+        audioFormat.setInteger(MediaFormat.KEY_BIT_RATE, BIT_RATE);
+        audioFormat.setInteger(MediaFormat.KEY_CHANNEL_COUNT, 1);
 
         try{
             mAudioCodec = MediaCodec.createEncoderByType(AUDIO_MIME_TYPE);
             mAudioCodec.configure(audioFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-
             mAudioCodec.setCallback(mAudioCodecCallback);
-
             mAudioCodec.start();
         }
         catch (IOException e){
@@ -269,6 +409,15 @@ public class RecordingService extends Service {
     }
 
     public void stopRecording() {
+        synchronized (mSync) {
+            if (!mIsCapturing || mRequestStop) {
+                return;
+            }
+            mRequestStop = true;	// for rejecting newer frame
+            mSync.notifyAll();
+            // We can not know when the encoding and writing finish.
+            // so we return immediately after request to avoid delay of caller thread
+        }
         releaseEncoders();
     }
 

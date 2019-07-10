@@ -21,8 +21,8 @@ public class MyUtils {
     }
     public class MediaUtils{
 
-        public static final int AUDIO_SAMPLING_RATE = 44100 ;
-        public static final int AUDIO_CHANNEL = 2;
-        public static final int AUDIO_BITRATE = 64*1024;
+//        public static final int AUDIO_SAMPLING_RATE = 44100 ;
+//        public static final int AUDIO_CHANNEL = 1;
+//        public static final int AUDIO_BITRATE = 64*1024;
     }
 }

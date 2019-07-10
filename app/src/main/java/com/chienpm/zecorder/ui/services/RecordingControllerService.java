@@ -22,7 +22,7 @@ import android.widget.Toast;
 
 import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.ui.activities.MainActivity;
-import com.chienpm.zecorder.ui.services.RecordingService.RecordingUsingMuxerBinder;
+import com.chienpm.zecorder.ui.services.RecordingService.RecordingBinder;
 import com.chienpm.zecorder.ui.utils.CameraPreview;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 
@@ -340,7 +340,7 @@ public class RecordingControllerService extends Service {
     private ServiceConnection mRecordingServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            RecordingUsingMuxerBinder binder = (RecordingUsingMuxerBinder) service;
+            RecordingBinder binder = (RecordingBinder) service;
             mRecordingService = binder.getService();
             mRecordingServiceBound = true;
 
