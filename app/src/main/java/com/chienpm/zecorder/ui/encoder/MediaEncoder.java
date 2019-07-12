@@ -1,7 +1,7 @@
 package com.chienpm.zecorder.ui.encoder;
 /*
- * AudioVideoRecordingSample
- * Sample project to cature audio and video from internal mic/camera and save as MPEG4 file.
+ * ScreenRecordingSample
+ * Sample project to cature and save audio from internal and video from screen as MPEG4 file.
  *
  * Copyright (c) 2014-2015 saki t_saki@serenegiant.com
  *
@@ -25,14 +25,13 @@ package com.chienpm.zecorder.ui.encoder;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.util.Log;
-
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 
 public abstract class MediaEncoder implements Runnable {
 	private static final boolean DEBUG = false;	// TODO set false on release
-	private static final String TAG = "MediaEncoder";
+	private static final String TAG = com.serenegiant.media.MediaEncoder.class.getSimpleName();
 
 	protected static final int TIMEOUT_USEC = 10000;	// 10[msec]
 	protected static final int MSG_FRAME_AVAILABLE = 1;
@@ -82,6 +81,9 @@ public abstract class MediaEncoder implements Runnable {
     private MediaCodec.BufferInfo mBufferInfo;		// API >= 16(Android4.1.2)
 
     protected final MediaEncoderListener mListener;
+
+	protected volatile boolean mRequestPause;
+	private long mLastPausedTimeUs;
 
     public MediaEncoder(final MediaMuxerWrapper muxer, final MediaEncoderListener listener) {
     	if (listener == null) throw new NullPointerException("MediaEncoderListener is null");
@@ -173,7 +175,7 @@ public abstract class MediaEncoder implements Runnable {
 	}
 
 	/*
-    * prepareing method for each sub class
+    * preparing method for each sub class
     * this method should be implemented in sub class, so set this as abstract method
     * @throws IOException
     */
@@ -184,6 +186,7 @@ public abstract class MediaEncoder implements Runnable {
 		synchronized (mSync) {
 			mIsCapturing = true;
 			mRequestStop = false;
+			mRequestPause = false;
 			mSync.notifyAll();
 		}
 	}
@@ -204,10 +207,37 @@ public abstract class MediaEncoder implements Runnable {
 		}
 	}
 
+	/*package*/ void pauseRecording() {
+		if (DEBUG) Log.v(TAG, "pauseRecording");
+		synchronized (mSync) {
+			if (!mIsCapturing || mRequestStop) {
+				return;
+			}
+			mRequestPause = true;
+			mLastPausedTimeUs = System.nanoTime() / 1000;
+			mSync.notifyAll();
+		}
+	}
+
+	/*package*/ void resumeRecording() {
+		if (DEBUG) Log.v(TAG, "resumeRecording");
+		synchronized (mSync) {
+			if (!mIsCapturing || mRequestStop) {
+				return;
+			}
+			if (mLastPausedTimeUs != 0) {
+				offsetPTSUs = System.nanoTime() / 1000 - mLastPausedTimeUs;
+				mLastPausedTimeUs = 0;
+			}
+			mRequestPause = false;
+			mSync.notifyAll();
+		}
+	}
+
 //********************************************************************************
 //********************************************************************************
     /**
-     * Release all releated objects
+     * Release all released objects
      */
     protected void release() {
 		if (DEBUG) Log.d(TAG, "release:");
@@ -309,7 +339,7 @@ LOOP:	while (mIsCapturing) {
                 }
             } else if (encoderStatus == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
             	if (DEBUG) Log.v(TAG, "INFO_OUTPUT_BUFFERS_CHANGED");
-                // this shoud not come when encoding
+                // this should not come when encoding
                 encoderOutputBuffers = mMediaCodec.getOutputBuffers();
             } else if (encoderStatus == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
             	if (DEBUG) Log.v(TAG, "INFO_OUTPUT_FORMAT_CHANGED");
@@ -346,7 +376,7 @@ LOOP:	while (mIsCapturing) {
                     throw new RuntimeException("encoderOutputBuffer " + encoderStatus + " was null");
                 }
                 if ((mBufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
-                	// You shoud set output format to muxer here when you target Android4.3 or less
+                	// You should set output format to muxer here when you target Android4.3 or less
                 	// but MediaCodec#getOutputFormat can not call here(because INFO_OUTPUT_FORMAT_CHANGED don't come yet)
                 	// therefor we should expand and prepare output format from buffer data.
                 	// This sample is for API>=18(>=Android 4.3), just ignore this flag here
@@ -358,13 +388,15 @@ LOOP:	while (mIsCapturing) {
                 	// encoded data is ready, clear waiting counter
             		count = 0;
                     if (!mMuxerStarted) {
-                    	// muxer is not ready...this will prrograming failure.
+                    	// muxer is not ready...this will be programing failure.
                         throw new RuntimeException("drain:muxer hasn't started");
                     }
                     // write encoded data to muxer(need to adjust presentationTimeUs.
-                   	mBufferInfo.presentationTimeUs = getPTSUs();
-                   	muxer.writeSampleData(mTrackIndex, encodedData, mBufferInfo);
-					prevOutputPTSUs = mBufferInfo.presentationTimeUs;
+					if (!mRequestPause) {
+	                   	mBufferInfo.presentationTimeUs = getPTSUs();
+	                   	muxer.writeSampleData(mTrackIndex, encodedData, mBufferInfo);
+						prevOutputPTSUs = mBufferInfo.presentationTimeUs;
+					}
                 }
                 // return buffer to encoder
                 mMediaCodec.releaseOutputBuffer(encoderStatus, false);
@@ -381,16 +413,24 @@ LOOP:	while (mIsCapturing) {
      * previous presentationTimeUs for writing
      */
 	private long prevOutputPTSUs = 0;
+
+	private long offsetPTSUs = 0;
 	/**
 	 * get next encoding presentationTimeUs
 	 * @return
 	 */
     protected long getPTSUs() {
-		long result = System.nanoTime() / 1000L;
+    	long result;
+		synchronized (mSync) {
+			result = System.nanoTime() / 1000L - offsetPTSUs;
+		}
 		// presentationTimeUs should be monotonic
 		// otherwise muxer fail to write
-		if (result < prevOutputPTSUs)
-			result = (prevOutputPTSUs - result) + result;
+		if (result < prevOutputPTSUs) {
+			final long offset = prevOutputPTSUs - result;
+			offsetPTSUs -= offset;
+			result += offset;
+		}
 		return result;
     }
 

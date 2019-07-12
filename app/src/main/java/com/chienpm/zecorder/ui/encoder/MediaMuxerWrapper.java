@@ -1,9 +1,9 @@
 package com.chienpm.zecorder.ui.encoder;
 /*
- * AudioVideoRecordingSample
- * Sample project to cature audio and video from internal mic/camera and save as MPEG4 file.
+ * ScreenRecordingSample
+ * Sample project to cature and save audio from internal and video from screen as MPEG4 file.
  *
- * Copyright (c) 2014-2015 saki t_saki@serenegiant.com
+ * Copyright (c) 2014-2016 saki t_saki@serenegiant.com
  *
  * File name: MediaMuxerWrapper.java
  *
@@ -22,6 +22,7 @@ package com.chienpm.zecorder.ui.encoder;
  * All files in the folder are under this Apache License, Version 2.0.
 */
 
+import android.content.Context;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.media.MediaMuxer;
@@ -29,35 +30,32 @@ import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
 
-import java.io.File;
+import com.serenegiant.utils.FileUtils;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.text.SimpleDateFormat;
-import java.util.GregorianCalendar;
-import java.util.Locale;
 
 public class MediaMuxerWrapper {
 	private static final boolean DEBUG = false;	// TODO set false on release
-	private static final String TAG = "MediaMuxerWrapper";
-
-	private static final String DIR_NAME = "AVRecSample";
-    private static final SimpleDateFormat mDateTimeFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.US);
+	private static final String TAG = com.serenegiant.media.MediaMuxerWrapper.class.getSimpleName();
 
 	private String mOutputPath;
 	private final MediaMuxer mMediaMuxer;	// API >= 18
 	private int mEncoderCount, mStatredCount;
 	private boolean mIsStarted;
+	private volatile boolean mIsPaused;
 	private MediaEncoder mVideoEncoder, mAudioEncoder;
 
 	/**
 	 * Constructor
-	 * @param ext extension of output file
+	 * @param _ext extension of output file
 	 * @throws IOException
 	 */
-	public MediaMuxerWrapper(String ext) throws IOException {
+	public MediaMuxerWrapper(final Context context, final String _ext) throws IOException {
+		String ext = _ext;
 		if (TextUtils.isEmpty(ext)) ext = ".mp4";
 		try {
-			mOutputPath = getCaptureFile(Environment.DIRECTORY_MOVIES, ext).toString();
+			mOutputPath = FileUtils.getCaptureFile(context, Environment.DIRECTORY_MOVIES, ext, 0).toString();
 		} catch (final NullPointerException e) {
 			throw new RuntimeException("This app has no permission of writing external storage");
 		}
@@ -70,21 +68,21 @@ public class MediaMuxerWrapper {
 		return mOutputPath;
 	}
 
-	public void prepare() throws IOException {
+	public synchronized void prepare() throws IOException {
 		if (mVideoEncoder != null)
 			mVideoEncoder.prepare();
 		if (mAudioEncoder != null)
 			mAudioEncoder.prepare();
 	}
 
-	public void startRecording() {
+	public synchronized void startRecording() {
 		if (mVideoEncoder != null)
 			mVideoEncoder.startRecording();
 		if (mAudioEncoder != null)
 			mAudioEncoder.startRecording();
 	}
 
-	public void stopRecording() {
+	public synchronized void stopRecording() {
 		if (mVideoEncoder != null)
 			mVideoEncoder.stopRecording();
 		mVideoEncoder = null;
@@ -97,14 +95,34 @@ public class MediaMuxerWrapper {
 		return mIsStarted;
 	}
 
+	public synchronized void pauseRecording() {
+		mIsPaused = true;
+		if (mVideoEncoder != null)
+			mVideoEncoder.pauseRecording();
+		if (mAudioEncoder != null)
+			mAudioEncoder.pauseRecording();
+	}
+
+	public synchronized void resumeRecording() {
+		if (mVideoEncoder != null)
+			mVideoEncoder.resumeRecording();
+		if (mAudioEncoder != null)
+			mAudioEncoder.resumeRecording();
+		mIsPaused = false;
+	}
+
+	public synchronized boolean isPaused() {
+		return mIsPaused;
+	}
+
 //**********************************************************************
 //**********************************************************************
 	/**
 	 * assign encoder to this calss. this is called from encoder.
-	 * @param encoder instance of MediaVideoEncoder or MediaAudioEncoder
+	 * @param encoder instance of MediaVideoEncoderBase
 	 */
 	/*package*/ void addEncoder(final MediaEncoder encoder) {
-		if (encoder instanceof MediaVideoEncoder) {
+		if (encoder instanceof MediaVideoEncoderBase) {
 			if (mVideoEncoder != null)
 				throw new IllegalArgumentException("Video encoder already added.");
 			mVideoEncoder = encoder;
@@ -173,29 +191,4 @@ public class MediaMuxerWrapper {
 
 //**********************************************************************
 //**********************************************************************
-    /**
-     * generate output file
-     * @param type Environment.DIRECTORY_MOVIES / Environment.DIRECTORY_DCIM etc.
-     * @param ext .mp4(.m4a for audio) or .png
-     * @return return null when this app has no writing permission to external storage.
-     */
-    public static final File getCaptureFile(final String type, final String ext) {
-		final File dir = new File(Environment.getExternalStoragePublicDirectory(type), DIR_NAME);
-		Log.d(TAG, "path=" + dir.toString());
-		dir.mkdirs();
-        if (dir.canWrite()) {
-        	return new File(dir, getDateTimeString() + ext);
-        }
-    	return null;
-    }
-
-    /**
-     * get current date and time as String
-     * @return
-     */
-    private static final String getDateTimeString() {
-    	final GregorianCalendar now = new GregorianCalendar();
-    	return mDateTimeFormat.format(now.getTime());
-    }
-
 }

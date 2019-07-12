@@ -1,11 +1,11 @@
 package com.chienpm.zecorder.ui.encoder;
 /*
- * AudioVideoRecordingSample
- * Sample project to cature audio and video from internal mic/camera and save as MPEG4 file.
+ * ScreenRecordingSample
+ * Sample project to capture and save audio from internal and video from screen as MPEG4 file.
  *
- * Copyright (c) 2014-2015 saki t_saki@serenegiant.com
+ * Copyright (c) 2014-2016 saki t_saki@serenegiant.com
  *
- * File name: MediaVideoEncoder.java
+ * File name: MediaVideoEncoderBase.java
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,112 +26,70 @@ import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecList;
 import android.media.MediaFormat;
-import android.opengl.EGLContext;
 import android.util.Log;
 import android.view.Surface;
-
 import java.io.IOException;
 
-public class MediaVideoEncoder extends MediaEncoder {
-	private static final boolean DEBUG = false;	// TODO set false on release
-	private static final String TAG = "MediaVideoEncoder";
 
-	private static final String MIME_TYPE = "video/avc";
+public abstract class MediaVideoEncoderBase extends MediaEncoder {
+	private static final boolean DEBUG = false;	// TODO set false on release
+	private static final String TAG = MediaVideoEncoderBase.class.getSimpleName();
+
 	// parameters for recording
-    private static final int FRAME_RATE = 25;
     private static final float BPP = 0.25f;
 
-    private final int mWidth;
-    private final int mHeight;
-//    private RenderHandler mRenderHandler;
-    private Surface mSurface;
+    protected final int mWidth;
+    protected final int mHeight;
 
-	public MediaVideoEncoder(final MediaMuxerWrapper muxer, final MediaEncoderListener listener, final int width, final int height) {
+	public MediaVideoEncoderBase(final MediaMuxerWrapper muxer, final MediaEncoderListener listener, final int width, final int height) {
 		super(muxer, listener);
-		if (DEBUG) Log.i(TAG, "MediaVideoEncoder: ");
 		mWidth = width;
 		mHeight = height;
-//		mRenderHandler = RenderHandler.createHandler(TAG);
 	}
 
-	public boolean frameAvailableSoon(final float[] tex_matrix) {
-		boolean result;
-		if (result = super.frameAvailableSoon());
-//			mRenderHandler.draw(tex_matrix);
-		return result;
+	/**
+	 * エンコーダー用のMediaFormatを生成する。prepare_surface_encoder内から呼び出される
+	 * @param mime
+	 * @param frame_rate
+	 * @param bitrate
+	 * @return
+	 */
+	protected MediaFormat create_encoder_format(final String mime, final int frame_rate, final int bitrate) {
+		if (DEBUG) Log.v(TAG, String.format("create_encoder_format:(%d,%d),mime=%s,frame_rate=%d,bitrate=%d", mWidth, mHeight, mime, frame_rate, bitrate));
+        final MediaFormat format = MediaFormat.createVideoFormat(mime, mWidth, mHeight);
+        format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);	// API >= 18
+        format.setInteger(MediaFormat.KEY_BIT_RATE, bitrate > 0 ? bitrate : calcBitRate(frame_rate));
+        format.setInteger(MediaFormat.KEY_FRAME_RATE, frame_rate);
+        format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 10);
+		return format;
 	}
 
-	public boolean frameAvailableSoon(final float[] tex_matrix, final float[] mvp_matrix) {
-		boolean result;
-		if (result = super.frameAvailableSoon());
-//			mRenderHandler.draw(tex_matrix, mvp_matrix);
-		return result;
-	}
+	protected Surface prepare_surface_encoder(final String mime, final int frame_rate, final int bitrate)
+		throws IOException, IllegalArgumentException {
 
-	@Override
-	public boolean frameAvailableSoon() {
-		boolean result;
-		if (result = super.frameAvailableSoon());
-//			mRenderHandler.draw(null);
-		return result;
-	}
+		if (DEBUG) Log.v(TAG, String.format("prepare_surface_encoder:(%d,%d),mime=%s,frame_rate=%d,bitrate=%d", mWidth, mHeight, mime, frame_rate, bitrate));
 
-	@Override
-	protected void prepare() throws IOException {
-		if (DEBUG) Log.i(TAG, "prepare: ");
-        mTrackIndex = -1;
+		mTrackIndex = -1;
         mMuxerStarted = mIsEOS = false;
 
-        final MediaCodecInfo videoCodecInfo = selectVideoCodec(MIME_TYPE);
+        final MediaCodecInfo videoCodecInfo = selectVideoCodec(mime);
         if (videoCodecInfo == null) {
-            Log.e(TAG, "Unable to find an appropriate codec for " + MIME_TYPE);
-            return;
+            throw new IllegalArgumentException("Unable to find an appropriate codec for " + mime);
         }
 		if (DEBUG) Log.i(TAG, "selected codec: " + videoCodecInfo.getName());
 
-        final MediaFormat format = MediaFormat.createVideoFormat(MIME_TYPE, mWidth, mHeight);
-        format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);	// API >= 18
-        format.setInteger(MediaFormat.KEY_BIT_RATE, calcBitRate());
-        format.setInteger(MediaFormat.KEY_FRAME_RATE, FRAME_RATE);
-        format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 10);
+        final MediaFormat format = create_encoder_format(mime, frame_rate, bitrate);
 		if (DEBUG) Log.i(TAG, "format: " + format);
 
-        mMediaCodec = MediaCodec.createEncoderByType(MIME_TYPE);
+        mMediaCodec = MediaCodec.createEncoderByType(mime);
         mMediaCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
         // get Surface for encoder input
         // this method only can call between #configure and #start
-        mSurface = mMediaCodec.createInputSurface();	// API >= 18
-        mMediaCodec.start();
-        if (DEBUG) Log.i(TAG, "prepare finishing");
-        if (mListener != null) {
-        	try {
-        		mListener.onPrepared(this);
-        	} catch (final Exception e) {
-        		Log.e(TAG, "prepare:", e);
-        	}
-        }
+        return mMediaCodec.createInputSurface();	// API >= 18
 	}
 
-	public void setEglContext(final EGLContext shared_context, final int tex_id) {
-//		mRenderHandler.setEglContext(shared_context, tex_id, mSurface, true);
-	}
-
-	@Override
-    protected void release() {
-		if (DEBUG) Log.i(TAG, "release:");
-		if (mSurface != null) {
-			mSurface.release();
-			mSurface = null;
-		}
-//		if (mRenderHandler != null) {
-//			mRenderHandler.release();
-//			mRenderHandler = null;
-//		}
-		super.release();
-	}
-
-	private int calcBitRate() {
-		final int bitrate = (int)(BPP * FRAME_RATE * mWidth * mHeight);
+	protected int calcBitRate(final int frameRate) {
+		final int bitrate = (int)(BPP * frameRate * mWidth * mHeight);
 		Log.i(TAG, String.format("bitrate=%5.2f[Mbps]", bitrate / 1024f / 1024f));
 		return bitrate;
 	}
@@ -141,7 +99,8 @@ public class MediaVideoEncoder extends MediaEncoder {
      * @param mimeType
      * @return null if no codec matched
      */
-    protected static final MediaCodecInfo selectVideoCodec(final String mimeType) {
+    @SuppressWarnings("deprecation")
+	protected static final MediaCodecInfo selectVideoCodec(final String mimeType) {
     	if (DEBUG) Log.v(TAG, "selectVideoCodec:");
 
     	// get the list of available codecs
@@ -208,7 +167,7 @@ public class MediaVideoEncoder extends MediaEncoder {
 		};
 	}
 
-    private static final boolean isRecognizedViewoFormat(final int colorFormat) {
+    protected static final boolean isRecognizedViewoFormat(final int colorFormat) {
 		if (DEBUG) Log.i(TAG, "isRecognizedViewoFormat:colorFormat=" + colorFormat);
     	final int n = recognizedFormats != null ? recognizedFormats.length : 0;
     	for (int i = 0; i < n; i++) {
