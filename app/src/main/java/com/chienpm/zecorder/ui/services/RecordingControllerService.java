@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.PixelFormat;
 import android.hardware.Camera;
+import android.os.CountDownTimer;
 import android.os.IBinder;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
@@ -18,10 +19,10 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.chienpm.zecorder.R;
-import com.chienpm.zecorder.ui.activities.MainActivity;
 import com.chienpm.zecorder.ui.services.RecordingService.RecordingBinder;
 import com.chienpm.zecorder.ui.utils.CameraPreview;
 import com.chienpm.zecorder.ui.utils.MyUtils;
@@ -37,7 +38,7 @@ public class RecordingControllerService extends Service {
     private View mCameraLayout;
     private WindowManager mWindowManager;
 
-    final WindowManager.LayoutParams params = new WindowManager.LayoutParams(
+    final WindowManager.LayoutParams paramViewRoot = new WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
@@ -53,6 +54,16 @@ public class RecordingControllerService extends Service {
             PixelFormat.TRANSLUCENT
     );
 
+    final WindowManager.LayoutParams paramCountdown = new WindowManager.LayoutParams(
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            PixelFormat.TRANSLUCENT
+    );
+
+
+
     private Intent mScreenCaptureIntent = null;
 
     private ImageView mImgClose, mImgRec, mImgStart, mImgStop, mImgPause, mImgResume, mImgCapture, mImgLive, mImgSetting;
@@ -62,6 +73,7 @@ public class RecordingControllerService extends Service {
     private LinearLayout cameraPreview;
     private CameraPreview mPreview;
     private int mScreenWidth, mScreenHeight;
+    private View mViewCountdown;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -133,20 +145,24 @@ public class RecordingControllerService extends Service {
         //re-inflate controller
         mWindowManager.removeViewImmediate(mViewRoot);
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-        mWindowManager.addView(mViewRoot, params);
+        mWindowManager.addView(mViewRoot, paramViewRoot);
     }
 
 
     private void initializeViews() {
         Log.d(TAG, "RecordingControllerService: initializeViews()");
         mViewRoot = LayoutInflater.from(this).inflate(R.layout.layout_recording, null);
+        mViewCountdown = LayoutInflater.from(this).inflate(R.layout.layout_countdown, null);
 
-        params.gravity = Gravity.TOP | Gravity.START;
-        params.x = 0;
-        params.y = 100;
+        paramViewRoot.gravity = Gravity.TOP | Gravity.START;
+        paramViewRoot.x = 0;
+        paramViewRoot.y = 100;
 
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-        mWindowManager.addView(mViewRoot, params);
+        mWindowManager.addView(mViewCountdown, paramCountdown);
+        mWindowManager.addView(mViewRoot, paramViewRoot);
+
+        togleCountdown(View.GONE);
 
         mImgRec = mViewRoot.findViewById(R.id.imgRec);
         mImgCapture = mViewRoot.findViewById(R.id.imgCapture);
@@ -212,9 +228,23 @@ public class RecordingControllerService extends Service {
 
                 if(mRecordingServiceBound){
                     //Todo: start recording
-                    mRecordingStarted = true;
-                    mRecordingService.startRecording();
-                    MyUtils.toast(getApplicationContext(), "Recording Started", Toast.LENGTH_LONG);
+
+                    togleCountdown(View.VISIBLE);
+                    //Todo: replace time countdown here
+                    new CountDownTimer(4000, 1000) {
+
+                        public void onTick(long millisUntilFinished) {
+                            ((TextView)(mViewCountdown.findViewById(R.id.tvCountDown))).setText(""+millisUntilFinished / 1000);
+                        }
+
+                        public void onFinish() {
+                            togleCountdown(View.GONE);
+                            mRecordingStarted = true;
+                            mRecordingService.startRecording();
+                            MyUtils.toast(getApplicationContext(), "Recording Started", Toast.LENGTH_LONG);
+                        }
+                    }.start();
+
                 }
                 else{
                     mRecordingStarted = false;
@@ -254,6 +284,7 @@ public class RecordingControllerService extends Service {
             @Override
             public void onClick(View v) {
 //                startActivity(new Intent(getApplicationContext(), MainActivity.class));
+                mImgStop.performClick();
                 stopSelf();
             }
         });
@@ -270,8 +301,8 @@ public class RecordingControllerService extends Service {
                     case MotionEvent.ACTION_DOWN:
 
                         //remember the initial position.
-                        initialX = params.x;
-                        initialY = params.y;
+                        initialX = paramViewRoot.x;
+                        initialY = paramViewRoot.y;
 
                         //get the touch location
                         initialTouchX = event.getRawX();
@@ -279,15 +310,15 @@ public class RecordingControllerService extends Service {
                         return true;
                     case MotionEvent.ACTION_UP:
                         if(event.getRawX() < mScreenWidth/2) {
-                            params.x = 0;
+                            paramViewRoot.x = 0;
                         }
                         else {
-                            params.x = mScreenWidth;
+                            paramViewRoot.x = mScreenWidth;
                         }
-                        params.y = initialY + (int) (event.getRawY() - initialTouchY);
+                        paramViewRoot.y = initialY + (int) (event.getRawY() - initialTouchY);
 
                         //Update the layout with new X & Y coordinate
-                        mWindowManager.updateViewLayout(mViewRoot, params);
+                        mWindowManager.updateViewLayout(mViewRoot, paramViewRoot);
 
 
                         int Xdiff = (int) (event.getRawX() - initialTouchX);
@@ -309,11 +340,11 @@ public class RecordingControllerService extends Service {
                         return true;
                     case MotionEvent.ACTION_MOVE:
                         //Calculate the X and Y coordinates of the view.
-                        params.x = initialX + (int) (event.getRawX() - initialTouchX);
-                        params.y = initialY + (int) (event.getRawY() - initialTouchY);
+                        paramViewRoot.x = initialX + (int) (event.getRawX() - initialTouchX);
+                        paramViewRoot.y = initialY + (int) (event.getRawY() - initialTouchY);
 
                         //Update the layout with new X & Y coordinate
-                        mWindowManager.updateViewLayout(mViewRoot, params);
+                        mWindowManager.updateViewLayout(mViewRoot, paramViewRoot);
                         return true;
                 }
 
@@ -327,6 +358,10 @@ public class RecordingControllerService extends Service {
                     toggleNavigationButton(View.GONE);
             }
         });
+    }
+
+    private void togleCountdown(int visibility) {
+        mViewCountdown.findViewById(R.id.countdown_container).setVisibility(visibility);
     }
 
     private void bindRecordingService() {

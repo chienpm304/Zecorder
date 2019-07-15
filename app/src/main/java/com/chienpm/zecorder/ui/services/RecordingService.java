@@ -47,15 +47,36 @@ public class RecordingService extends Service {
     public void onCreate() {
         super.onCreate();
         // Get the display size and density.
-        DisplayMetrics metrics = getResources().getDisplayMetrics();
-        mScreenWidth = metrics.widthPixels;
-        mScreenHeight = metrics.heightPixels;
-        mScreenDensity = metrics.densityDpi;
+//        getScreenSize();
 
 
         mMediaProjectionManager = (MediaProjectionManager) getSystemService(
                 Context.MEDIA_PROJECTION_SERVICE);
 
+    }
+
+    private void getScreenSize() {
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        mScreenDensity = metrics.densityDpi;
+        int width = metrics.widthPixels;
+        int height = metrics.heightPixels;
+        if (width > height) {
+            // 横長
+            final float scale_x = width / 1920f;
+            final float scale_y = height / 1080f;
+            final float scale = Math.max(scale_x,  scale_y);
+            width = (int)(width / scale);
+            height = (int)(height / scale);
+        } else {
+            // 縦長
+            final float scale_x = width / 1080f;
+            final float scale_y = height / 1920f;
+            final float scale = Math.max(scale_x,  scale_y);
+            width = (int)(width / scale);
+            height = (int)(height / scale);
+        }
+        mScreenWidth = width;
+        mScreenHeight = height;
     }
 
     @Override
@@ -70,6 +91,7 @@ public class RecordingService extends Service {
     public void startRecording() {
         synchronized (sSync) {
             if(mMuxer==null) {
+                getScreenSize();
                 mMediaProjection = mMediaProjectionManager.getMediaProjection(mScreenCaptureResultCode, mScreenCaptureIntent);
                 DisplayManager dm = (DisplayManager) getSystemService(Context.DISPLAY_SERVICE);
                 Display defaultDisplay;
