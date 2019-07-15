@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="Common">
+        <EditTextPreference
+            android:defaultValue="true"
+            android:key="setting_countdown"
+            android:summary="10s"
+            android:title="Countdown" />
+
+    </PreferenceCategory>
+
+
+
+    <PreferenceCategory
+        android:title="Camera">
+        <ListPreference
+            android:key="@string/setting_camera_mode"
+            android:title="Camera mode"
+            android:summary="Face"
+            android:defaultValue="1"
+            android:entries="@array/listCameraModeEntries"
+            android:entryValues="@array/listCameraModeValues" />
+
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Video ">
+        <ListPreference
+            android:key="@string/setting_resolution"
+            android:title="Resolution"
+            android:summary="HD"
+            android:defaultValue="1"
+            android:entries="@array/listResolutionEntries"
+            android:entryValues="@array/listResolutionValues" />
+
+        <EditTextPreference
+            android:key="@string/setting_bitrate"
+            android:title="Bitrate"
+            android:summary="6000 Kbs"/>
+        <EditTextPreference
+            android:key="@string/setting_fps"
+            android:title="FPs"
+            android:defaultValue="15"
+            android:summary="15"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Audio">
+
+    </PreferenceCategory>
+</PreferenceScreen>

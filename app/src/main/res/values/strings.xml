@@ -3,4 +3,11 @@
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="setting_bitrate">setting_bitrate</string>
+    <string name="setting_resolution">setting_resolution</string>
+    <string name="setting_fps">setting_fps</string>
+    <string name="setting_camera_mode">setting_camera_mode</string>
+    <string name="setting_camera_position">setting_camera_position</string>
+    <string name="setting_frame">setting_camera_frame</string>
+
 </resources>
