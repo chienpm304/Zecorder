@@ -22,7 +22,7 @@ import android.widget.Toast;
 
 import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.ui.activities.MainActivity;
-import com.chienpm.zecorder.ui.services.RecordingServiceSyncMode.RecordingBinder;
+import com.chienpm.zecorder.ui.services.RecordingService.RecordingBinder;
 import com.chienpm.zecorder.ui.utils.CameraPreview;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 
@@ -30,7 +30,7 @@ import com.chienpm.zecorder.ui.utils.MyUtils;
 public class RecordingControllerService extends Service {
     private static final String TAG = "chienpm";
 
-    private RecordingServiceSyncMode mRecordingService;
+    private RecordingService mRecordingService;
     private Boolean mRecordingServiceBound = false;
 
     private View mViewRoot;
@@ -253,7 +253,7 @@ public class RecordingControllerService extends Service {
         mImgClose.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(getApplicationContext(), MainActivity.class));
+//                startActivity(new Intent(getApplicationContext(), MainActivity.class));
                 stopSelf();
             }
         });
@@ -331,7 +331,7 @@ public class RecordingControllerService extends Service {
 
     private void bindRecordingService() {
         Log.d(TAG, "RecordingControllerService: bindRecordingService()");
-        Intent mRecordingServiceIntent = new Intent(getApplicationContext(), RecordingServiceSyncMode.class);
+        Intent mRecordingServiceIntent = new Intent(getApplicationContext(), RecordingService.class);
         mRecordingServiceIntent.putExtra(Intent.EXTRA_INTENT, mScreenCaptureIntent);
         bindService(mRecordingServiceIntent, mRecordingServiceConnection, Context.BIND_AUTO_CREATE);
     }

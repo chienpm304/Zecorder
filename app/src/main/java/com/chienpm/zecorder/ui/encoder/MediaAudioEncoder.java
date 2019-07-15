@@ -67,8 +67,6 @@ public class MediaAudioEncoder extends MediaEncoder {
 		audioFormat.setInteger(MediaFormat.KEY_CHANNEL_MASK, AudioFormat.CHANNEL_IN_MONO);
 		audioFormat.setInteger(MediaFormat.KEY_BIT_RATE, BIT_RATE);
 		audioFormat.setInteger(MediaFormat.KEY_CHANNEL_COUNT, 1);
-//		audioFormat.setLong(MediaFormat.KEY_MAX_INPUT_SIZE, inputFile.length());
-//      audioFormat.setLong(MediaFormat.KEY_DURATION, (long)durationInMs );
 		if (DEBUG) Log.i(TAG, "format: " + audioFormat);
         mMediaCodec = MediaCodec.createEncoderByType(MIME_TYPE);
         mMediaCodec.configure(audioFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
@@ -114,7 +112,6 @@ public class MediaAudioEncoder extends MediaEncoder {
     private class AudioThread extends Thread {
     	@Override
     	public void run() {
-    		android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
     		try {
 				final int min_buffer_size = AudioRecord.getMinBufferSize(
 					SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO,

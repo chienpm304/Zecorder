@@ -32,6 +32,7 @@ import android.util.Log;
 
 import com.serenegiant.utils.FileUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
@@ -55,10 +56,17 @@ public class MediaMuxerWrapper {
 		String ext = _ext;
 		if (TextUtils.isEmpty(ext)) ext = ".mp4";
 		try {
-			mOutputPath = FileUtils.getCaptureFile(context, Environment.DIRECTORY_MOVIES, ext, 0).toString();
-		} catch (final NullPointerException e) {
+			File outputFile = new File(Environment.getExternalStoragePublicDirectory(
+					Environment.DIRECTORY_PICTURES) + "/Zecorder", "Z-" +
+					Long.toHexString(System.currentTimeMillis()) + ".mp4");
+			if (!outputFile.getParentFile().exists()) {
+				outputFile.getParentFile().mkdirs();
+			}
+			mOutputPath = outputFile.getAbsolutePath();
+		}catch (final NullPointerException e) {
 			throw new RuntimeException("This app has no permission of writing external storage");
 		}
+
 		mMediaMuxer = new MediaMuxer(mOutputPath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
 		mEncoderCount = mStatredCount = 0;
 		mIsStarted = false;

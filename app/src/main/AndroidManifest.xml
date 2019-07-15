@@ -23,16 +23,11 @@
         android:theme="@style/AppTheme">
 
         <service
-            android:name=".ui.services.RecordingService"
-            android:enabled="true"
-            android:exported="false" />
-
-        <service
             android:name=".ui.services.RecordingControllerService"
             android:enabled="true"
             android:exported="false" />
         <service
-            android:name=".ui.services.RecordingServiceSyncMode"
+            android:name=".ui.services.RecordingService"
             android:enabled="true"
             android:exported="false" />
 
