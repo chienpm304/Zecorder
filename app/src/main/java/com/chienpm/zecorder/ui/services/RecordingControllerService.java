@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.res.Configuration;
 import android.graphics.PixelFormat;
-import android.graphics.drawable.GradientDrawable;
 import android.hardware.Camera;
 import android.os.CountDownTimer;
 import android.os.IBinder;
@@ -15,11 +14,9 @@ import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
-import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
-import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -31,6 +28,7 @@ import android.widget.Toast;
 import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.ui.services.RecordingService.RecordingBinder;
 import com.chienpm.zecorder.ui.utils.CameraPreview;
+import com.chienpm.zecorder.ui.utils.MyCameraProfile;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 import com.chienpm.zecorder.ui.utils.SettingManager;
 
@@ -135,8 +133,15 @@ public class RecordingControllerService extends Service {
 
     private void initCameraView() {
         Log.d(TAG, "RecordingControllerService: initializeCamera()");
+        MyCameraProfile cameraProfile = SettingManager.getCameraProfile(getApplication());
+
         mCameraLayout = LayoutInflater.from(this).inflate(R.layout.layout_camera_view, null);
-        mCamera =  Camera.open();
+
+        if(cameraProfile.getMode().equals(MyCameraProfile.CAMERA_MODE_BACK))
+            mCamera =  Camera.open(Camera.CameraInfo.CAMERA_FACING_BACK);
+        else
+            mCamera = Camera.open(Camera.CameraInfo.CAMERA_FACING_FRONT);
+
         cameraPreview = (LinearLayout) mCameraLayout.findViewById(R.id.camera_preview);
         onConfigurationChanged(getResources().getConfiguration());
         mPreview = new CameraPreview(this, mCamera);
@@ -154,6 +159,9 @@ public class RecordingControllerService extends Service {
         mWindowManager.removeViewImmediate(mViewRoot);
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         mWindowManager.addView(mViewRoot, paramViewRoot);
+
+        if(cameraProfile.getMode().equals(MyCameraProfile.CAMERA_MODE_OFF))
+            toggleView(cameraPreview, View.GONE);
     }
 
     private void updateCameraViewOrientation() {
@@ -264,7 +272,7 @@ public class RecordingControllerService extends Service {
 
                     toggleView(mCountdownLayout, View.VISIBLE);
 
-                    int countdown = SettingManager.getSettingCountdownValue(getApplication()) * 1000;
+                    int countdown = SettingManager.getCountdown(getApplication()) * 1000;
 
                     new CountDownTimer(countdown, 1000) {
 

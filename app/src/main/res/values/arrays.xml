@@ -15,14 +15,14 @@
 
     <!--Camera modes-->
     <string-array name="entries_camera_mode">
-        <item>Face</item>
-        <item>Rear</item>
+        <item>Front</item>
+        <item>Back</item>
         <item>Off</item>
     </string-array>
 
     <string-array name="values_camera_mode">
-        <item>Face</item>
-        <item>Rear</item>
+        <item>Front</item>
+        <item>Back</item>
         <item>Off</item>
     </string-array>
 
@@ -50,10 +50,10 @@
     </string-array>
 
     <string-array name="values_camera_position">
-        <item>Top_Left</item>
-        <item>Top_Right</item>
-        <item>Bottom_Left</item>
-        <item>Bottom_Right</item>
+        <item>Top Left</item>
+        <item>Top Right</item>
+        <item>Bottom Left</item>
+        <item>Bottom Right</item>
         <item>Center</item>
     </string-array>
 
@@ -94,9 +94,9 @@
     </string-array>
 
     <string-array name="values_audio_source">
-        <item>0</item>
-        <item>1</item>
-        <item>2</item>
+        <item>Microphone</item>
+        <item>Internal Sound</item>
+        <item>Mixed</item>
     </string-array>
 
 </resources>

@@ -24,21 +24,21 @@
         <ListPreference
             android:key="@string/setting_camera_mode"
             android:title="Camera mode"
-            android:defaultValue="1"
+            android:defaultValue="@string/default_camera_mode"
             android:entries="@array/entries_camera_mode"
             android:entryValues="@array/values_camera_mode" />
 
         <ListPreference
             android:key="@string/setting_camera_position"
             android:title="Camera position"
-            android:defaultValue="1"
+            android:defaultValue="@string/default_camera_position"
             android:entries="@array/entries_camera_position"
             android:entryValues="@array/values_camera_position" />
 
         <ListPreference
             android:key="@string/setting_camera_size"
             android:title="Camera size"
-            android:defaultValue="1"
+            android:defaultValue="@string/default_camera_size"
             android:entries="@array/entries_camera_size"
             android:entryValues="@array/values_camera_size" />
     </PreferenceCategory>
@@ -48,7 +48,7 @@
         <ListPreference
             android:key="@string/setting_audio_source"
             android:title="Audio source"
-            android:defaultValue="1"
+            android:defaultValue="@string/default_audio_source"
             android:entries="@array/entries_audio_source"
             android:entryValues="@array/values_audio_source" />
     </PreferenceCategory>
