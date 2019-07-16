@@ -17,6 +17,8 @@ import com.chienpm.zecorder.ui.encoder.MediaEncoder;
 import com.chienpm.zecorder.ui.encoder.MediaMuxerWrapper;
 import com.chienpm.zecorder.ui.encoder.MediaScreenEncoder;
 import com.chienpm.zecorder.ui.utils.MyUtils;
+import com.chienpm.zecorder.ui.utils.SettingManager;
+import com.chienpm.zecorder.ui.utils.VideoProfile;
 
 import java.io.IOException;
 
@@ -110,10 +112,13 @@ public class RecordingService extends Service {
                     mMuxer = new MediaMuxerWrapper(this, ".mp4");    // if you record audio only, ".m4a" is also OK.
                     if (true) {
                         // for screen capturing
-                        new MediaScreenEncoder(mMuxer, mMediaEncoderListener, mMediaProjection, mScreenWidth, mScreenHeight, mScreenDensity, 800 * 1024, 15);
+                        //todo: setting video parameter here
+                        VideoProfile videoProfile = SettingManager.getVideoProfile(getApplicationContext());
+                        new MediaScreenEncoder(mMuxer, mMediaEncoderListener, mMediaProjection, videoProfile, mScreenDensity);
                     }
                     if (true) {
                         // for audio capturing
+                        //todo: setting audio setting here
                         new MediaAudioEncoder(mMuxer, mMediaEncoderListener);
                     }
                     mMuxer.prepare();

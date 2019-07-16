@@ -6,7 +6,7 @@
     <PreferenceCategory android:title="Common">
         <EditTextPreference
             android:key="@string/setting_common_countdown"
-            android:defaultValue="3"
+            android:defaultValue="@string/default_setting_countdown"
             android:inputType="number"
             android:title="Countdown" />
 
@@ -59,23 +59,22 @@
         <ListPreference
             android:key="@string/setting_video_resolution"
             android:title="Resolution"
-            android:defaultValue="1"
+            android:defaultValue="@string/default_setting_resolution"
             android:entries="@array/entries_video_resolution"
             android:entryValues="@array/values_video_resolution" />
 
-        <EditTextPreference
+        <ListPreference
             android:key="@string/setting_video_bitrate"
-            android:title="Bitrate (Kbps)"
-            android:inputType="number"
-            android:defaultValue="6000"
-            />
+            android:title="Bitrate"
+            android:defaultValue="@string/default_setting_bitrate"
+            android:entries="@array/entries_video_bitrate"
+            android:entryValues="@array/values_video_bitrate" />
 
         <EditTextPreference
             android:key="@string/setting_video_fps"
             android:title="FPS"
             android:inputType="number"
-
-            android:defaultValue="15"
+            android:defaultValue="@string/default_setting_fps"
             />
 
     </PreferenceCategory>

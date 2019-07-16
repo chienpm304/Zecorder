@@ -75,8 +75,7 @@ public class SettingFragment extends PreferenceFragmentCompat implements SharedP
             String summary = sharedPreferences.getString(key,"");
             if(key.equals(getString(R.string.setting_common_countdown)))
                 summary += "s";
-            else if(key.equals(getString(R.string.setting_video_bitrate)))
-                summary += " Kbps";
+
             preference.setSummary(summary);
         }
     }

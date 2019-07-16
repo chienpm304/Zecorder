@@ -13,6 +13,7 @@ import android.os.HandlerThread;
 import android.util.Log;
 import android.view.Surface;
 
+import com.chienpm.zecorder.ui.utils.VideoProfile;
 import com.serenegiant.glutils.EGLBase;
 import com.serenegiant.glutils.EglTask;
 import com.serenegiant.glutils.GLDrawer2D;
@@ -32,15 +33,29 @@ public class MediaScreenEncoder extends MediaVideoEncoderBase {
     private Surface mSurface;
     private final Handler mHandler;
 
-	public MediaScreenEncoder(final MediaMuxerWrapper muxer, final MediaEncoderListener listener,
-                              final MediaProjection projection, final int width, final int height, final int density,
-                              final int _bitrate, final int _fps) {
+//	public MediaScreenEncoder(final MediaMuxerWrapper muxer, final MediaEncoderListener listener,
+//                              final MediaProjection projection, final int width, final int height, final int density,
+//                              final int _bitrate, final int _fps) {
+//
+//		super(muxer, listener, width, height);
+//		mMediaProjection = projection;
+//		mDensity = density;
+//		fps = (_fps > 0 && _fps <= 30) ? _fps : FRAME_RATE;
+//		bitrate = (_bitrate > 0) ? _bitrate : calcBitRate(_fps);
+//		final HandlerThread thread = new HandlerThread(TAG);
+//		thread.start();
+//		mHandler = new Handler(thread.getLooper());
+//	}
 
-		super(muxer, listener, width, height);
+	public MediaScreenEncoder(MediaMuxerWrapper muxer, MediaEncoderListener listener, MediaProjection projection, VideoProfile videoProfile, int density) {
+		super(muxer, listener, videoProfile.getWidth(), videoProfile.getHeight());
 		mMediaProjection = projection;
 		mDensity = density;
+		int _fps = videoProfile.getFPS();
+		int _bitrate = videoProfile.getBirate();
 		fps = (_fps > 0 && _fps <= 30) ? _fps : FRAME_RATE;
 		bitrate = (_bitrate > 0) ? _bitrate : calcBitRate(_fps);
+
 		final HandlerThread thread = new HandlerThread(TAG);
 		thread.start();
 		mHandler = new Handler(thread.getLooper());

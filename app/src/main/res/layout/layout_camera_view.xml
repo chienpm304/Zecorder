@@ -6,8 +6,8 @@
 
     <LinearLayout
         android:id="@+id/camera_preview"
-        android:layout_width="160dp"
-        android:layout_height="90dp"
+        android:layout_width="90dp"
+        android:layout_height="160dp"
         android:background="@android:color/darker_gray"
         android:orientation="horizontal" />
 

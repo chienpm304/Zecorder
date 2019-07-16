@@ -21,22 +21,22 @@
     </string-array>
 
     <string-array name="values_camera_mode">
-        <item>1</item>
-        <item>2</item>
-        <item>3</item>
+        <item>Face</item>
+        <item>Rear</item>
+        <item>Off</item>
     </string-array>
 
     <!--resolutions-->
     <string-array name="entries_video_resolution">
+        <item>SD</item>
         <item>HD</item>
         <item>FHD</item>
-        <item>QHD</item>
     </string-array>
 
     <string-array name="values_video_resolution">
-        <item>1</item>
-        <item>2</item>
-        <item>3</item>
+        <item>SD</item>
+        <item>HD</item>
+        <item>FHD</item>
     </string-array>
 
     <!--Camera positions-->
@@ -50,11 +50,11 @@
     </string-array>
 
     <string-array name="values_camera_position">
-        <item>1</item>
-        <item>2</item>
-        <item>3</item>
-        <item>4</item>
-        <item>5</item>
+        <item>Top_Left</item>
+        <item>Top_Right</item>
+        <item>Bottom_Left</item>
+        <item>Bottom_Right</item>
+        <item>Center</item>
     </string-array>
 
     <!--Camera size-->
@@ -66,9 +66,24 @@
     </string-array>
 
     <string-array name="values_camera_size">
-        <item>1</item>
-        <item>2</item>
-        <item>3</item>
+        <item>Small</item>
+        <item>Medium</item>
+        <item>Big</item>
+    </string-array>
+
+    <!--Video bitrate-->
+    <string-array name="entries_video_bitrate">
+        <item>Auto</item>
+        <item>1000 Kbps</item>
+        <item>2000 Kbps</item>
+        <item>4000 Kbps</item>
+    </string-array>
+
+    <string-array name="values_video_bitrate">
+        <item>-1</item>
+        <item>1000000</item>
+        <item>2000000</item>
+        <item>4000000</item>
     </string-array>
 
     <!--Audio sources-->
@@ -79,9 +94,9 @@
     </string-array>
 
     <string-array name="values_audio_source">
+        <item>0</item>
         <item>1</item>
         <item>2</item>
-        <item>3</item>
     </string-array>
 
 </resources>

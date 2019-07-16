@@ -5,17 +5,23 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.res.Configuration;
 import android.graphics.PixelFormat;
+import android.graphics.drawable.GradientDrawable;
 import android.hardware.Camera;
 import android.os.CountDownTimer;
 import android.os.IBinder;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.TypedValue;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
+import android.view.Surface;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -26,10 +32,11 @@ import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.ui.services.RecordingService.RecordingBinder;
 import com.chienpm.zecorder.ui.utils.CameraPreview;
 import com.chienpm.zecorder.ui.utils.MyUtils;
+import com.chienpm.zecorder.ui.utils.SettingManager;
 
 
 public class RecordingControllerService extends Service {
-    private static final String TAG = "chienpm";
+    private static final String TAG = "chienpm_controller";
 
     private RecordingService mRecordingService;
     private Boolean mRecordingServiceBound = false;
@@ -127,10 +134,9 @@ public class RecordingControllerService extends Service {
     private void initCameraView() {
         Log.d(TAG, "RecordingControllerService: initializeCamera()");
         mCameraLayout = LayoutInflater.from(this).inflate(R.layout.layout_camera_view, null);
-
         mCamera =  Camera.open();
-        mCamera.setDisplayOrientation(90);
         cameraPreview = (LinearLayout) mCameraLayout.findViewById(R.id.camera_preview);
+        onConfigurationChanged(getResources().getConfiguration());
         mPreview = new CameraPreview(this, mCamera);
 
         paramCam.gravity = Gravity.BOTTOM | Gravity.END;
@@ -148,7 +154,32 @@ public class RecordingControllerService extends Service {
         mWindowManager.addView(mViewRoot, paramViewRoot);
     }
 
+    private void updateCameraViewOrientation() {
 
+    }
+
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        Log.d(TAG, "onConfigurationChanged: DETECTED" + newConfig.orientation);
+
+        int height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 160, getResources().getDisplayMetrics());
+        int width = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 90, getResources().getDisplayMetrics());
+
+        ViewGroup.LayoutParams params = cameraPreview.getLayoutParams();
+        if(newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE){
+            params.height = width;
+            params.width = height;
+
+        }
+        else{
+            params.height = height;
+            params.width = width;
+        }
+        cameraPreview.setLayoutParams(params);
+
+    }
     private void initializeViews() {
         Log.d(TAG, "RecordingControllerService: initializeViews()");
         mViewRoot = LayoutInflater.from(this).inflate(R.layout.layout_recording, null);
@@ -231,7 +262,9 @@ public class RecordingControllerService extends Service {
 
                     togleCountdown(View.VISIBLE);
                     //Todo: replace time countdown here
-                    new CountDownTimer(4000, 1000) {
+                    int countdown = SettingManager.getSettingCountdownValue(getApplication()) * 1000;
+
+                    new CountDownTimer(countdown, 1000) {
 
                         public void onTick(long millisUntilFinished) {
                             ((TextView)(mViewCountdown.findViewById(R.id.tvCountDown))).setText(""+millisUntilFinished / 1000);
