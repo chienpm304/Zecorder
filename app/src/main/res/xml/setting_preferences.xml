@@ -1,52 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen
     xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--Common Settings-->
     <PreferenceCategory android:title="Common">
         <EditTextPreference
-            android:defaultValue="true"
-            android:key="setting_countdown"
-            android:summary="10s"
+            android:key="@string/setting_common_countdown"
+            android:defaultValue="3"
+            android:inputType="number"
             android:title="Countdown" />
 
+        <ListPreference
+            android:key="@string/setting_common_orientation"
+           android:title="Orientation"
+            android:defaultValue="1"
+            android:entries="@array/entries_common_orientation"
+            android:entryValues="@array/values_common_orientation" />
     </PreferenceCategory>
 
-
-
+    <!--Camera settings-->
     <PreferenceCategory
         android:title="Camera">
         <ListPreference
             android:key="@string/setting_camera_mode"
             android:title="Camera mode"
-            android:summary="Face"
             android:defaultValue="1"
-            android:entries="@array/listCameraModeEntries"
-            android:entryValues="@array/listCameraModeValues" />
+            android:entries="@array/entries_camera_mode"
+            android:entryValues="@array/values_camera_mode" />
 
+        <ListPreference
+            android:key="@string/setting_camera_position"
+            android:title="Camera position"
+            android:defaultValue="1"
+            android:entries="@array/entries_camera_position"
+            android:entryValues="@array/values_camera_position" />
 
+        <ListPreference
+            android:key="@string/setting_camera_size"
+            android:title="Camera size"
+            android:defaultValue="1"
+            android:entries="@array/entries_camera_size"
+            android:entryValues="@array/values_camera_size" />
     </PreferenceCategory>
 
+    <!--Audio Settings-->
+    <PreferenceCategory android:title="Audio">
+        <ListPreference
+            android:key="@string/setting_audio_source"
+            android:title="Audio source"
+            android:defaultValue="1"
+            android:entries="@array/entries_audio_source"
+            android:entryValues="@array/values_audio_source" />
+    </PreferenceCategory>
+
+
+    <!--Video Settings-->
     <PreferenceCategory android:title="Video ">
         <ListPreference
-            android:key="@string/setting_resolution"
+            android:key="@string/setting_video_resolution"
             android:title="Resolution"
-            android:summary="HD"
             android:defaultValue="1"
-            android:entries="@array/listResolutionEntries"
-            android:entryValues="@array/listResolutionValues" />
+            android:entries="@array/entries_video_resolution"
+            android:entryValues="@array/values_video_resolution" />
 
         <EditTextPreference
-            android:key="@string/setting_bitrate"
-            android:title="Bitrate"
-            android:summary="6000 Kbs"/>
+            android:key="@string/setting_video_bitrate"
+            android:title="Bitrate (Kbps)"
+            android:inputType="number"
+            android:defaultValue="6000"
+            />
+
         <EditTextPreference
-            android:key="@string/setting_fps"
-            android:title="FPs"
+            android:key="@string/setting_video_fps"
+            android:title="FPS"
+            android:inputType="number"
+
             android:defaultValue="15"
-            android:summary="15"/>
+            />
 
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="Audio">
-
-    </PreferenceCategory>
 </PreferenceScreen>

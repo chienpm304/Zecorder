@@ -3,11 +3,23 @@
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="setting_bitrate">setting_bitrate</string>
-    <string name="setting_resolution">setting_resolution</string>
-    <string name="setting_fps">setting_fps</string>
+
+    <!--Video settings-->
+    <string name="setting_video_bitrate">setting_video_bitrate</string>
+    <string name="setting_video_resolution">setting_video_resolution</string>
+    <string name="setting_video_fps">setting_video_fps</string>
+
+    <!--Camera settings-->
     <string name="setting_camera_mode">setting_camera_mode</string>
     <string name="setting_camera_position">setting_camera_position</string>
-    <string name="setting_frame">setting_camera_frame</string>
+    <string name="setting_camera_size">setting_camera_size</string>
+
+    <!--Audio settings-->
+    <string name="setting_audio_source">setting_audio_source</string>
+
+
+    <!--Common Setting-->
+    <string name="setting_common_orientation">setting_common_orientation</string>
+    <string name="setting_common_countdown">setting_common_countdown</string>
 
 </resources>

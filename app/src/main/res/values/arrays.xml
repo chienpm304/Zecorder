@@ -1,28 +1,87 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string-array name="listCameraModeEntries">
+    <!--orientations-->
+    <string-array name="entries_common_orientation">
+        <item>Auto</item>
+        <item>Landscape</item>
+        <item>Portrait</item>
+    </string-array>
+
+    <string-array name="values_common_orientation">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+
+    <!--Camera modes-->
+    <string-array name="entries_camera_mode">
         <item>Face</item>
         <item>Rear</item>
         <item>Off</item>
     </string-array>
 
-    <string-array name="listCameraModeValues">
+    <string-array name="values_camera_mode">
         <item>1</item>
         <item>2</item>
         <item>3</item>
     </string-array>
 
-    <string-array name="listResolutionEntries">
+    <!--resolutions-->
+    <string-array name="entries_video_resolution">
         <item>HD</item>
         <item>FHD</item>
         <item>QHD</item>
     </string-array>
 
-    <string-array name="listResolutionValues">
+    <string-array name="values_video_resolution">
         <item>1</item>
         <item>2</item>
         <item>3</item>
     </string-array>
 
+    <!--Camera positions-->
+    <string-array name="entries_camera_position">
+        <item>Top Left</item>
+        <item>Top Right</item>
+        <item>Bottom Left</item>
+        <item>Bottom Right</item>
+        <item>Center</item>
+
+    </string-array>
+
+    <string-array name="values_camera_position">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+    </string-array>
+
+    <!--Camera size-->
+    <string-array name="entries_camera_size">
+        <item>Small</item>
+        <item>Medium</item>
+        <item>Big</item>
+
+    </string-array>
+
+    <string-array name="values_camera_size">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+
+    <!--Audio sources-->
+    <string-array name="entries_audio_source">
+        <item>Microphone</item>
+        <item>Internal Sound</item>
+        <item>Mixed</item>
+    </string-array>
+
+    <string-array name="values_audio_source">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
 
 </resources>

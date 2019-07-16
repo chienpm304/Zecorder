@@ -5,19 +5,14 @@ import android.os.Bundle;
 import android.support.v7.preference.ListPreference;
 import android.support.v7.preference.Preference;
 import android.support.v7.preference.PreferenceFragmentCompat;
-import android.support.v7.preference.PreferenceManager;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
+import android.support.v7.preference.PreferenceScreen;
 
 import com.chienpm.zecorder.R;
-import com.chienpm.zecorder.ui.activities.MainActivity;
-
-import java.util.Objects;
 
 public class SettingFragment extends PreferenceFragmentCompat implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     private SharedPreferences mSharedPreferences;
+    private PreferenceScreen mPreferenceScreen;
 
     public SettingFragment() {
         // Required empty public constructor
@@ -35,12 +30,30 @@ public class SettingFragment extends PreferenceFragmentCompat implements SharedP
 
     @Override
     public void onCreatePreferences(Bundle bundle, String s) {
+
         addPreferencesFromResource(R.xml.setting_preferences);
-        mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(Objects.requireNonNull(getContext()));
+
+        mPreferenceScreen = getPreferenceScreen();
+        mSharedPreferences = mPreferenceScreen.getSharedPreferences();
 
         onSharedPreferenceChanged(mSharedPreferences, getString(R.string.setting_camera_mode));
+        onSharedPreferenceChanged(mSharedPreferences, getString(R.string.setting_camera_size));
+        onSharedPreferenceChanged(mSharedPreferences, getString(R.string.setting_camera_position));
+
+        onSharedPreferenceChanged(mSharedPreferences, getString(R.string.setting_common_countdown));
+        onSharedPreferenceChanged(mSharedPreferences, getString(R.string.setting_common_orientation));
+
+        onSharedPreferenceChanged(mSharedPreferences, getString(R.string.setting_video_bitrate));
+        onSharedPreferenceChanged(mSharedPreferences, getString(R.string.setting_video_fps));
+        onSharedPreferenceChanged(mSharedPreferences, getString(R.string.setting_video_resolution));
+
+        onSharedPreferenceChanged(mSharedPreferences, getString(R.string.setting_audio_source));
+
+
+
 
     }
+
     @Override
     public void onResume() {
         super.onResume();
@@ -59,8 +72,12 @@ public class SettingFragment extends PreferenceFragmentCompat implements SharedP
                 preference.setSummary(listPreference.getEntries()[prefIndex]);
             }
         } else {
-            preference.setSummary(sharedPreferences.getString(key, ""));
-
+            String summary = sharedPreferences.getString(key,"");
+            if(key.equals(getString(R.string.setting_common_countdown)))
+                summary += "s";
+            else if(key.equals(getString(R.string.setting_video_bitrate)))
+                summary += " Kbps";
+            preference.setSummary(summary);
         }
     }
 
@@ -70,13 +87,6 @@ public class SettingFragment extends PreferenceFragmentCompat implements SharedP
         //unregister the preference change listener
         getPreferenceScreen().getSharedPreferences()
                 .unregisterOnSharedPreferenceChangeListener(this);
-    }
-
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_setting, container, false);
     }
 
     @Override
