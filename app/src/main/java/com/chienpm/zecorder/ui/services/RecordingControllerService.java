@@ -81,6 +81,8 @@ public class RecordingControllerService extends Service {
     private CameraPreview mPreview;
     private int mScreenWidth, mScreenHeight;
     private View mViewCountdown;
+    private TextView mTvCountdown;
+    private View mCountdownLayout;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -193,7 +195,10 @@ public class RecordingControllerService extends Service {
         mWindowManager.addView(mViewCountdown, paramCountdown);
         mWindowManager.addView(mViewRoot, paramViewRoot);
 
-        togleCountdown(View.GONE);
+        mCountdownLayout = mViewCountdown.findViewById(R.id.countdown_container);
+        mTvCountdown = mViewCountdown.findViewById(R.id.tvCountDown);
+
+        toggleView(mCountdownLayout, View.GONE);
 
         mImgRec = mViewRoot.findViewById(R.id.imgRec);
         mImgCapture = mViewRoot.findViewById(R.id.imgCapture);
@@ -205,10 +210,8 @@ public class RecordingControllerService extends Service {
         mImgStop = mViewRoot.findViewById(R.id.imgStop);
         mImgResume = mViewRoot.findViewById(R.id.imgResume);
 
-        mImgResume.setVisibility(View.GONE);
-        mImgStop.setVisibility(View.GONE);
-
-
+        toggleView(mImgResume, View.GONE);
+        toggleView(mImgStop, View.GONE);
         toggleNavigationButton(View.GONE);
 
         mImgCapture.setOnClickListener(new View.OnClickListener() {
@@ -217,10 +220,10 @@ public class RecordingControllerService extends Service {
                 MyUtils.toast(getApplicationContext(), "Capture clicked", Toast.LENGTH_SHORT);
                 toggleNavigationButton(View.GONE);
                 if(cameraPreview.getVisibility() == View.GONE){
-                    cameraPreview.setVisibility(View.VISIBLE);
+                    toggleView(cameraPreview, View.VISIBLE);
                 }
                 else{
-                    cameraPreview.setVisibility(View.GONE);
+                    toggleView(cameraPreview, View.GONE);
                 }
             }
         });
@@ -258,20 +261,21 @@ public class RecordingControllerService extends Service {
                 toggleNavigationButton(View.GONE);
 
                 if(mRecordingServiceBound){
-                    //Todo: start recording
 
-                    togleCountdown(View.VISIBLE);
-                    //Todo: replace time countdown here
+                    toggleView(mCountdownLayout, View.VISIBLE);
+
                     int countdown = SettingManager.getSettingCountdownValue(getApplication()) * 1000;
 
                     new CountDownTimer(countdown, 1000) {
 
                         public void onTick(long millisUntilFinished) {
-                            ((TextView)(mViewCountdown.findViewById(R.id.tvCountDown))).setText(""+millisUntilFinished / 1000);
+                            toggleView(mViewRoot, View.GONE);
+                            mTvCountdown.setText(""+millisUntilFinished / 1000);
                         }
 
                         public void onFinish() {
-                            togleCountdown(View.GONE);
+                            toggleView(mCountdownLayout, View.GONE);
+                            toggleView(mViewRoot, View.VISIBLE);
                             mRecordingStarted = true;
                             mRecordingService.startRecording();
                             MyUtils.toast(getApplicationContext(), "Recording Started", Toast.LENGTH_LONG);
@@ -393,8 +397,8 @@ public class RecordingControllerService extends Service {
         });
     }
 
-    private void togleCountdown(int visibility) {
-        mViewCountdown.findViewById(R.id.countdown_container).setVisibility(visibility);
+    private void toggleView(View view, int visible) {
+        view.setVisibility(visible);
     }
 
     private void bindRecordingService() {

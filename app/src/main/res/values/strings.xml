@@ -27,6 +27,7 @@
     <string name="default_setting_bitrate">-1</string>
     <string name="default_setting_fps">15</string>
     <string name="default_setting_countdown">3</string>
+    <string name="default_setting_orientation">Auto</string>
 
 
 </resources>

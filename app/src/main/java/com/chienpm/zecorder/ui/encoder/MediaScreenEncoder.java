@@ -48,7 +48,7 @@ public class MediaScreenEncoder extends MediaVideoEncoderBase {
 //	}
 
 	public MediaScreenEncoder(MediaMuxerWrapper muxer, MediaEncoderListener listener, MediaProjection projection, VideoProfile videoProfile, int density) {
-		super(muxer, listener, videoProfile.getWidth(), videoProfile.getHeight());
+		super(muxer, listener, videoProfile.getWidth(), videoProfile.getHeight(), videoProfile.getOrientation());
 		mMediaProjection = projection;
 		mDensity = density;
 		int _fps = videoProfile.getFPS();

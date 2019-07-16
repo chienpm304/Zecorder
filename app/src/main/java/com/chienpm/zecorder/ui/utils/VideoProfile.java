@@ -1,16 +1,20 @@
 package com.chienpm.zecorder.ui.utils;
 
 public class VideoProfile {
-    int mWidth, mHeight, mFPS, mBirate;
-    public static VideoProfile VIDEO_PROFILE_SD = new VideoProfile(480, 360, 30, 1000 * 1024);
-    public static VideoProfile VIDEO_PROFILE_HD = new VideoProfile(1280, 720, 30, 2000 * 1024);
-    public static VideoProfile VIDEO_PROFILE_FHD = new VideoProfile(1920, 1080, 30, 4000 * 1024);
+    public static final int ORIENTATION_PORTRAIT = 0;
+    public static final int ORIENTATION_LANDSCAPE = 1;
 
-    public VideoProfile(int width, int height, int FPS, int birate) {
+    int mWidth, mHeight, mFPS, mBirate, mOrientation;
+    public static VideoProfile VIDEO_PROFILE_SD = new VideoProfile(480, 360, 30, 1000 * 1024, ORIENTATION_LANDSCAPE);
+    public static VideoProfile VIDEO_PROFILE_HD = new VideoProfile(1280, 720, 30, 2000 * 1024, ORIENTATION_LANDSCAPE);
+    public static VideoProfile VIDEO_PROFILE_FHD = new VideoProfile(1920, 1080, 30, 4000 * 1024, ORIENTATION_LANDSCAPE);
+
+    public VideoProfile(int width, int height, int FPS, int birate, int orientation) {
         mWidth = width;
         mHeight = height;
         mFPS = FPS;
         mBirate = birate;
+        mOrientation = orientation;
     }
 
     public int getWidth() {
@@ -37,6 +41,14 @@ public class VideoProfile {
         mBirate = bitrate;
     }
 
+    public void setOrientation(int orientation){
+        mOrientation = orientation;
+    }
+
+    public int getOrientation() {
+        return mOrientation;
+    }
+
     @Override
     public String toString() {
         return "VideoProfile{" +
@@ -44,6 +56,7 @@ public class VideoProfile {
                 ", mHeight=" + mHeight +
                 ", mFPS=" + mFPS +
                 ", mBirate=" + mBirate +
+                ", mOrientation=" + mOrientation +
                 '}';
     }
 }

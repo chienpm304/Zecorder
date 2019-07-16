@@ -90,6 +90,10 @@ public class MainActivity extends AppCompatActivity {
         mImgRec.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if(isMyServiceRunning(RecordingControllerService.class)){
+                    MyUtils.showSnackBarNotification(mImgRec,"Recording service is running!", Snackbar.LENGTH_LONG);
+                    return;
+                }
                 if(mScreenCaptureIntent == null || mScreenCaptureResultCode == MyUtils.RESULT_CODE_FAILED)
                     requestScreenCaptureIntent();
                 if(hasPermission()) {

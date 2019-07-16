@@ -13,7 +13,7 @@
         <ListPreference
             android:key="@string/setting_common_orientation"
            android:title="Orientation"
-            android:defaultValue="1"
+            android:defaultValue="@string/default_setting_orientation"
             android:entries="@array/entries_common_orientation"
             android:entryValues="@array/values_common_orientation" />
     </PreferenceCategory>

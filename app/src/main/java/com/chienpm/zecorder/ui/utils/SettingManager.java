@@ -19,7 +19,13 @@ public class SettingManager {
         return Integer.parseInt(res);
     }
 
+    private static String getSettingOrientation(Context context){
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+        String key = getStringRes(context, R.string.setting_common_orientation);
+        String defValue = getStringRes(context, R.string.default_setting_orientation);
 
+        return preferences.getString(key, defValue);
+    }
 
     private static int getVideoSettingBitrateValue(Context context){
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
@@ -54,6 +60,7 @@ public class SettingManager {
         VideoProfile videoProfile = null;
 
         String resolution = getVideoSettingResolutionValue(context);
+        String orientation = getSettingOrientation(context);
 
         switch (resolution){
             case "SD": videoProfile = VideoProfile.VIDEO_PROFILE_SD; break;
@@ -67,6 +74,10 @@ public class SettingManager {
 
         if(bitrate != -1) // not auto
             videoProfile.setBitrate(bitrate);
+
+        if(orientation.equals("Portrait")){ //DEFAULT IS LANDSCAPE
+            videoProfile.setOrientation(VideoProfile.ORIENTATION_PORTRAIT);
+        }
 
         videoProfile.setFPS(fps);
         Log.d("chienpm", "getVideoProfile: "+videoProfile.toString());
