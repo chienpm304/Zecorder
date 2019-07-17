@@ -1,15 +1,15 @@
-package com.chienpm.zecorder.ui.utils;
+package com.chienpm.zecorder.controllers.settings;
 
-public class VideoProfile {
+public class VideoSetting {
     public static final int ORIENTATION_PORTRAIT = 0;
     public static final int ORIENTATION_LANDSCAPE = 1;
 
     int mWidth, mHeight, mFPS, mBirate, mOrientation;
-    public static VideoProfile VIDEO_PROFILE_SD = new VideoProfile(480, 360, 30, 1000 * 1024, ORIENTATION_LANDSCAPE);
-    public static VideoProfile VIDEO_PROFILE_HD = new VideoProfile(1280, 720, 30, 2000 * 1024, ORIENTATION_LANDSCAPE);
-    public static VideoProfile VIDEO_PROFILE_FHD = new VideoProfile(1920, 1080, 30, 4000 * 1024, ORIENTATION_LANDSCAPE);
+    public static VideoSetting VIDEO_PROFILE_SD = new VideoSetting(480, 360, 30, 1000 * 1024, ORIENTATION_LANDSCAPE);
+    public static VideoSetting VIDEO_PROFILE_HD = new VideoSetting(1280, 720, 30, 2000 * 1024, ORIENTATION_LANDSCAPE);
+    public static VideoSetting VIDEO_PROFILE_FHD = new VideoSetting(1920, 1080, 30, 4000 * 1024, ORIENTATION_LANDSCAPE);
 
-    public VideoProfile(int width, int height, int FPS, int birate, int orientation) {
+    public VideoSetting(int width, int height, int FPS, int birate, int orientation) {
         mWidth = width;
         mHeight = height;
         mFPS = FPS;
@@ -51,7 +51,7 @@ public class VideoProfile {
 
     @Override
     public String toString() {
-        return "VideoProfile{" +
+        return "VideoSetting{" +
                 "mWidth=" + mWidth +
                 ", mHeight=" + mHeight +
                 ", mFPS=" + mFPS +

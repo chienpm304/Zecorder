@@ -13,7 +13,7 @@ import android.os.HandlerThread;
 import android.util.Log;
 import android.view.Surface;
 
-import com.chienpm.zecorder.ui.utils.VideoProfile;
+import com.chienpm.zecorder.controllers.settings.VideoSetting;
 import com.serenegiant.glutils.EGLBase;
 import com.serenegiant.glutils.EglTask;
 import com.serenegiant.glutils.GLDrawer2D;
@@ -47,12 +47,12 @@ public class MediaScreenEncoder extends MediaVideoEncoderBase {
 //		mHandler = new Handler(thread.getLooper());
 //	}
 
-	public MediaScreenEncoder(MediaMuxerWrapper muxer, MediaEncoderListener listener, MediaProjection projection, VideoProfile videoProfile, int density) {
-		super(muxer, listener, videoProfile.getWidth(), videoProfile.getHeight(), videoProfile.getOrientation());
+	public MediaScreenEncoder(MediaMuxerWrapper muxer, MediaEncoderListener listener, MediaProjection projection, VideoSetting videoSetting, int density) {
+		super(muxer, listener, videoSetting.getWidth(), videoSetting.getHeight(), videoSetting.getOrientation());
 		mMediaProjection = projection;
 		mDensity = density;
-		int _fps = videoProfile.getFPS();
-		int _bitrate = videoProfile.getBirate();
+		int _fps = videoSetting.getFPS();
+		int _bitrate = videoSetting.getBirate();
 		fps = (_fps > 0 && _fps <= 30) ? _fps : FRAME_RATE;
 		bitrate = (_bitrate > 0) ? _bitrate : calcBitRate(_fps);
 

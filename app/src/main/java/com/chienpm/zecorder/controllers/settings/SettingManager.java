@@ -1,4 +1,4 @@
-package com.chienpm.zecorder.ui.utils;
+package com.chienpm.zecorder.controllers.settings;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -80,16 +80,16 @@ public class SettingManager {
         return context.getResources().getString(resId);
     }
 
-    public static VideoProfile getVideoProfile(Context context) {
-        VideoProfile videoProfile = null;
+    public static VideoSetting getVideoProfile(Context context) {
+        VideoSetting videoSetting = null;
 
         String resolution = getVideoResolution(context);
         String orientation = getOrientation(context);
 
         switch (resolution){
-            case "SD": videoProfile = VideoProfile.VIDEO_PROFILE_SD; break;
-            case "HD": videoProfile = VideoProfile.VIDEO_PROFILE_HD; break;
-            case "FHD": videoProfile =  VideoProfile.VIDEO_PROFILE_FHD; break;
+            case "SD": videoSetting = VideoSetting.VIDEO_PROFILE_SD; break;
+            case "HD": videoSetting = VideoSetting.VIDEO_PROFILE_HD; break;
+            case "FHD": videoSetting =  VideoSetting.VIDEO_PROFILE_FHD; break;
         }
 
         int fps = getVideoFPS(context);
@@ -97,21 +97,21 @@ public class SettingManager {
         int bitrate = getVideoBitrate(context);
 
         if(bitrate != -1) // not auto
-            videoProfile.setBitrate(bitrate);
+            videoSetting.setBitrate(bitrate);
 
         if(orientation.equals("Portrait")){ //DEFAULT IS LANDSCAPE
-            videoProfile.setOrientation(VideoProfile.ORIENTATION_PORTRAIT);
+            videoSetting.setOrientation(VideoSetting.ORIENTATION_PORTRAIT);
         }
 
-        videoProfile.setFPS(fps);
-        Log.d("chienpm", "getVideoProfile: "+videoProfile.toString());
-        return videoProfile;
+        videoSetting.setFPS(fps);
+        Log.d("chienpm", "getVideoProfile: "+ videoSetting.toString());
+        return videoSetting;
     }
 
-    public static MyCameraProfile getCameraProfile(Context context) {
+    public static CameraSetting getCameraProfile(Context context) {
         String size = getCameraSize(context);
         String mode = getCameraMode(context);
         String pos = getCameraPosition(context);
-        return new MyCameraProfile(mode, pos, size);
+        return new CameraSetting(mode, pos, size);
     }
 }

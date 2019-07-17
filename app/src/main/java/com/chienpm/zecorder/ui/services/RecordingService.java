@@ -17,8 +17,8 @@ import com.chienpm.zecorder.ui.encoder.MediaEncoder;
 import com.chienpm.zecorder.ui.encoder.MediaMuxerWrapper;
 import com.chienpm.zecorder.ui.encoder.MediaScreenEncoder;
 import com.chienpm.zecorder.ui.utils.MyUtils;
-import com.chienpm.zecorder.ui.utils.SettingManager;
-import com.chienpm.zecorder.ui.utils.VideoProfile;
+import com.chienpm.zecorder.controllers.settings.SettingManager;
+import com.chienpm.zecorder.controllers.settings.VideoSetting;
 
 import java.io.IOException;
 
@@ -113,8 +113,8 @@ public class RecordingService extends Service {
                     if (true) {
                         // for screen capturing
                         //todo: setting video parameter here
-                        VideoProfile videoProfile = SettingManager.getVideoProfile(getApplicationContext());
-                        new MediaScreenEncoder(mMuxer, mMediaEncoderListener, mMediaProjection, videoProfile, mScreenDensity);
+                        VideoSetting videoSetting = SettingManager.getVideoProfile(getApplicationContext());
+                        new MediaScreenEncoder(mMuxer, mMediaEncoderListener, mMediaProjection, videoSetting, mScreenDensity);
                     }
                     if (true) {
                         // for audio capturing

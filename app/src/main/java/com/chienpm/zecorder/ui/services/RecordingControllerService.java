@@ -8,7 +8,6 @@ import android.content.ServiceConnection;
 import android.content.res.Configuration;
 import android.graphics.PixelFormat;
 import android.hardware.Camera;
-import android.media.CameraProfile;
 import android.os.Build;
 import android.os.CountDownTimer;
 import android.os.IBinder;
@@ -30,9 +29,9 @@ import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.ui.activities.MainActivity;
 import com.chienpm.zecorder.ui.services.RecordingService.RecordingBinder;
 import com.chienpm.zecorder.ui.utils.CameraPreview;
-import com.chienpm.zecorder.ui.utils.MyCameraProfile;
+import com.chienpm.zecorder.controllers.settings.CameraSetting;
 import com.chienpm.zecorder.ui.utils.MyUtils;
-import com.chienpm.zecorder.ui.utils.SettingManager;
+import com.chienpm.zecorder.controllers.settings.SettingManager;
 
 
 public class RecordingControllerService extends Service {
@@ -112,8 +111,8 @@ public class RecordingControllerService extends Service {
     }
 
     private void updateCameraMode() {
-        MyCameraProfile profile = SettingManager.getCameraProfile(getApplicationContext());
-        if(profile.getMode().equals(MyCameraProfile.CAMERA_MODE_OFF))
+        CameraSetting profile = SettingManager.getCameraProfile(getApplicationContext());
+        if(profile.getMode().equals(CameraSetting.CAMERA_MODE_OFF))
             toggleView(mCameraLayout, View.GONE);
         else{
             if(mCameraLayout!=null){
@@ -126,7 +125,7 @@ public class RecordingControllerService extends Service {
 
     private void updateCameraPosition() {
         Log.d(TAG, "updateCameraPosition: ");
-        MyCameraProfile profile = SettingManager.getCameraProfile(getApplicationContext());
+        CameraSetting profile = SettingManager.getCameraProfile(getApplicationContext());
         paramCam.gravity = profile.getParamGravity();
         paramCam.x = 0;
         paramCam.y = 0;
@@ -134,7 +133,7 @@ public class RecordingControllerService extends Service {
     }
 
     private void updateCameraSize() {
-        MyCameraProfile profile = SettingManager.getCameraProfile(getApplicationContext());
+        CameraSetting profile = SettingManager.getCameraProfile(getApplicationContext());
         calculateCameraSize(profile);
         onConfigurationChanged(getResources().getConfiguration());
     }
@@ -199,11 +198,11 @@ public class RecordingControllerService extends Service {
 
     private void initCameraView() {
         Log.d(TAG, "RecordingControllerService: initializeCamera()");
-        MyCameraProfile cameraProfile = SettingManager.getCameraProfile(getApplication());
+        CameraSetting cameraProfile = SettingManager.getCameraProfile(getApplication());
 
         mCameraLayout = LayoutInflater.from(this).inflate(R.layout.layout_camera_view, null);
 
-        if(cameraProfile.getMode().equals(MyCameraProfile.CAMERA_MODE_BACK))
+        if(cameraProfile.getMode().equals(CameraSetting.CAMERA_MODE_BACK))
             mCamera =  Camera.open(Camera.CameraInfo.CAMERA_FACING_BACK);
         else
             mCamera = Camera.open(Camera.CameraInfo.CAMERA_FACING_FRONT);
@@ -230,17 +229,17 @@ public class RecordingControllerService extends Service {
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         mWindowManager.addView(mViewRoot, paramViewRoot);
 
-        if(cameraProfile.getMode().equals(MyCameraProfile.CAMERA_MODE_OFF))
+        if(cameraProfile.getMode().equals(CameraSetting.CAMERA_MODE_OFF))
             toggleView(cameraPreview, View.GONE);
     }
 
-    private void calculateCameraSize(MyCameraProfile cameraProfile) {
+    private void calculateCameraSize(CameraSetting cameraProfile) {
         int factor;
         switch (cameraProfile.getSize()){
-            case MyCameraProfile.SIZE_BIG:
+            case CameraSetting.SIZE_BIG:
                 factor = 3;
                 break;
-            case MyCameraProfile.SIZE_MEDIUM:
+            case CameraSetting.SIZE_MEDIUM:
                 factor = 4;
                 break;
             default: //small

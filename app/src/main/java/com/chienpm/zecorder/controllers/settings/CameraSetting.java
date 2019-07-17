@@ -1,10 +1,8 @@
-package com.chienpm.zecorder.ui.utils;
+package com.chienpm.zecorder.controllers.settings;
 
 import android.view.Gravity;
 
-import java.util.concurrent.RecursiveTask;
-
-public class MyCameraProfile {
+public class CameraSetting {
     public static final String CAMERA_MODE_FRONT = "Front";
     public static final String CAMERA_MODE_BACK = "Back";
     public static final String CAMERA_MODE_OFF = "Off";
@@ -23,7 +21,7 @@ public class MyCameraProfile {
     String mPosition; //
     String mSize; //Big, Medium, Small
 
-    public MyCameraProfile(String mode, String pos, String size) {
+    public CameraSetting(String mode, String pos, String size) {
         mMode = mode; mPosition = pos; mSize = size;
     }
 
