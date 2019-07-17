@@ -8,13 +8,13 @@ import android.content.ServiceConnection;
 import android.content.res.Configuration;
 import android.graphics.PixelFormat;
 import android.hardware.Camera;
+import android.media.CameraProfile;
 import android.os.Build;
 import android.os.CountDownTimer;
 import android.os.IBinder;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -27,6 +27,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.chienpm.zecorder.R;
+import com.chienpm.zecorder.ui.activities.MainActivity;
 import com.chienpm.zecorder.ui.services.RecordingService.RecordingBinder;
 import com.chienpm.zecorder.ui.utils.CameraPreview;
 import com.chienpm.zecorder.ui.utils.MyCameraProfile;
@@ -68,13 +69,20 @@ public class RecordingControllerService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         String action = intent.getAction();
+
+        if(action.equals(MyUtils.ACTION_UPDATE_SETTING)){
+            handleUpdateSetting(intent);
+            return START_NOT_STICKY;
+        }
         Log.d(TAG, "RecordingControllerService: onStartCommand()");
+
         if(action != null){
             if(TextUtils.equals(action, "Camera_Available")){
                 initCameraView();
             }
 
         }
+
         mScreenCaptureIntent = intent.getParcelableExtra(Intent.EXTRA_INTENT);
 
         if(mScreenCaptureIntent == null){
@@ -86,6 +94,49 @@ public class RecordingControllerService extends Service {
             bindRecordingService();
         }
         return super.onStartCommand(intent, flags, startId);
+    }
+
+    private void handleUpdateSetting(Intent intent) {
+        int key = intent.getIntExtra(MyUtils.ACTION_UPDATE_SETTING, -1);
+        switch (key){
+            case R.string.setting_camera_size:
+                updateCameraSize();
+                break;
+            case R.string.setting_camera_position:
+                updateCameraPosition();
+                break;
+            case R.string.setting_camera_mode:
+                updateCameraMode();
+                break;
+        }
+    }
+
+    private void updateCameraMode() {
+        MyCameraProfile profile = SettingManager.getCameraProfile(getApplicationContext());
+        if(profile.getMode().equals(MyCameraProfile.CAMERA_MODE_OFF))
+            toggleView(mCameraLayout, View.GONE);
+        else{
+            if(mCameraLayout!=null){
+                mWindowManager.removeViewImmediate(mCameraLayout);
+                releaseCamera();
+                initCameraView();
+            }
+        }
+    }
+
+    private void updateCameraPosition() {
+        Log.d(TAG, "updateCameraPosition: ");
+        MyCameraProfile profile = SettingManager.getCameraProfile(getApplicationContext());
+        paramCam.gravity = profile.getParamGravity();
+        paramCam.x = 0;
+        paramCam.y = 0;
+        mWindowManager.updateViewLayout(mCameraLayout,paramCam);
+    }
+
+    private void updateCameraSize() {
+        MyCameraProfile profile = SettingManager.getCameraProfile(getApplicationContext());
+        calculateCameraSize(profile);
+        onConfigurationChanged(getResources().getConfiguration());
     }
 
     public RecordingControllerService() {
@@ -159,14 +210,15 @@ public class RecordingControllerService extends Service {
 
         cameraPreview = (LinearLayout) mCameraLayout.findViewById(R.id.camera_preview);
 
-        updateCameraSize(cameraProfile);
-        onConfigurationChanged(getResources().getConfiguration());
+        calculateCameraSize(cameraProfile);
 
-        mPreview = new CameraPreview(this, mCamera);
+        onConfigurationChanged(getResources().getConfiguration());
 
         paramCam.gravity = cameraProfile.getParamGravity();
         paramCam.x = 0;
         paramCam.y = 0;
+
+        mPreview = new CameraPreview(this, mCamera);
 
         cameraPreview.addView(mPreview);
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
@@ -182,7 +234,7 @@ public class RecordingControllerService extends Service {
             toggleView(cameraPreview, View.GONE);
     }
 
-    private void updateCameraSize(MyCameraProfile cameraProfile) {
+    private void calculateCameraSize(MyCameraProfile cameraProfile) {
         int factor;
         switch (cameraProfile.getSize()){
             case MyCameraProfile.SIZE_BIG:
@@ -203,17 +255,15 @@ public class RecordingControllerService extends Service {
             mCameraWidth = mScreenHeight/factor;
             mCameraHeight = mScreenWidth/factor;
         }
-        Log.d(TAG, "updateCameraSize: "+mScreenWidth+"x"+mScreenHeight);
+        Log.d(TAG, "calculateCameraSize: "+mScreenWidth+"x"+mScreenHeight);
     }
 
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
+//        super.onConfigurationChanged(newConfig);
         Log.d(TAG, "onConfigurationChanged: DETECTED" + newConfig.orientation);
 
-//        int width = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, mCameraWidth, getResources().getDisplayMetrics());
-//        int height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, mCameraHeight, getResources().getDisplayMetrics());
         int width = mCameraWidth, height = mCameraHeight;
 
         ViewGroup.LayoutParams params = cameraPreview.getLayoutParams();
@@ -300,6 +350,10 @@ public class RecordingControllerService extends Service {
             public void onClick(View v) {
                 MyUtils.toast(getApplicationContext(), "Setting clicked", Toast.LENGTH_SHORT);
                 toggleNavigationButton(View.GONE);
+                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                intent.setAction(MyUtils.ACTION_OPEN_SETTING_ACTIVITY);
+                startActivity(intent);
+
             }
         });
 
@@ -341,7 +395,6 @@ public class RecordingControllerService extends Service {
         mImgStop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//                MyUtils.toast(getApplicationContext(), "Stop recording!", Toast.LENGTH_SHORT);
                 toggleNavigationButton(View.GONE);
 
                 if(mRecordingServiceBound){
@@ -349,6 +402,8 @@ public class RecordingControllerService extends Service {
                     mRecordingStarted = false;
                     mRecordingService.stopRecording();
                     MyUtils.toast(getApplicationContext(), "Recording Stopped", Toast.LENGTH_LONG);
+                    //Todo: stop and open video manager
+                    //startActivity(new Intent(getApplicationContext(), MainActivity.class));
                 }
                 else{
                     mRecordingStarted = true;

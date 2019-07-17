@@ -1,16 +1,22 @@
 package com.chienpm.zecorder.ui.fragments;
 
+import android.app.ActivityManager;
+import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.preference.ListPreference;
 import android.support.v7.preference.Preference;
 import android.support.v7.preference.PreferenceFragmentCompat;
 import android.support.v7.preference.PreferenceScreen;
+import android.util.Log;
 
 import com.chienpm.zecorder.R;
+import com.chienpm.zecorder.ui.services.RecordingControllerService;
+import com.chienpm.zecorder.ui.utils.MyUtils;
 
-public class SettingFragment extends PreferenceFragmentCompat implements SharedPreferences.OnSharedPreferenceChangeListener {
-
+public class SettingFragment extends PreferenceFragmentCompat implements SharedPreferences.OnSharedPreferenceChangeListener{
+    static final String TAG = "chienpm_log";
     private SharedPreferences mSharedPreferences;
     private PreferenceScreen mPreferenceScreen;
 
@@ -49,9 +55,6 @@ public class SettingFragment extends PreferenceFragmentCompat implements SharedP
 
         onSharedPreferenceChanged(mSharedPreferences, getString(R.string.setting_audio_source));
 
-
-
-
     }
 
     @Override
@@ -78,8 +81,47 @@ public class SettingFragment extends PreferenceFragmentCompat implements SharedP
 
             preference.setSummary(summary);
         }
+        if(isMyServiceRunning(RecordingControllerService.class)) {
+
+            int settingKey = getResources().getIdentifier(key, "string", getActivity().getPackageName());
+            if (isCanUpdateSettingImmediately(settingKey)) {
+                Log.d(TAG, "onSharedPreferenceChanged: "+key);
+                requestUpdateSetting(settingKey);
+            }
+        }
     }
 
+    private void requestUpdateSetting(int key) {
+        Intent intent = new Intent(getActivity(), RecordingControllerService.class);
+        intent.setAction(MyUtils.ACTION_UPDATE_SETTING);
+        intent.putExtra(MyUtils.ACTION_UPDATE_SETTING, key);
+        getActivity().startService(intent);
+    }
+
+    private final int[] mList = {
+            R.string.setting_camera_mode,
+            R.string.setting_camera_size,
+            R.string.setting_camera_position
+    };
+
+
+    private boolean isCanUpdateSettingImmediately(int key) {
+        for (int s:mList) {
+            if(s==key)
+                return true;
+        }
+        return false;
+    }
+
+    private boolean isMyServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getActivity().getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
     @Override
     public void onPause() {
         super.onPause();
@@ -92,4 +134,5 @@ public class SettingFragment extends PreferenceFragmentCompat implements SharedP
     public void onDetach() {
         super.onDetach();
     }
+
 }

@@ -60,9 +60,27 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         initViews();
 
+        Intent intent = getIntent();
+        if(intent!=null)
+            handleIncomingRequest(intent);
+    }
+
+    private void handleIncomingRequest(Intent intent) {
+        if(intent != null) {
+            switch (intent.getAction()) {
+                case MyUtils.ACTION_OPEN_SETTING_ACTIVITY:
+                    mTabLayout.getTabAt(2).select();
+                    break;
+                case MyUtils.ACTION_OPEN_LIVE_ACTIVITY:
+                    mTabLayout.getTabAt(1).select();
+                    break;
+                case MyUtils.ACTION_OPEN_VIDEO_MANAGER_ACTIVITY:
+                    mTabLayout.getTabAt(0).select();
+                    break;
+            }
+        }
     }
 
     private void requestScreenCaptureIntent() {

@@ -6,10 +6,12 @@ import android.view.View;
 import android.widget.Toast;
 
 public class MyUtils {
-    public static final int PERMISSION_SCREEN_SHARE_DENIED = 9876;
     public static final int RESULT_CODE_FAILED = -999999;
     public static final String SCREEN_CAPTURE_INTENT_RESULT_CODE = "SCREEN_CAPTURE_INTENT_RESULT_CODE";
-    public static final String RECORDING_INTENT_SERVICE_NAME = "RecordingIntentService";
+    public static final String ACTION_OPEN_SETTING_ACTIVITY = "ACTION_OPEN_SETTING_ACTIVITY";
+    public static final String ACTION_OPEN_LIVE_ACTIVITY = "ACTION_OPEN_LIVE_ACTIVITY";
+    public static final String ACTION_OPEN_VIDEO_MANAGER_ACTIVITY = "ACTION_OPEN_VIDOE_MANAGER_ACTIVITY";
+    public static final String ACTION_UPDATE_SETTING = "ACTION_UPDATE_SETTING";
 
 
     public static void showSnackBarNotification(View view, String msg, int length) {
