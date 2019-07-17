@@ -3,11 +3,17 @@ package com.chienpm.zecorder.ui.fragments;
 
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import com.chienpm.zecorder.R;
+import com.chienpm.zecorder.data.database.VideoDatabase;
+import com.chienpm.zecorder.data.entities.Video;
+
+import java.util.List;
+
 
 /**
  * A simple {@link Fragment} subclass.
@@ -54,6 +60,22 @@ public class VideoManagerFragment extends Fragment {
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
+
+        //Test get Data from db
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                List<Video> mList = VideoDatabase.getInstance(getContext()).getVideoDao().getAllVideo();
+                Log.d("chienpm_log", "getAllVideo: ");
+                for (Video v: mList
+                ) {
+                    Log.d("chienpm_log+", "video: "+v.toString());
+                }
+            }
+        }).start();
+
+
+
     }
 
     @Override

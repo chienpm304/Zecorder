@@ -26,6 +26,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.chienpm.zecorder.R;
+import com.chienpm.zecorder.data.database.VideoDatabase;
+import com.chienpm.zecorder.data.entities.Video;
 import com.chienpm.zecorder.ui.activities.MainActivity;
 import com.chienpm.zecorder.ui.services.RecordingService.RecordingBinder;
 import com.chienpm.zecorder.ui.utils.CameraPreview;
@@ -316,11 +318,11 @@ public class RecordingControllerService extends Service {
             public void onClick(View v) {
                 MyUtils.toast(getApplicationContext(), "Capture clicked", Toast.LENGTH_SHORT);
                 toggleNavigationButton(View.GONE);
-                if(cameraPreview.getVisibility() == View.GONE){
-                    toggleView(cameraPreview, View.VISIBLE);
+                if(mCameraLayout.getVisibility() == View.GONE){
+                    toggleView(mCameraLayout, View.VISIBLE);
                 }
                 else{
-                    toggleView(cameraPreview, View.GONE);
+                    toggleView(mCameraLayout, View.GONE);
                 }
             }
         });
@@ -416,13 +418,28 @@ public class RecordingControllerService extends Service {
             public void onClick(View v) {
                 Toast.makeText(getApplicationContext(), "Live clicked", Toast.LENGTH_SHORT).show();
                 toggleNavigationButton(View.GONE);
+                //Test write db
+
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+
+                        Video mVideo = new Video("video 1", 1000, 2000, 20, "1280x720", 35000, "path/file1.mp4", "10:30:22", false, null);
+
+                        VideoDatabase.getInstance(getApplication()).getVideoDao().insertVideo(mVideo);
+                        VideoDatabase.getInstance(getApplication()).getVideoDao().insertVideo(mVideo);
+                        VideoDatabase.getInstance(getApplication()).getVideoDao().insertVideo(mVideo);
+                        VideoDatabase.getInstance(getApplication()).getVideoDao().insertVideo(mVideo);
+                    }
+                }).start();
+
+
             }
         });
 
         mImgClose.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//                startActivity(new Intent(getApplicationContext(), MainActivity.class));
                 mImgStop.performClick();
                 stopSelf();
             }
