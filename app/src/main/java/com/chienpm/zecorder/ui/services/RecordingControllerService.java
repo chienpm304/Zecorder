@@ -8,6 +8,7 @@ import android.content.ServiceConnection;
 import android.content.res.Configuration;
 import android.graphics.PixelFormat;
 import android.hardware.Camera;
+import android.os.Build;
 import android.os.CountDownTimer;
 import android.os.IBinder;
 import android.text.TextUtils;
@@ -43,30 +44,11 @@ public class RecordingControllerService extends Service {
     private View mCameraLayout;
     private WindowManager mWindowManager;
 
-    final WindowManager.LayoutParams paramViewRoot = new WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-            PixelFormat.TRANSLUCENT
-    );
+    WindowManager.LayoutParams paramViewRoot;
 
-    final WindowManager.LayoutParams paramCam = new WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-            PixelFormat.TRANSLUCENT
-    );
+    WindowManager.LayoutParams paramCam;
 
-    final WindowManager.LayoutParams paramCountdown = new WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-            PixelFormat.TRANSLUCENT
-    );
-
+    WindowManager.LayoutParams paramCountdown;
 
 
     private Intent mScreenCaptureIntent = null;
@@ -81,6 +63,7 @@ public class RecordingControllerService extends Service {
     private View mViewCountdown;
     private TextView mTvCountdown;
     private View mCountdownLayout;
+    private int mCameraWidth = 160, mCameraHeight = 90;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -120,9 +103,41 @@ public class RecordingControllerService extends Service {
     public void onCreate() {
         super.onCreate();
         Log.d(TAG, "RecordingControllerService: onCreate");
-        initializeViews();
         updateScreenSize();
+        initParam();
+        initializeViews();
+    }
 
+    private void initParam() {
+        int LAYOUT_FLAG;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            LAYOUT_FLAG = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
+        } else {
+            LAYOUT_FLAG = WindowManager.LayoutParams.TYPE_PHONE;
+        }
+        paramViewRoot = new WindowManager.LayoutParams(
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                LAYOUT_FLAG,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                PixelFormat.TRANSLUCENT
+        );
+
+        paramCam = new WindowManager.LayoutParams(
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                LAYOUT_FLAG,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                PixelFormat.TRANSLUCENT
+        );
+
+        paramCountdown = new WindowManager.LayoutParams(
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                LAYOUT_FLAG,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                PixelFormat.TRANSLUCENT
+        );
     }
 
     private void updateScreenSize() {
@@ -143,12 +158,15 @@ public class RecordingControllerService extends Service {
             mCamera = Camera.open(Camera.CameraInfo.CAMERA_FACING_FRONT);
 
         cameraPreview = (LinearLayout) mCameraLayout.findViewById(R.id.camera_preview);
+
+        updateCameraSize(cameraProfile);
         onConfigurationChanged(getResources().getConfiguration());
+
         mPreview = new CameraPreview(this, mCamera);
 
-        paramCam.gravity = Gravity.BOTTOM | Gravity.END;
-        paramCam.x = 50;
-        paramCam.y = 50;
+        paramCam.gravity = cameraProfile.getParamGravity();
+        paramCam.x = 0;
+        paramCam.y = 0;
 
         cameraPreview.addView(mPreview);
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
@@ -164,8 +182,28 @@ public class RecordingControllerService extends Service {
             toggleView(cameraPreview, View.GONE);
     }
 
-    private void updateCameraViewOrientation() {
-
+    private void updateCameraSize(MyCameraProfile cameraProfile) {
+        int factor;
+        switch (cameraProfile.getSize()){
+            case MyCameraProfile.SIZE_BIG:
+                factor = 3;
+                break;
+            case MyCameraProfile.SIZE_MEDIUM:
+                factor = 4;
+                break;
+            default: //small
+                factor = 5;
+                break;
+        }
+        if(mScreenWidth > mScreenHeight) {//landscape
+            mCameraWidth = mScreenWidth / factor;
+            mCameraHeight = mScreenHeight / factor;
+        }
+        else{
+            mCameraWidth = mScreenHeight/factor;
+            mCameraHeight = mScreenWidth/factor;
+        }
+        Log.d(TAG, "updateCameraSize: "+mScreenWidth+"x"+mScreenHeight);
     }
 
 
@@ -174,11 +212,12 @@ public class RecordingControllerService extends Service {
         super.onConfigurationChanged(newConfig);
         Log.d(TAG, "onConfigurationChanged: DETECTED" + newConfig.orientation);
 
-        int height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 160, getResources().getDisplayMetrics());
-        int width = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 90, getResources().getDisplayMetrics());
+//        int width = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, mCameraWidth, getResources().getDisplayMetrics());
+//        int height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, mCameraHeight, getResources().getDisplayMetrics());
+        int width = mCameraWidth, height = mCameraHeight;
 
         ViewGroup.LayoutParams params = cameraPreview.getLayoutParams();
-        if(newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE){
+        if(newConfig.orientation == Configuration.ORIENTATION_PORTRAIT){
             params.height = width;
             params.width = height;
 
@@ -190,6 +229,7 @@ public class RecordingControllerService extends Service {
         cameraPreview.setLayoutParams(params);
 
     }
+
     private void initializeViews() {
         Log.d(TAG, "RecordingControllerService: initializeViews()");
         mViewRoot = LayoutInflater.from(this).inflate(R.layout.layout_recording, null);
