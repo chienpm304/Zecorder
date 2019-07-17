@@ -12,6 +12,7 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
 
+import com.chienpm.zecorder.data.entities.Video;
 import com.chienpm.zecorder.ui.encoder.MediaAudioEncoder;
 import com.chienpm.zecorder.ui.encoder.MediaEncoder;
 import com.chienpm.zecorder.ui.encoder.MediaMuxerWrapper;
@@ -34,6 +35,7 @@ public class RecordingService extends Service {
     private int mScreenWidth, mScreenHeight, mScreenDensity;
     private MediaMuxerWrapper mMuxer;
     private static final Object sSync = new Object();
+    private VideoSetting mCurrentVideoSetting;
 
     public class RecordingBinder extends Binder{
         public RecordingService getService(){
@@ -48,10 +50,6 @@ public class RecordingService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        // Get the display size and density.
-//        getScreenSize();
-
-
         mMediaProjectionManager = (MediaProjectionManager) getSystemService(
                 Context.MEDIA_PROJECTION_SERVICE);
 
@@ -63,14 +61,12 @@ public class RecordingService extends Service {
         int width = metrics.widthPixels;
         int height = metrics.heightPixels;
         if (width > height) {
-            // 横長
             final float scale_x = width / 1920f;
             final float scale_y = height / 1080f;
             final float scale = Math.max(scale_x,  scale_y);
             width = (int)(width / scale);
             height = (int)(height / scale);
         } else {
-            // 縦長
             final float scale_x = width / 1080f;
             final float scale_y = height / 1920f;
             final float scale = Math.max(scale_x,  scale_y);
@@ -114,7 +110,8 @@ public class RecordingService extends Service {
                         // for screen capturing
                         //todo: setting video parameter here
                         VideoSetting videoSetting = SettingManager.getVideoProfile(getApplicationContext());
-                        new MediaScreenEncoder(mMuxer, mMediaEncoderListener, mMediaProjection, videoSetting, mScreenDensity);
+                        mCurrentVideoSetting = videoSetting;
+                        new MediaScreenEncoder(mMuxer, mMediaEncoderListener, mMediaProjection, mCurrentVideoSetting, mScreenDensity);
                     }
                     if (true) {
                         // for audio capturing
@@ -146,15 +143,23 @@ public class RecordingService extends Service {
         }
     }
 
-    public void stopRecording() {
+    //Return output file
+    public String stopRecording() {
         if (DEBUG) Log.v(TAG, "stopRecording:mMuxer=" + mMuxer);
+
+        String outputFile = "";
+
         synchronized (sSync) {
             if (mMuxer != null) {
+
+                outputFile = mMuxer.getOutputPath();
+
                 mMuxer.stopRecording();
                 mMuxer = null;
                 // you should not wait here
             }
         }
+        return outputFile;
     }
 
     private static final MediaEncoder.MediaEncoderListener mMediaEncoderListener = new MediaEncoder.MediaEncoderListener() {

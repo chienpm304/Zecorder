@@ -401,10 +401,17 @@ public class RecordingControllerService extends Service {
                 if(mRecordingServiceBound){
                     //Todo: stop and save recording
                     mRecordingStarted = false;
-                    mRecordingService.stopRecording();
-                    MyUtils.toast(getApplicationContext(), "Recording Stopped", Toast.LENGTH_LONG);
-                    //Todo: stop and open video manager
-                    //startActivity(new Intent(getApplicationContext(), MainActivity.class));
+
+                    String outputFile = mRecordingService.stopRecording();
+
+
+                    if(!TextUtils.isEmpty(outputFile)){
+                        MyUtils.toast(getApplicationContext(), "Recording Stopped"+outputFile, Toast.LENGTH_LONG);
+                        //Todo: stop and open video manager, retrive file information to write db
+
+                        //startActivity(new Intent(getApplicationContext(), MainActivity.class));
+                    }
+
                 }
                 else{
                     mRecordingStarted = true;
@@ -418,7 +425,8 @@ public class RecordingControllerService extends Service {
             public void onClick(View v) {
                 Toast.makeText(getApplicationContext(), "Live clicked", Toast.LENGTH_SHORT).show();
                 toggleNavigationButton(View.GONE);
-                //Test write db
+
+                //Todo: Test write db
 
                 new Thread(new Runnable() {
                     @Override
@@ -431,6 +439,7 @@ public class RecordingControllerService extends Service {
                         VideoDatabase.getInstance(getApplication()).getVideoDao().insertVideo(mVideo);
                         VideoDatabase.getInstance(getApplication()).getVideoDao().insertVideo(mVideo);
                     }
+
                 }).start();
 
 

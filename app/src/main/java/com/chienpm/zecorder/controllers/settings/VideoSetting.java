@@ -59,4 +59,8 @@ public class VideoSetting {
                 ", mOrientation=" + mOrientation +
                 '}';
     }
+
+    public String getResolutionString() {
+        return mWidth+"x"+mHeight;
+    }
 }

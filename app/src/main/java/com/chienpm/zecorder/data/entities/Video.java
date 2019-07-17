@@ -5,6 +5,8 @@ import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.PrimaryKey;
 import android.support.annotation.NonNull;
 
+import com.chienpm.zecorder.controllers.settings.VideoSetting;
+
 @Entity(tableName = "videos")
 public class Video {
     @NonNull
@@ -55,6 +57,19 @@ public class Video {
         mCreateAt = createAt;
         mSynced = isSynced;
         mCloudPath = cloudPath;
+    }
+
+    public Video(VideoSetting setting) {
+//        mTitle = "";
+//        mDuration = 0; //todo: update duration
+//        mBitrate = setting.getBirate();
+//        mFps = setting.getFPS();
+//        mResolution = setting.getResolutionString();
+//        mWeight = 0; //todo: update duration
+//        mLocalPath = localPath;
+//        mCreateAt = createAt;
+//        mSynced = isSynced;
+//        mCloudPath = cloudPath;
     }
 
     public int getId() {

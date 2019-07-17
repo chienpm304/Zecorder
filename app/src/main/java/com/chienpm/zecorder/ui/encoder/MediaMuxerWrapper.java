@@ -40,7 +40,7 @@ public class MediaMuxerWrapper {
 	private static final boolean DEBUG = false;	// TODO set false on release
 	private static final String TAG = com.serenegiant.media.MediaMuxerWrapper.class.getSimpleName();
 
-	private String mOutputPath;
+	private String mOutputPath = "";
 	private final MediaMuxer mMediaMuxer;	// API >= 18
 	private int mEncoderCount, mStatredCount;
 	private boolean mIsStarted;
