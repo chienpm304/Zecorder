@@ -13,6 +13,8 @@ import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.Loader;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -62,31 +64,24 @@ public class VideoManagerFragment extends Fragment implements LoaderManager.Load
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        //Test get Data from db
-//        new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//                List<Video> mList = VideoDatabase.getInstance(getContext()).getVideoDao().getAllVideo();
-//                Log.d("chienpm_log", "getAllVideo: ");
-//                for (Video v: mList
-//                ) {
-//                    Log.d("chienpm_log+", "video: "+v.toString());
-//                }
-//            }
-//        }).start();
-
-
-
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
+        setHasOptionsMenu(true);
         mViewRoot = inflater.inflate(R.layout.fragment_video_manager, container, false);
         return mViewRoot;
     }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+        menu.clear();
+        inflater.inflate(R.menu.video_setting_menu, menu);
+    }
+
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
