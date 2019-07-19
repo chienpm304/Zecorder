@@ -4,8 +4,13 @@ import android.arch.persistence.room.ColumnInfo;
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.PrimaryKey;
 import android.support.annotation.NonNull;
+import android.text.TextUtils;
 
 import com.chienpm.zecorder.controllers.settings.VideoSetting;
+
+import java.sql.Date;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 
 @Entity(tableName = "videos")
 public class Video {
@@ -58,9 +63,18 @@ public class Video {
         mHeight = height;
         mSize = size;
         mLocalPath = localPath;
-        mCreateAt = createAt;
+        if(!TextUtils.isEmpty(createAt))
+            mCreateAt = createAt;
+        else
+            mCreateAt = getCurrentTime();
         mSynced = isSynced;
         mCloudPath = cloudPath;
+    }
+
+    private String getCurrentTime() {
+        Calendar cal = Calendar.getInstance();
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+        return sdf.format(cal.getTime());
     }
 
     public Video(VideoSetting setting) {

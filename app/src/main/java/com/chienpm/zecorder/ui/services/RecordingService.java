@@ -12,7 +12,6 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
 
-import com.chienpm.zecorder.data.entities.Video;
 import com.chienpm.zecorder.ui.encoder.MediaAudioEncoder;
 import com.chienpm.zecorder.ui.encoder.MediaEncoder;
 import com.chienpm.zecorder.ui.encoder.MediaMuxerWrapper;
@@ -144,7 +143,7 @@ public class RecordingService extends Service {
     }
 
     //Return output file
-    public String stopRecording() {
+    public VideoSetting stopRecording() {
         if (DEBUG) Log.v(TAG, "stopRecording:mMuxer=" + mMuxer);
 
         String outputFile = "";
@@ -153,13 +152,13 @@ public class RecordingService extends Service {
             if (mMuxer != null) {
 
                 outputFile = mMuxer.getOutputPath();
-
+                mCurrentVideoSetting.setOutputPath(outputFile);
                 mMuxer.stopRecording();
                 mMuxer = null;
                 // you should not wait here
             }
         }
-        return outputFile;
+        return mCurrentVideoSetting;
     }
 
     private static final MediaEncoder.MediaEncoderListener mMediaEncoderListener = new MediaEncoder.MediaEncoderListener() {

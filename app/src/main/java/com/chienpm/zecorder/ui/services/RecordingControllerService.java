@@ -28,6 +28,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.chienpm.zecorder.R;
+import com.chienpm.zecorder.controllers.settings.VideoSetting;
 import com.chienpm.zecorder.data.database.VideoDatabase;
 import com.chienpm.zecorder.data.entities.Video;
 import com.chienpm.zecorder.ui.activities.MainActivity;
@@ -40,6 +41,7 @@ import com.chienpm.zecorder.controllers.settings.SettingManager;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
 
 
@@ -410,26 +412,14 @@ public class RecordingControllerService extends Service {
                     //Todo: stop and save recording
                     mRecordingStarted = false;
 
-                    final String outputFile = mRecordingService.stopRecording();
-                    Log.d(TAG, "onStopRecording: "+outputFile);
+                    final VideoSetting videoSetting = mRecordingService.stopRecording();
 
-                    if(!TextUtils.isEmpty(outputFile)){
-                        MyUtils.toast(getApplicationContext(), "Recording Stopped"+outputFile, Toast.LENGTH_LONG);
-                        //Todo: stop and open video manager, retrive file information to write db
-                        final Video mVideo = tryToExtractVideoFile(outputFile);
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-
-
-                                if(mVideo !=null){
-                                    Log.d(TAG, "onSaveVideo: "+mVideo.toString());
-                                    VideoDatabase.getInstance(getApplicationContext()).getVideoDao().insertVideo(mVideo);
-                                }
-                            }
-                        }).start();
-
-                        //startActivity(new Intent(getApplicationContext(), MainActivity.class));
+                    if(videoSetting != null ){
+                        saveVideoToDatabase(videoSetting);
+                    }
+                    else{
+                        MyUtils.toast(getApplicationContext(), "Recording Service Closed", Toast.LENGTH_LONG);
+                        return;
                     }
 
                 }
@@ -446,21 +436,21 @@ public class RecordingControllerService extends Service {
                 Toast.makeText(getApplicationContext(), "Live clicked", Toast.LENGTH_SHORT).show();
                 toggleNavigationButton(View.GONE);
 
-                //Todo: Test write db
-
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-
-                        Video mVideo = new Video("video 1", 1000, 2000, 20, 1280, 720, 35000, "path/file1.mp4", "10:30:22", false, null);
-
-                        VideoDatabase.getInstance(getApplication()).getVideoDao().insertVideo(mVideo);
-                        VideoDatabase.getInstance(getApplication()).getVideoDao().insertVideo(mVideo);
-                        VideoDatabase.getInstance(getApplication()).getVideoDao().insertVideo(mVideo);
-                        VideoDatabase.getInstance(getApplication()).getVideoDao().insertVideo(mVideo);
-                    }
-
-                }).start();
+//                //Todo: Test write db
+//
+//                new Thread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//
+//                        Video mVideo = new Video("video 1", 1000, 2000, 20, 1280, 720, 35000, "path/file1.mp4", "10:30:22", false, null);
+//
+//                        VideoDatabase.getInstance(getApplication()).getVideoDao().insertVideo(mVideo);
+//                        VideoDatabase.getInstance(getApplication()).getVideoDao().insertVideo(mVideo);
+//                        VideoDatabase.getInstance(getApplication()).getVideoDao().insertVideo(mVideo);
+//                        VideoDatabase.getInstance(getApplication()).getVideoDao().insertVideo(mVideo);
+//                    }
+//
+//                }).start();
 
 
             }
@@ -545,41 +535,59 @@ public class RecordingControllerService extends Service {
         });
     }
 
+    private void saveVideoToDatabase(VideoSetting videoSetting) {
+        String outputFile = videoSetting.getOutputPath();
+        if(TextUtils.isEmpty(outputFile))
+            return;
+        MyUtils.toast(getApplicationContext(), "Recording Stopped"+outputFile, Toast.LENGTH_LONG);
 
-    private Video tryToExtractVideoFile(String outputFile) {
-        MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+        final Video mVideo = tryToExtractVideoFile(videoSetting);
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if(mVideo !=null){
+                    Log.d(TAG, "onSaveVideo: "+mVideo.toString());
+                    synchronized (mVideo) {
+                        VideoDatabase.getInstance(getApplicationContext()).getVideoDao().insertVideo(mVideo);
+                    }
+                    Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    intent.setAction(MyUtils.ACTION_OPEN_VIDEO_MANAGER_ACTIVITY);
+                    startActivity(intent);
+                }
+            }
+        }).start();
+    }
+
+
+    private Video tryToExtractVideoFile(VideoSetting videoSetting) {
 
         Video mVideo = null;
         try {
-            File file = new File(Uri.parse(outputFile).getPath());
+            File file = new File(Uri.parse(videoSetting.getOutputPath()).getPath());
             long size = file.length();
-            Log.d(TAG, "tryToExtractVideoFile: size: "+size);
+            String title = file.getName();
 
-            String testFile = file.getParent()+"/test.mp4";
-            mmr.setDataSource(testFile);
+            int bitrate = videoSetting.getBirate();
+            int fps = videoSetting.getFPS();
+            int width = videoSetting.getWidth();
+            int height = videoSetting.getHeight();
+            String localPath = videoSetting.getOutputPath();
 
-            String title = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
-            String bitrate = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
-            String duration = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
-            String fps = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_CAPTURE_FRAMERATE);
-            String date = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE);
+            MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+            mmr.setDataSource(file.getAbsolutePath());
 
-//            Date inputDate = new SimpleDateFormat("yyyyMMdd'T'HHmmss", Locale.getDefault()).parse(date);
-//            date = new SimpleDateFormat("dd/mm/yyyy HH:mm", Locale.getDefault()).format(inputDate);
-//
-//            int width = Integer.parseInt(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH));
-//            int height = Integer.parseInt(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT));
-
-
-//            mVideo = new Video(title, duration,bitrate, fps, width, height, size, outputFile,date, false, "");
-//            Log.d(TAG, "tryToExtractVideoFile: successed"+mVideo.toString());
+            long duration = Long.parseLong(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
+//            String date = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE);
             mmr.release();
+
+            mVideo = new Video(title, duration, bitrate, fps, width, height, size, localPath, null, false, "");
+            Log.d(TAG, "tryToExtractVideoFile: size: "+mVideo.toString());
+
         } catch (Exception e) {
             e.printStackTrace();
             Log.d(TAG, "tryToExtractVideoFile: error-"+ e.getMessage());
-
-            return null;
-
         }
         return mVideo;
     }

@@ -10,6 +10,7 @@ import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
 import com.chienpm.zecorder.R;
+import com.chienpm.zecorder.controllers.settings.VideoSetting;
 import com.chienpm.zecorder.data.entities.Video;
 import com.chienpm.zecorder.ui.fragments.VideoManagerFragment;
 
@@ -34,10 +35,20 @@ public class VideoAdapter extends ArrayAdapter<Video> {
         }
 
         Video curVideo = getItem(position);
+        if(curVideo !=null) {
+            ((TextView) viewVideoItem.findViewById(R.id.tvTitle)).setText(curVideo.getTitle());
 
-        ((TextView)viewVideoItem.findViewById(R.id.tvTitle)).setText(curVideo.getTitle());
+            String resolution = VideoSetting.getShortResolution(curVideo.getWidth(), curVideo.getHeight());
+            ((TextView) viewVideoItem.findViewById(R.id.tvResolution)).setText(resolution);
 
+            String size = VideoSetting.getFormattedSize(curVideo.getSize());
+            ((TextView) viewVideoItem.findViewById(R.id.tvSize)).setText(size);
 
+            String duration = VideoSetting.getFormattedDuration(curVideo.getDuration());
+            ((TextView) viewVideoItem.findViewById(R.id.tvDuration)).setText(duration);
+
+            ((TextView) viewVideoItem.findViewById(R.id.tvDate)).setText(curVideo.getCreateAt());
+        }
         return viewVideoItem;
     }
 }

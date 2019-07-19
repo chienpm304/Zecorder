@@ -2,6 +2,8 @@ package com.chienpm.zecorder.ui.fragments;
 
 
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -13,6 +15,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -104,6 +107,16 @@ public class VideoManagerFragment extends Fragment implements LoaderManager.Load
         // Set the mAdapter on the {@link ListView}
         // so the list can be populated in the user interface
         mListviewVideos.setAdapter(mAdapter);
+
+        mListviewVideos.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Video video = mAdapter.getItem(position);
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(video.getLocalPath()));
+                intent.setDataAndType(Uri.parse(video.getLocalPath()), "video/mp4");
+                startActivity(intent);
+            }
+        });
 
         Log.d(TAG, "initLoader (activity create) called");
         getLoaderManager().initLoader(0, null, this);
