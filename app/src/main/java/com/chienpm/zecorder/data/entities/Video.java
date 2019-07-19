@@ -18,7 +18,7 @@ public class Video {
     private String mTitle;
 
     @ColumnInfo(name = "duration")
-    private int mDuration;
+    private long mDuration;
 
     @ColumnInfo(name = "bitrate")
     private int mBitrate;
@@ -26,11 +26,14 @@ public class Video {
     @ColumnInfo(name = "fps")
     private int mFps;
 
-    @ColumnInfo(name = "resolution")
-    private String mResolution;
+    @ColumnInfo(name = "width")
+    private int mWidth;
 
-    @ColumnInfo(name = "weight")
-    private int mWeight;
+    @ColumnInfo(name = "height")
+    private int mHeight;
+
+    @ColumnInfo(name = "size")
+    private long mSize;
 
     @ColumnInfo(name = "local_path")
     private String mLocalPath;
@@ -46,13 +49,14 @@ public class Video {
 
     public Video(){}
 
-    public Video(String title, int duration, int bitrate, int fps, String resolution, int weight, String localPath, String createAt, Boolean isSynced, String cloudPath) {
+    public Video(String title, long duration, int bitrate, int fps, int width, int height, long size, String localPath, String createAt, Boolean isSynced, String cloudPath) {
         mTitle = title;
         mDuration = duration;
         mBitrate = bitrate;
         mFps = fps;
-        mResolution = resolution;
-        mWeight = weight;
+        mWidth = width;
+        mHeight = height;
+        mSize = size;
         mLocalPath = localPath;
         mCreateAt = createAt;
         mSynced = isSynced;
@@ -65,7 +69,7 @@ public class Video {
 //        mBitrate = setting.getBirate();
 //        mFps = setting.getFPS();
 //        mResolution = setting.getResolutionString();
-//        mWeight = 0; //todo: update duration
+//        mSize = 0; //todo: update duration
 //        mLocalPath = localPath;
 //        mCreateAt = createAt;
 //        mSynced = isSynced;
@@ -88,11 +92,11 @@ public class Video {
         mTitle = title;
     }
 
-    public int getDuration() {
-        return mDuration;
+    public int getWidth() {
+        return mWidth;
     }
 
-    public void setDuration(int duration) {
+    public void setDuration(long duration) {
         mDuration = duration;
     }
 
@@ -113,19 +117,31 @@ public class Video {
     }
 
     public String getResolution() {
-        return mResolution;
+        return mWidth+"x"+mHeight;
     }
 
-    public void setResolution(String resolution) {
-        mResolution = resolution;
+    public long getDuration() {
+        return mDuration;
     }
 
-    public int getWeight() {
-        return mWeight;
+    public void setWidth(int width) {
+        mWidth = width;
     }
 
-    public void setWeight(int weight) {
-        mWeight = weight;
+    public int getHeight() {
+        return mHeight;
+    }
+
+    public void setHeight(int height) {
+        mHeight = height;
+    }
+
+    public long getSize() {
+        return mSize;
+    }
+
+    public void setSize(long size) {
+        mSize = size;
     }
 
     public String getLocalPath() {
@@ -168,8 +184,8 @@ public class Video {
                 ", mDuration=" + mDuration +
                 ", mBitrate=" + mBitrate +
                 ", mFps=" + mFps +
-                ", mResolution='" + mResolution + '\'' +
-                ", mWeight=" + mWeight +
+                ", mResolution='" + getResolution() + '\'' +
+                ", mSize=" + mSize +
                 ", mLocalPath='" + mLocalPath + '\'' +
                 ", mCreateAt='" + mCreateAt + '\'' +
                 ", mSynced=" + mSynced +

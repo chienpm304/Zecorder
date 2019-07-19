@@ -8,6 +8,8 @@ import android.content.ServiceConnection;
 import android.content.res.Configuration;
 import android.graphics.PixelFormat;
 import android.hardware.Camera;
+import android.media.MediaMetadataRetriever;
+import android.net.Uri;
 import android.os.Build;
 import android.os.CountDownTimer;
 import android.os.IBinder;
@@ -34,6 +36,11 @@ import com.chienpm.zecorder.ui.utils.CameraPreview;
 import com.chienpm.zecorder.controllers.settings.CameraSetting;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 import com.chienpm.zecorder.controllers.settings.SettingManager;
+
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 
 public class RecordingControllerService extends Service {
@@ -352,6 +359,7 @@ public class RecordingControllerService extends Service {
                 MyUtils.toast(getApplicationContext(), "Setting clicked", Toast.LENGTH_SHORT);
                 toggleNavigationButton(View.GONE);
                 Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 intent.setAction(MyUtils.ACTION_OPEN_SETTING_ACTIVITY);
                 startActivity(intent);
 
@@ -402,12 +410,24 @@ public class RecordingControllerService extends Service {
                     //Todo: stop and save recording
                     mRecordingStarted = false;
 
-                    String outputFile = mRecordingService.stopRecording();
-
+                    final String outputFile = mRecordingService.stopRecording();
+                    Log.d(TAG, "onStopRecording: "+outputFile);
 
                     if(!TextUtils.isEmpty(outputFile)){
                         MyUtils.toast(getApplicationContext(), "Recording Stopped"+outputFile, Toast.LENGTH_LONG);
                         //Todo: stop and open video manager, retrive file information to write db
+                        final Video mVideo = tryToExtractVideoFile(outputFile);
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+
+
+                                if(mVideo !=null){
+                                    Log.d(TAG, "onSaveVideo: "+mVideo.toString());
+                                    VideoDatabase.getInstance(getApplicationContext()).getVideoDao().insertVideo(mVideo);
+                                }
+                            }
+                        }).start();
 
                         //startActivity(new Intent(getApplicationContext(), MainActivity.class));
                     }
@@ -432,7 +452,7 @@ public class RecordingControllerService extends Service {
                     @Override
                     public void run() {
 
-                        Video mVideo = new Video("video 1", 1000, 2000, 20, "1280x720", 35000, "path/file1.mp4", "10:30:22", false, null);
+                        Video mVideo = new Video("video 1", 1000, 2000, 20, 1280, 720, 35000, "path/file1.mp4", "10:30:22", false, null);
 
                         VideoDatabase.getInstance(getApplication()).getVideoDao().insertVideo(mVideo);
                         VideoDatabase.getInstance(getApplication()).getVideoDao().insertVideo(mVideo);
@@ -523,6 +543,45 @@ public class RecordingControllerService extends Service {
                     toggleNavigationButton(View.GONE);
             }
         });
+    }
+
+
+    private Video tryToExtractVideoFile(String outputFile) {
+        MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+
+        Video mVideo = null;
+        try {
+            File file = new File(Uri.parse(outputFile).getPath());
+            long size = file.length();
+            Log.d(TAG, "tryToExtractVideoFile: size: "+size);
+
+            String testFile = file.getParent()+"/test.mp4";
+            mmr.setDataSource(testFile);
+
+            String title = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
+            String bitrate = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
+            String duration = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+            String fps = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_CAPTURE_FRAMERATE);
+            String date = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE);
+
+//            Date inputDate = new SimpleDateFormat("yyyyMMdd'T'HHmmss", Locale.getDefault()).parse(date);
+//            date = new SimpleDateFormat("dd/mm/yyyy HH:mm", Locale.getDefault()).format(inputDate);
+//
+//            int width = Integer.parseInt(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH));
+//            int height = Integer.parseInt(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT));
+
+
+//            mVideo = new Video(title, duration,bitrate, fps, width, height, size, outputFile,date, false, "");
+//            Log.d(TAG, "tryToExtractVideoFile: successed"+mVideo.toString());
+            mmr.release();
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.d(TAG, "tryToExtractVideoFile: error-"+ e.getMessage());
+
+            return null;
+
+        }
+        return mVideo;
     }
 
     private void toggleView(View view, int visible) {

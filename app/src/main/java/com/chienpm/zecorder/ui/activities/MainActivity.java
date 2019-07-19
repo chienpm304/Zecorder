@@ -30,6 +30,8 @@ import com.chienpm.zecorder.ui.fragments.VideoManagerFragment;
 import com.chienpm.zecorder.ui.services.RecordingControllerService;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 
+import java.util.Objects;
+
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "chienpm";
     private static final int PERMISSION_REQUEST_CODE = 3004;
@@ -69,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void handleIncomingRequest(Intent intent) {
         if(intent != null) {
-            switch (intent.getAction()) {
+            switch (Objects.requireNonNull(intent.getAction())) {
                 case MyUtils.ACTION_OPEN_SETTING_ACTIVITY:
                     mTabLayout.getTabAt(2).select();
                     break;
