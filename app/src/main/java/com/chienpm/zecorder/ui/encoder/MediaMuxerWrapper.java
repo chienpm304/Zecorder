@@ -57,8 +57,9 @@ public class MediaMuxerWrapper {
 		if (TextUtils.isEmpty(ext)) ext = ".mp4";
 		try {
 			File outputFile = new File(Environment.getExternalStoragePublicDirectory(
-					Environment.DIRECTORY_PICTURES) + "/Zecorder", "Z-" +
+					Environment.DIRECTORY_MOVIES) + "/Zecorder", "Z-" +
 					Long.toHexString(System.currentTimeMillis()) + ".mp4");
+
 			if (!outputFile.getParentFile().exists()) {
 				outputFile.getParentFile().mkdirs();
 			}

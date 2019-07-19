@@ -1,5 +1,5 @@
 package com.chienpm.zecorder.ui.adapters;
-
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentActivity;
@@ -7,13 +7,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
 import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.controllers.settings.VideoSetting;
 import com.chienpm.zecorder.data.entities.Video;
-import com.chienpm.zecorder.ui.fragments.VideoManagerFragment;
-
 import java.util.ArrayList;
 
 public class VideoAdapter extends ArrayAdapter<Video> {
@@ -23,7 +23,10 @@ public class VideoAdapter extends ArrayAdapter<Video> {
     public VideoAdapter(FragmentActivity videoManagerFragment, ArrayList<Video> videos) {
         super(videoManagerFragment, 0, videos);
         mVideos = videos;
+
     }
+
+    final Handler mHandler = new Handler();
 
     @NonNull
     @Override
@@ -34,8 +37,17 @@ public class VideoAdapter extends ArrayAdapter<Video> {
             viewVideoItem = LayoutInflater.from(getContext()).inflate(R.layout.video_list_item, parent, false);
         }
 
-        Video curVideo = getItem(position);
+        final Video curVideo = getItem(position);
         if(curVideo !=null) {
+
+            ImageView imgagView = viewVideoItem.findViewById(R.id.imgThumbnail);
+            String path = curVideo.getLocalPath();
+
+            Glide.with(getContext())
+                    .load(path) // or URI/path
+                    .into(imgagView); //imageview to set thumbnail to
+            imgagView.setBackgroundResource(R.color.TRANSPARENT);
+
             ((TextView) viewVideoItem.findViewById(R.id.tvTitle)).setText(curVideo.getTitle());
 
             String resolution = VideoSetting.getShortResolution(curVideo.getWidth(), curVideo.getHeight());
@@ -51,4 +63,5 @@ public class VideoAdapter extends ArrayAdapter<Video> {
         }
         return viewVideoItem;
     }
+
 }
