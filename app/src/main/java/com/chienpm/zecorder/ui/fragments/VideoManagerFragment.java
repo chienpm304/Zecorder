@@ -15,9 +15,11 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.CheckBox;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -82,10 +84,34 @@ public class VideoManagerFragment extends Fragment implements LoaderManager.Load
         inflater.inflate(R.menu.video_setting_menu, menu);
     }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+//        .onOptionsItemSelected(item);
+        switch (item.getItemId()){
+            case R.id.action_cancel:
+                mAdapter.showAllCheckboxes(false);
+                mAdapter.selectAll(false);
+                break;
+            case R.id.action_select_multiple:
+                boolean selectAll = ((CheckBox)item).isChecked();
+                mAdapter.selectAll(selectAll);
+                break;
+        }
+        return false;
+    }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         initViews();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if(mAdapter.getSelectedPositionCount()>0)
+            mAdapter.showAllCheckboxes(true);
+        else
+            mAdapter.showAllCheckboxes(false);
     }
 
     private void initViews() {
@@ -103,19 +129,47 @@ public class VideoManagerFragment extends Fragment implements LoaderManager.Load
         // so the list can be populated in the user interface
         mListviewVideos.setAdapter(mAdapter);
 
-        mListviewVideos.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Video video = mAdapter.getItem(position);
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(video.getLocalPath()));
-                intent.setDataAndType(Uri.parse(video.getLocalPath()), "video/mp4");
-                startActivity(intent);
-            }
-        });
+        handleListviewItemClickEvents();
 
         Log.d(TAG, "initLoader (activity create) called");
         getLoaderManager().initLoader(0, null, this);
 
+    }
+
+    private void handleListviewItemClickEvents() {
+        mListviewVideos.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if(!hasFocus)
+                    mAdapter.showAllCheckboxes(false);
+            }
+        });
+
+        mListviewVideos.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+//                Log.d("chienpm_log", "onCheckedChanged: "+mSelectedPositions.size());
+                if(mAdapter.getSelectedPositionCount() == 0) {
+                    Video video = mAdapter.getItem(position);
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(video.getLocalPath()));
+                    intent.setDataAndType(Uri.parse(video.getLocalPath()), "video/mp4");
+                    startActivity(intent);
+                }
+                else {
+                    mAdapter.toggleSelectionAtPosition(position);
+                }
+                Log.d("chienpm_log", "selected: "+mAdapter.logSelection());
+            }
+        });
+
+        mListviewVideos.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+                mAdapter.showAllCheckboxes(true);
+                mAdapter.toggleSelectionAtPosition(position);
+                return false;
+            }
+        });
     }
 
     @NonNull

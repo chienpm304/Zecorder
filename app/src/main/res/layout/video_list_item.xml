@@ -38,13 +38,14 @@
         />
 
     <CheckBox
-        android:id="@+id/tvCheckBox"
+        android:id="@+id/cbItemSelected"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toBottomOf="@id/tvTitle"
         android:layout_marginEnd="8dp"
         app:layout_constraintRight_toRightOf="parent"
-        android:visibility="visible"
+        android:visibility="gone"
+        android:focusable="false"
         />
 
     <TextView
