@@ -5,22 +5,25 @@
     <item
         android:id="@+id/action_select_multiple"
         android:checkable="true"
-        android:icon="@android:drawable/checkbox_off_background"
+        android:visible="false"
         app:actionViewClass="android.widget.CheckBox"
         app:showAsAction="ifRoom|withText"
         android:title="Select multiple" />
 
-    <item android:id="@+id/action_grid_mode"
-        android:icon="@android:drawable/arrow_down_float"
-        android:title="Grid Mode"
-        app:showAsAction="ifRoom" />
-
     <item android:id="@+id/action_sync"
-        android:title="Sync All"/>
+        android:title="Sync"/>
+
+    <item android:id="@+id/action_rename"
+        android:title="Rename" />
+
+    <item android:id="@+id/action_share"
+        android:title="Share" />
+
+    <item android:id="@+id/action_detail"
+        android:title="Detail" />
 
     <item android:id="@+id/action_delete"
-        android:title="Delete All" />
-
+        android:title="Delete" />
 
     <item android:id="@+id/action_cancel"
         android:title="Cancel" />

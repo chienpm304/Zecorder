@@ -30,4 +30,8 @@ public interface VideoDAO {
 
     @Delete
     void deleteVideo(Video video);
+
+    @Delete
+    public void deleteVideos(Video... videos);
+
 }

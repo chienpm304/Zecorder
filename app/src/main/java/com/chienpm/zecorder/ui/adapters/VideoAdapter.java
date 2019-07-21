@@ -1,4 +1,5 @@
 package com.chienpm.zecorder.ui.adapters;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -12,12 +13,18 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.controllers.settings.VideoSetting;
+import com.chienpm.zecorder.data.database.VideoDatabase;
 import com.chienpm.zecorder.data.entities.Video;
+import com.chienpm.zecorder.ui.utils.MyUtils;
+
 import java.util.ArrayList;
+
+import static com.serenegiant.utils.UIThreadHelper.runOnUiThread;
 
 public class VideoAdapter extends ArrayAdapter<Video> {
 
@@ -30,6 +37,52 @@ public class VideoAdapter extends ArrayAdapter<Video> {
         mVideos = videos;
         mShowAllCheckBox = false;
         mSelectedPositions = new ArrayList<>();
+    }
+
+    public int getSelectedMode() {
+        int count = getSelectedPositionCount();
+        int total = mVideos.size();
+        if(total == 0)
+            return MyUtils.SELECTED_MODE_EMPTY;
+        if(count == 0 || count == total)
+            return MyUtils.SELECTED_MODE_ALL;
+        if(count == 1)
+            return MyUtils.SELECTED_MODE_SINGLE;
+        return MyUtils.SELECTED_MODE_MULTIPLE;
+    }
+
+    public void deleteSelectedVideo() {
+        final ArrayList<Video> deleleVideos = new ArrayList<>();
+
+        for(int i: mSelectedPositions){
+            Video video = mVideos.get(i);
+            deleleVideos.add(video);
+            //delete from storage
+        };
+
+        final Video[] list = (Video[]) deleleVideos.toArray();
+
+        //remove from database
+        AsyncTask.execute(new Runnable() {
+            @Override
+            public void run() {
+                AsyncTask.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        // and deleting
+                        VideoDatabase.getInstance(getContext()).getVideoDao().deleteVideos(list);
+
+                        runOnUiThread(new Runnable() {
+                            public void run() {
+                                MyUtils.toast(getContext(), "Deleted from database", Toast.LENGTH_LONG);
+                            }
+                        });
+                    }
+                });
+            }
+        });
+
+            //remove from storage
     }
 
     static class ViewHolder {
