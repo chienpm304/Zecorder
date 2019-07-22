@@ -341,6 +341,7 @@ LOOP:	while (mIsCapturing) {
             	if (DEBUG) Log.v(TAG, "INFO_OUTPUT_BUFFERS_CHANGED");
                 // this should not come when encoding
                 encoderOutputBuffers = mMediaCodec.getOutputBuffers();
+
             } else if (encoderStatus == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
             	if (DEBUG) Log.v(TAG, "INFO_OUTPUT_FORMAT_CHANGED");
             	// this status indicate the output format of codec is changed

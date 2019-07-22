@@ -8,10 +8,12 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.Loader;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -23,6 +25,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.data.database.VideoDatabase;
@@ -30,6 +33,7 @@ import com.chienpm.zecorder.data.entities.Video;
 import com.chienpm.zecorder.ui.adapters.VideoAdapter;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 
+import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
@@ -50,6 +54,7 @@ public class VideoManagerFragment extends Fragment{
     ListView mListviewVideos;
     TextView mTvEmpty;
     private VideoAdapter mAdapter;
+    private Object mSync = new Object();
 
     // TODO: Rename and change types of parameters
 
@@ -109,6 +114,12 @@ public class VideoManagerFragment extends Fragment{
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()){
+
+            case R.id.action_scan:
+                reloadData();
+
+                break;
+
             case R.id.action_sync:
 
                 break;
@@ -126,7 +137,7 @@ public class VideoManagerFragment extends Fragment{
                 break;
 
             case R.id.action_delete:
-                requestConfirmDeletion();
+                requestConfirmDeletion("Delete videos?", "Are you want to delete selected videos?");
                 break;
 
             case R.id.action_cancel:
@@ -139,19 +150,38 @@ public class VideoManagerFragment extends Fragment{
         return false;
     }
 
-    private void requestConfirmDeletion() {
+    private void reloadData() {
+        getLoaderManager().restartLoader(0, null, mLoadVideosCallback);
+        mAdapter.verifyData();
+        MyUtils.showSnackBarNotification(mViewRoot, "Scanned video!", Snackbar.LENGTH_LONG);
+    }
+
+    private void requestConfirmDeletion(String title, String message) {
         new AlertDialog.Builder(getContext())
-            .setTitle("Delete Selected ?")
-            .setMessage("Are you sure you want to delete this videos?")
+            .setTitle(title)
+            .setMessage(message)
             .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int which) {
                     // Continue with delete operation
-                    mAdapter.deleteSelectedVideo();
+                    synchronized (mSync) {
+                        mAdapter.deleteSelectedVideo();
+                        toggleSelectMultipleCheckbox(false);
+                    }
+                    MyUtils.showSnackBarNotification(mViewRoot, "Deleted video from database", Snackbar.LENGTH_LONG);
                 }
             })
-            .setNegativeButton(android.R.string.no, null)
+            .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    mAdapter.clearSelected();
+                }
+            })
             .setIcon(android.R.drawable.ic_dialog_alert)
             .show();
+    }
+
+    private void toggleSelectMultipleCheckbox(boolean b) {
+        setMenuItemVisibility(R.id.action_select_multiple, b);
     }
 
     @Override
@@ -162,13 +192,24 @@ public class VideoManagerFragment extends Fragment{
     @Override
     public void onResume() {
         super.onResume();
+//        reloadData();
         if(mMenu!=null)
-            setMenuItemVisibility(R.id.action_select_multiple, false);
+            toggleSelectMultipleCheckbox(false);
     }
 
     private void initViews() {
          mListviewVideos = (ListView) mViewRoot.findViewById(R.id.list_videos);
          mTvEmpty = mViewRoot.findViewById(R.id.tvEmpty);
+
+        final SwipeRefreshLayout srl = (SwipeRefreshLayout) mViewRoot.findViewById(R.id.swipeLayout);
+        srl.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                reloadData();
+                srl.setRefreshing(false);
+            }
+
+        });
 
          // Create textview to set empty state of listview
         mListviewVideos.setEmptyView(mTvEmpty);
@@ -202,10 +243,21 @@ public class VideoManagerFragment extends Fragment{
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 //                Log.d("chienpm_log", "onCheckedChanged: "+mSelectedPositions.size());
                 if(mAdapter.getSelectedPositionCount() == 0) {
+
                     Video video = mAdapter.getItem(position);
-                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(video.getLocalPath()));
-                    intent.setDataAndType(Uri.parse(video.getLocalPath()), "video/mp4");
-                    startActivity(intent);
+                    String path = video.getLocalPath();
+                    File file = new File(path);
+                    if (file.exists()) {
+                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(video.getLocalPath()));
+                        intent.setDataAndType(Uri.parse(video.getLocalPath()), "video/mp4");
+                        startActivity(intent);
+                    }
+                    else{
+                        MyUtils.showSnackBarNotification(mTvEmpty, "This video is not available now!", Snackbar.LENGTH_LONG);
+                        mAdapter.toggleSelectionAtPosition(position);
+                        requestConfirmDeletion("This video is not available", "Are you want to delete this video?");
+                    }
+
                 }
                 else {
                     mAdapter.toggleSelectionAtPosition(position);
@@ -233,13 +285,15 @@ public class VideoManagerFragment extends Fragment{
             case MyUtils.SELECTED_MODE_EMPTY:
                 //hide all
                 break;
+
             case MyUtils.SELECTED_MODE_ALL:
                 setMenuItemVisibility(R.id.action_sync, true);
-                setMenuItemVisibility(R.id.action_delete, true);
+                setMenuItemVisibility(R.id.action_delete, false);
                 setMenuItemVisibility(R.id.action_cancel, true);
                 mMenu.findItem(R.id.action_sync).setTitle("Sync all");
-                mMenu.findItem(R.id.action_delete).setTitle("Delete all");
+//                mMenu.findItem(R.id.action_delete).setTitle("Delete all");
                 break;
+
             case MyUtils.SELECTED_MODE_MULTIPLE:
                 setMenuItemVisibility(R.id.action_sync, true);
                 setMenuItemVisibility(R.id.action_delete, true);
@@ -255,11 +309,16 @@ public class VideoManagerFragment extends Fragment{
     }
 
     private void setMenuItemVisibility(int id, boolean value) {
-        mMenu.findItem(id).setVisible(value);
+        if(mMenu!=null) {
+            MenuItem item = mMenu.findItem(id);
+            if(item!=null){
+                item.setVisible(value);
+            }
+        }
     }
 
     private void showMenuItems(boolean value) {
-        for(int i = 1; i < mMenu.size(); i++){
+        for(int i = 2; i < mMenu.size(); i++){
             mMenu.getItem(i).setVisible(value);
         }
     }

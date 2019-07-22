@@ -10,6 +10,9 @@
         app:showAsAction="ifRoom|withText"
         android:title="Select multiple" />
 
+    <item android:id="@+id/action_scan"
+        android:title="Scan videos"/>
+
     <item android:id="@+id/action_sync"
         android:title="Sync"/>
 

@@ -1,8 +1,8 @@
 package com.chienpm.zecorder.ui.adapters;
 import android.os.AsyncTask;
-import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -10,7 +10,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -22,18 +21,22 @@ import com.chienpm.zecorder.data.database.VideoDatabase;
 import com.chienpm.zecorder.data.entities.Video;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 
+import java.io.File;
 import java.util.ArrayList;
 
 import static com.serenegiant.utils.UIThreadHelper.runOnUiThread;
 
 public class VideoAdapter extends ArrayAdapter<Video> {
 
+    private final FragmentActivity mFragment;
     ArrayList<Video> mVideos;
     private ArrayList<Integer> mSelectedPositions;
     private boolean mShowAllCheckBox;
+    private Object mSync = new Object();
 
     public VideoAdapter(FragmentActivity videoManagerFragment, ArrayList<Video> videos) {
         super(videoManagerFragment, 0, videos);
+        mFragment = videoManagerFragment;
         mVideos = videos;
         mShowAllCheckBox = false;
         mSelectedPositions = new ArrayList<>();
@@ -44,7 +47,7 @@ public class VideoAdapter extends ArrayAdapter<Video> {
         int total = mVideos.size();
         if(total == 0)
             return MyUtils.SELECTED_MODE_EMPTY;
-        if(count == 0 || count == total)
+        if(count == 0)
             return MyUtils.SELECTED_MODE_ALL;
         if(count == 1)
             return MyUtils.SELECTED_MODE_SINGLE;
@@ -52,37 +55,76 @@ public class VideoAdapter extends ArrayAdapter<Video> {
     }
 
     public void deleteSelectedVideo() {
-        final ArrayList<Video> deleleVideos = new ArrayList<>();
+        final ArrayList<Video> videos = new ArrayList<>();
 
         for(int i: mSelectedPositions){
             Video video = mVideos.get(i);
-            deleleVideos.add(video);
+            videos.add(video);
             //delete from storage
         };
 
-        final Video[] list = (Video[]) deleleVideos.toArray();
+        Video[] list = new Video[videos.size()];
+        videos.toArray(list);
 
-        //remove from database
-        AsyncTask.execute(new Runnable() {
-            @Override
-            public void run() {
-                AsyncTask.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        // and deleting
-                        VideoDatabase.getInstance(getContext()).getVideoDao().deleteVideos(list);
+        deleteVideosFromDatabase(list);
+        deleteFilesFromStorage(list);
 
-                        runOnUiThread(new Runnable() {
-                            public void run() {
-                                MyUtils.toast(getContext(), "Deleted from database", Toast.LENGTH_LONG);
+    }
+
+    public void deleteVideosFromDatabase(final Video ... videos) {
+        if(videos.length > 0) {
+            AsyncTask.execute(new Runnable() {
+                @Override
+                public void run() {
+                    AsyncTask.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            // and deleting
+                            synchronized (mSync) {
+                                VideoDatabase.getInstance(getContext()).getVideoDao().deleteVideos(videos);
+                                for(Video v: videos){
+                                    mVideos.remove(v);
+                                }
+                                mSelectedPositions.clear();
                             }
-                        });
-                    }
-                });
-            }
-        });
+                            runOnUiThread(new Runnable() {
+                                public void run() {
+                                    showAllCheckboxes(false);
 
-            //remove from storage
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        }
+    }
+
+    private void deleteFilesFromStorage(Video[] videos) {
+        for(Video v: videos){
+            File file = new File(v.getLocalPath());
+            if(file.exists()){
+                file.delete();
+            }
+        }
+//        MyUtils.toast(getContext(), "Deleted video from database", Toast.LENGTH_LONG);
+    }
+
+    public void clearSelected() {
+        mSelectedPositions.clear();
+        notifyDataSetChanged();;
+    }
+
+    public void verifyData() {
+
+        for(Video v: mVideos){
+            File file = new File(v.getLocalPath());
+
+            if(!file.exists()){
+                deleteVideosFromDatabase(v);
+            }
+        }
+        notifyDataSetChanged();
     }
 
     static class ViewHolder {
