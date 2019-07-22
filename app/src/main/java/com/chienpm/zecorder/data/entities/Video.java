@@ -13,7 +13,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
 @Entity(tableName = "videos")
-public class Video {
+public class Video implements Cloneable {
     @NonNull
     @PrimaryKey( autoGenerate = true)
     @ColumnInfo(name = "id")
@@ -44,7 +44,7 @@ public class Video {
     private String mLocalPath;
 
     @ColumnInfo(name = "createdAt")
-    private String mCreateAt;
+    private long mCreateAt;
 
     @ColumnInfo(name = "synced")
     private Boolean mSynced;
@@ -54,7 +54,7 @@ public class Video {
 
     public Video(){}
 
-    public Video(String title, long duration, int bitrate, int fps, int width, int height, long size, String localPath, String createAt, Boolean isSynced, String cloudPath) {
+    public Video(String title, long duration, int bitrate, int fps, int width, int height, long size, String localPath, long createAt, Boolean isSynced, String cloudPath) {
         mTitle = title;
         mDuration = duration;
         mBitrate = bitrate;
@@ -63,31 +63,33 @@ public class Video {
         mHeight = height;
         mSize = size;
         mLocalPath = localPath;
-        if(!TextUtils.isEmpty(createAt))
-            mCreateAt = createAt;
-        else
-            mCreateAt = getCurrentTime();
+        mCreateAt = getCurrentTime();
         mSynced = isSynced;
         mCloudPath = cloudPath;
     }
 
-    private String getCurrentTime() {
+    public Video(Video video) {
+        mId = video.mId;
+        mTitle = video.mTitle;
+        mDuration = video.mDuration;
+        mBitrate = video.mBitrate;
+        mFps = video.mBitrate;
+        mWidth = video.mWidth;
+        mHeight = video.mHeight;
+        mSize = video.mSize;
+        mLocalPath = video.mLocalPath;
+        mCreateAt = video.mCreateAt;
+        mSynced = video.mSynced;
+        mCloudPath = video.mCloudPath;
+
+    }
+
+    private long getCurrentTime() {
         Calendar cal = Calendar.getInstance();
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-        return sdf.format(cal.getTime());
+        return cal.getTimeInMillis();
     }
 
     public Video(VideoSetting setting) {
-//        mTitle = "";
-//        mDuration = 0; //todo: update duration
-//        mBitrate = setting.getBirate();
-//        mFps = setting.getFPS();
-//        mResolution = setting.getResolutionString();
-//        mSize = 0; //todo: update duration
-//        mLocalPath = localPath;
-//        mCreateAt = createAt;
-//        mSynced = isSynced;
-//        mCloudPath = cloudPath;
     }
 
     public int getId() {
@@ -166,11 +168,16 @@ public class Video {
         mLocalPath = localPath;
     }
 
-    public String getCreateAt() {
+    public long getCreateAt() {
         return mCreateAt;
     }
 
-    public void setCreateAt(String createAt) {
+    public String getFormattedDate(String pattern){
+        SimpleDateFormat sdf = new SimpleDateFormat(pattern);
+        return sdf.format(new Date(mCreateAt));
+    }
+
+    public void setCreateAt(long createAt) {
         mCreateAt = createAt;
     }
 
@@ -205,5 +212,19 @@ public class Video {
                 ", mSynced=" + mSynced +
                 ", mCloudPath='" + mCloudPath + '\'' +
                 '}';
+    }
+
+    public String getNameOnly() {
+        return mTitle.substring(0, mTitle.indexOf(".mp4"));
+    }
+
+    public void updateTitle(String newTitle, String newPath) {
+        mTitle = newTitle;
+        mLocalPath = newPath;
+    }
+
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        return super.clone();
     }
 }

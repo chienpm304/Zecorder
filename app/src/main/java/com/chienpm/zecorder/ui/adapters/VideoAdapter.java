@@ -1,11 +1,13 @@
 package com.chienpm.zecorder.ui.adapters;
 import android.app.Dialog;
-import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.design.widget.Snackbar;
+import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.FragmentActivity;
+import android.text.Editable;
+import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,6 +15,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -25,6 +28,7 @@ import com.chienpm.zecorder.data.entities.Video;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import static com.serenegiant.utils.UIThreadHelper.runOnUiThread;
@@ -138,11 +142,15 @@ public class VideoAdapter extends ArrayAdapter<Video> {
             dialog.setContentView(R.layout.layout_video_detail);
             dialog.setTitle("Properties");
 
-//            // set the custom dialog components - text, image and button
-//            TextView text = (TextView) dialog.findViewById(R.id.text);
-//            text.setText("Android custom dialog example!");
-//            ImageView image = (ImageView) dialog.findViewById(R.id.image);
-//            image.setImageResource(R.drawable.ic_launcher);
+            ((TextView)dialog.findViewById(R.id.detail_title)).setText(video.getTitle());
+            ((TextView)dialog.findViewById(R.id.detail_size)).setText(VideoSetting.getFormattedSize(video.getSize()) + "\n"+video.getSize()+" bytes");
+            ((TextView)dialog.findViewById(R.id.detail_date)).setText(video.getFormattedDate("dd/MM/yyyy hh:mm aa"));
+            ((TextView)dialog.findViewById(R.id.detail_path)).setText(video.getLocalPath());
+            ((TextView)dialog.findViewById(R.id.detail_resolution)).setText(video.getResolution());
+            ((TextView)dialog.findViewById(R.id.detail_duration)).setText(VideoSetting.getFormattedDuration(video.getDuration()));
+            ((TextView)dialog.findViewById(R.id.detail_bitrate)).setText(VideoSetting.getFormattedBitrate(video.getBitrate()));
+            ((TextView)dialog.findViewById(R.id.detail_fps)).setText(video.getFps()+"");
+            ((TextView)dialog.findViewById(R.id.detail_sync)).setText(video.getSynced()?"Synced":"Local only");
 
             Button dialogButton = (Button) dialog.findViewById(R.id.detail_btn_ok);
             // if button is clicked, close the custom dialog
@@ -156,6 +164,118 @@ public class VideoAdapter extends ArrayAdapter<Video> {
             dialog.show();
         }
 
+    }
+
+    public void showRenameDialog() {
+        if(getSelectedMode() == MyUtils.SELECTED_MODE_SINGLE){
+            final Video video = getItem(mSelectedPositions.get(0));// get selected video
+
+            final Dialog dialog = new Dialog(getContext());
+            dialog.setContentView(R.layout.layout_rename);
+            dialog.setTitle("Properties");
+            final TextInputLayout tilEditext = (TextInputLayout) dialog.findViewById(R.id.tilRename);
+
+            final boolean isValid = true;
+
+            final EditText editText = dialog.findViewById(R.id.edRename);
+            editText.setText(video.getNameOnly());
+            editText.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+                    if(isValidFilenameSynctax(s.toString())) {
+                        tilEditext.setError("A filename cannot contain any of the following charactor: \\/\":*<>| is not n");
+                    }
+                    else {
+                        tilEditext.setError("");
+                    }
+                }
+            });
+            Button btnOk = (Button) dialog.findViewById(R.id.rename_btn_ok);
+            // if button is clicked, close the custom dialog
+            btnOk.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    String newTitle = editText.getText().toString() + ".mp4";
+                    if(!TextUtils.equals(video.getTitle(), newTitle)){
+//                        MyUtils.toast(getContext(), "I will rename later: "+newTitle, Toast.LENGTH_LONG);
+                        try {
+                            tryToRenameFile(video, newTitle);
+                            dialog.dismiss();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            tilEditext.setError(e.getMessage());
+                        }
+                    }else
+                        dialog.dismiss();
+
+                }
+            });
+
+            Button btnCancel = (Button) dialog.findViewById(R.id.rename_btn_cancel);
+            // if button is clicked, close the custom dialog
+            btnCancel.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dialog.dismiss();
+                }
+            });
+            dialog.show();
+        }
+    }
+
+    private void tryToRenameFile(final Video video, final String newTitle) throws Exception {
+        if(isValidFilenameSynctax(newTitle))
+            throw new Exception("A filename cannot contain any of the following charactor: \\/\":*<>| is not n");
+
+        File file = new File(video.getLocalPath());
+
+        final File fileWithNewName = new File(file.getParent(), newTitle);
+        if (fileWithNewName.exists()) {
+            throw new IOException("This filename is exists. Please choose another name");
+        }
+
+        // Rename file (or directory)
+        boolean success = file.renameTo(fileWithNewName);
+
+        if (!success) {
+            // File was not successfully renamed
+            throw new Exception("Cannot rename this file");
+        }
+        else {
+            AsyncTask.execute(new Runnable() {
+                @Override
+                public void run() {
+                    // and deleting
+                    synchronized (mSync) {
+                        VideoDatabase.getInstance(getContext()).getVideoDao().updateVideo(video);
+                    }
+                    runOnUiThread(new Runnable() {
+                        public void run() {
+                            if(mSelectedPositions.size()>0)
+                                mVideos.get(mSelectedPositions.indexOf(0)).updateTitle(newTitle, fileWithNewName.getAbsolutePath());
+                            showAllCheckboxes(false);
+                        }
+                    });
+                }
+            });
+        }
+    }
+
+    private boolean isValidFilenameSynctax(String filename) {
+        for(int i = 0; i< filename.length(); i++){
+            char c = filename.charAt(i);
+            if(c == '/' || c =='\\' || c=='"' || c == ':' || c=='*'||c=='<'|| c =='>' || c == '|')
+                return true;
+        }
+        return false;
     }
 
     static class ViewHolder {
@@ -226,7 +346,7 @@ public class VideoAdapter extends ArrayAdapter<Video> {
             String duration = VideoSetting.getFormattedDuration(curVideo.getDuration());
             holder.duration.setText(duration);
 
-            holder.date.setText(curVideo.getCreateAt());
+            holder.date.setText(curVideo.getFormattedDate("dd/MM/yyyy"));
 
             if(mShowAllCheckBox){
                 holder.checkBox.setVisibility(View.VISIBLE);

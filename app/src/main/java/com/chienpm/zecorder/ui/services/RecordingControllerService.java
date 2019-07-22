@@ -78,6 +78,9 @@ public class RecordingControllerService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        if(intent==null)
+            return START_NOT_STICKY;
+
         String action = intent.getAction();
 
         if(action.equals(MyUtils.ACTION_UPDATE_SETTING)){
@@ -387,10 +390,10 @@ public class RecordingControllerService extends Service {
                         }
 
                         public void onFinish() {
-                            mRecordingStarted = true;
-                            mRecordingService.startRecording();
                             toggleView(mCountdownLayout, View.GONE);
                             toggleView(mViewRoot, View.VISIBLE);
+                            mRecordingStarted = true;
+                            mRecordingService.startRecording();
                             MyUtils.toast(getApplicationContext(), "Recording Started", Toast.LENGTH_LONG);
                         }
                     }.start();
@@ -435,23 +438,6 @@ public class RecordingControllerService extends Service {
             public void onClick(View v) {
                 Toast.makeText(getApplicationContext(), "Live clicked", Toast.LENGTH_SHORT).show();
                 toggleNavigationButton(View.GONE);
-
-//                //Todo: Test write db
-//
-//                new Thread(new Runnable() {
-//                    @Override
-//                    public void run() {
-//
-//                        Video mVideo = new Video("video 1", 1000, 2000, 20, 1280, 720, 35000, "path/file1.mp4", "10:30:22", false, null);
-//
-//                        VideoDatabase.getInstance(getApplication()).getVideoDao().insertVideo(mVideo);
-//                        VideoDatabase.getInstance(getApplication()).getVideoDao().insertVideo(mVideo);
-//                        VideoDatabase.getInstance(getApplication()).getVideoDao().insertVideo(mVideo);
-//                        VideoDatabase.getInstance(getApplication()).getVideoDao().insertVideo(mVideo);
-//                    }
-//
-//                }).start();
-
 
             }
         });
@@ -579,10 +565,9 @@ public class RecordingControllerService extends Service {
             mmr.setDataSource(file.getAbsolutePath());
 
             long duration = Long.parseLong(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
-//            String date = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE);
             mmr.release();
 
-            mVideo = new Video(title, duration, bitrate, fps, width, height, size, localPath, null, false, "");
+            mVideo = new Video(title, duration, bitrate, fps, width, height, size, localPath, 0, false, "");
             Log.d(TAG, "tryToExtractVideoFile: size: "+mVideo.toString());
 
         } catch (Exception e) {

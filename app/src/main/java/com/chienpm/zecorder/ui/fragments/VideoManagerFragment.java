@@ -125,7 +125,7 @@ public class VideoManagerFragment extends Fragment{
                 break;
 
             case R.id.action_rename:
-
+                mAdapter.showRenameDialog();
                 break;
 
             case R.id.action_share:

@@ -54,6 +54,10 @@ public class VideoSetting {
         return String.format("%d:%02d:%02d", s / 3600, (s % 3600) / 60, (s % 60));
     }
 
+    public static String getFormattedBitrate(int bitrate) {
+        return bitrate/1024 + " Kbps";
+    }
+
     public int getWidth() {
         return mWidth;
     }
