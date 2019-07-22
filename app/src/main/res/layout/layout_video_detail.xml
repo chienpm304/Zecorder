@@ -1,0 +1,175 @@
+<TableLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:padding="24dp">
+
+    <TableRow>
+        <TextView
+            android:text="File name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="1"
+            android:layout_marginRight="36dp"
+            android:paddingTop="24dp"
+            />
+
+        <TextView
+            android:text="Z-1546154541.mp4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/detail_title"
+            android:textStyle="bold"
+            android:layout_column="2"
+            android:layout_weight="2"
+            android:paddingTop="24dp"
+            />
+
+    </TableRow>
+
+    <TableRow>
+        <TextView
+            android:text="Size\n"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingTop="16dp"
+            android:layout_column="1" />
+
+        <TextView
+            android:id="@+id/detail_size"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="4.22 MB\n4.912.033 bytes"
+            android:paddingTop="16dp"
+            android:layout_weight="1"
+            />
+
+    </TableRow>
+
+    <TableRow>
+        <TextView
+            android:paddingTop="16dp"
+            android:text="Modified"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="1" />
+
+        <TextView
+            android:id="@+id/detail_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="7/22/2019 1:44PM"
+            android:layout_weight="1"
+            android:paddingTop="16dp"
+            />
+
+    </TableRow>
+
+    <TableRow>
+        <TextView
+            android:paddingTop="16dp"
+            android:text="Path"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="1" />
+
+        <TextView
+            android:paddingTop="16dp"
+            android:id="@+id/detail_path"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="/storeage/emulated/0/Movies/Zecorder/Z-1712398798123.mp4"
+            android:layout_weight="1"
+            android:ellipsize="none"
+            android:maxLines="5"
+            android:scrollHorizontally="false"
+            />
+
+    </TableRow>
+
+    <TableRow>
+        <TextView
+            android:paddingTop="16dp"
+            android:text="Resolution"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="1" />
+
+        <TextView
+            android:paddingTop="16dp"
+            android:id="@+id/detail_resolution"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="HD (1280x720)"
+            android:ellipsize="none"
+            android:layout_weight="1"
+            />
+
+    </TableRow>
+    <TableRow>
+        <TextView
+            android:paddingTop="16dp"
+            android:text="Bitrate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="1" />
+
+        <TextView
+            android:paddingTop="16dp"
+            android:id="@+id/detail_bitrate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="6 Mbps"
+            android:layout_weight="1"
+            />
+
+    </TableRow>
+    <TableRow>
+        <TextView
+            android:paddingTop="16dp"
+            android:text="FPS"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="1" />
+
+        <TextView
+            android:paddingTop="16dp"
+            android:id="@+id/detail_fps"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="30"
+            android:layout_weight="1"
+            />
+
+    </TableRow>
+    <TableRow>
+        <TextView
+            android:paddingTop="16dp"
+            android:text="Sync"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="1" />
+
+        <TextView
+            android:paddingTop="16dp"
+            android:id="@+id/detail_sync"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Synced/Not yet"
+            android:layout_weight="1"
+            />
+
+    </TableRow>
+
+    <Button
+        android:id="@+id/detail_btn_ok"
+        style="@style/Base.Widget.AppCompat.Button.Borderless.Colored"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="OK"
+        android:textSize="18dp"
+        android:textStyle="bold"
+        />
+
+</TableLayout>

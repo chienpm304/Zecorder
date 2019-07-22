@@ -1,19 +1,27 @@
-
-<android.support.v4.widget.SwipeRefreshLayout
-    android:layout_height="match_parent"
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_height="match_parent"
     android:layout_width="match_parent"
-    android:id="@+id/swipeLayout"
     >
-
-    <ListView xmlns:android="http://schemas.android.com/apk/res/android"
-        android:id="@+id/list_videos"
-        android:orientation="vertical"
-        android:layout_width="match_parent"
+    <android.support.v4.widget.SwipeRefreshLayout
         android:layout_height="match_parent"
-        android:divider="@null"
-        android:dividerHeight="0dp"
-        />
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:id="@+id/swipeLayout"
+        >
+
+        <ListView
+            android:id="@+id/list_videos"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:divider="@null"
+            android:dividerHeight="0dp"
+            />
+
+
+    </android.support.v4.widget.SwipeRefreshLayout>
 
     <TextView
         android:id="@+id/tvEmpty"
@@ -21,5 +29,4 @@
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
         />
-
-</android.support.v4.widget.SwipeRefreshLayout>
+</RelativeLayout>

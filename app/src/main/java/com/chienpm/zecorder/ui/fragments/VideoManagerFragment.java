@@ -133,7 +133,7 @@ public class VideoManagerFragment extends Fragment{
                 break;
 
             case R.id.action_detail:
-
+                mAdapter.showDetailDialog();
                 break;
 
             case R.id.action_delete:
@@ -153,6 +153,10 @@ public class VideoManagerFragment extends Fragment{
     private void reloadData() {
         getLoaderManager().restartLoader(0, null, mLoadVideosCallback);
         mAdapter.verifyData();
+        if(mAdapter.getCount() == 0){
+            mTvEmpty.setText("No Video Recored");
+        }
+        toggleSelectMultipleCheckbox(false);
         MyUtils.showSnackBarNotification(mViewRoot, "Scanned video!", Snackbar.LENGTH_LONG);
     }
 
@@ -345,6 +349,7 @@ public class VideoManagerFragment extends Fragment{
             }
             else{
                 mTvEmpty.setText("No Video Recored");
+                Log.d(TAG, "onLoadFinished: setted textempty ");
             }
         }
 

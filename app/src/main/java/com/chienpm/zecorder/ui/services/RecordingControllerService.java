@@ -377,20 +377,20 @@ public class RecordingControllerService extends Service {
 
                     toggleView(mCountdownLayout, View.VISIBLE);
 
-                    int countdown = SettingManager.getCountdown(getApplication()) * 1000;
+                    int countdown = (SettingManager.getCountdown(getApplication())+2) * 1000;
 
                     new CountDownTimer(countdown, 1000) {
 
                         public void onTick(long millisUntilFinished) {
                             toggleView(mViewRoot, View.GONE);
-                            mTvCountdown.setText(""+millisUntilFinished / 1000);
+                            mTvCountdown.setText(""+(millisUntilFinished / 1000 -1));
                         }
 
                         public void onFinish() {
-                            toggleView(mCountdownLayout, View.GONE);
-                            toggleView(mViewRoot, View.VISIBLE);
                             mRecordingStarted = true;
                             mRecordingService.startRecording();
+                            toggleView(mCountdownLayout, View.GONE);
+                            toggleView(mViewRoot, View.VISIBLE);
                             MyUtils.toast(getApplicationContext(), "Recording Started", Toast.LENGTH_LONG);
                         }
                     }.start();

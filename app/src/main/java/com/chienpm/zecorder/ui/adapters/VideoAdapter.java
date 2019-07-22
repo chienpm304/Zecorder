@@ -1,4 +1,6 @@
 package com.chienpm.zecorder.ui.adapters;
+import android.app.Dialog;
+import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -9,6 +11,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -125,6 +128,34 @@ public class VideoAdapter extends ArrayAdapter<Video> {
             }
         }
         notifyDataSetChanged();
+    }
+
+    public void showDetailDialog() {
+        // custom dialog
+        if(getSelectedMode() == MyUtils.SELECTED_MODE_SINGLE){
+            Video video = getItem(mSelectedPositions.get(0));// get selected video
+            final Dialog dialog = new Dialog(getContext());
+            dialog.setContentView(R.layout.layout_video_detail);
+            dialog.setTitle("Properties");
+
+//            // set the custom dialog components - text, image and button
+//            TextView text = (TextView) dialog.findViewById(R.id.text);
+//            text.setText("Android custom dialog example!");
+//            ImageView image = (ImageView) dialog.findViewById(R.id.image);
+//            image.setImageResource(R.drawable.ic_launcher);
+
+            Button dialogButton = (Button) dialog.findViewById(R.id.detail_btn_ok);
+            // if button is clicked, close the custom dialog
+            dialogButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dialog.dismiss();
+                }
+            });
+
+            dialog.show();
+        }
+
     }
 
     static class ViewHolder {
