@@ -26,5 +26,13 @@ public class MyUtils {
         Toast.makeText(mContext, msg, length).show();
     }
 
+    public static boolean isValidFilenameSynctax(String filename) {
+        for(int i = 0; i< filename.length(); i++){
+            char c = filename.charAt(i);
+            if(c == '/' || c =='\\' || c=='"' || c == ':' || c=='*'||c=='<'|| c =='>' || c == '|')
+                return true;
+        }
+        return false;
+    }
 
 }

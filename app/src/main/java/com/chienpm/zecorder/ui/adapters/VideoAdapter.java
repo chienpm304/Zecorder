@@ -1,41 +1,35 @@
 package com.chienpm.zecorder.ui.adapters;
-import android.app.Dialog;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.FragmentActivity;
-import android.text.Editable;
-import android.text.TextUtils;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.controllers.settings.VideoSetting;
 import com.chienpm.zecorder.data.database.VideoDatabase;
 import com.chienpm.zecorder.data.entities.Video;
+import com.chienpm.zecorder.ui.utils.DialogHelper;
+import com.chienpm.zecorder.ui.utils.FileHelper;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 
 import static com.serenegiant.utils.UIThreadHelper.runOnUiThread;
 
 public class VideoAdapter extends ArrayAdapter<Video> {
-
+    static final String TAG = "chienpm_log";
     private final FragmentActivity mFragment;
+
     ArrayList<Video> mVideos;
     private ArrayList<Integer> mSelectedPositions;
     private boolean mShowAllCheckBox;
@@ -73,48 +67,9 @@ public class VideoAdapter extends ArrayAdapter<Video> {
         Video[] list = new Video[videos.size()];
         videos.toArray(list);
 
-        deleteVideosFromDatabase(list);
-        deleteFilesFromStorage(list);
+        FileHelper.getInstance(this).deleteVideosFromDatabase(list);
+        FileHelper.getInstance(this).deleteFilesFromStorage(list);
 
-    }
-
-    public void deleteVideosFromDatabase(final Video ... videos) {
-        if(videos.length > 0) {
-            AsyncTask.execute(new Runnable() {
-                @Override
-                public void run() {
-                    AsyncTask.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            // and deleting
-                            synchronized (mSync) {
-                                VideoDatabase.getInstance(getContext()).getVideoDao().deleteVideos(videos);
-                                for(Video v: videos){
-                                    mVideos.remove(v);
-                                }
-                                mSelectedPositions.clear();
-                            }
-                            runOnUiThread(new Runnable() {
-                                public void run() {
-                                    showAllCheckboxes(false);
-
-                                }
-                            });
-                        }
-                    });
-                }
-            });
-        }
-    }
-
-    private void deleteFilesFromStorage(Video[] videos) {
-        for(Video v: videos){
-            File file = new File(v.getLocalPath());
-            if(file.exists()){
-                file.delete();
-            }
-        }
-//        MyUtils.toast(getContext(), "Deleted video from database", Toast.LENGTH_LONG);
     }
 
     public void clearSelected() {
@@ -128,155 +83,30 @@ public class VideoAdapter extends ArrayAdapter<Video> {
             File file = new File(v.getLocalPath());
 
             if(!file.exists()){
-                deleteVideosFromDatabase(v);
+                FileHelper.getInstance(this).deleteVideosFromDatabase(v);
             }
         }
         notifyDataSetChanged();
     }
 
-    public void showDetailDialog() {
-        // custom dialog
-        if(getSelectedMode() == MyUtils.SELECTED_MODE_SINGLE){
-            Video video = getItem(mSelectedPositions.get(0));// get selected video
-            final Dialog dialog = new Dialog(getContext());
-            dialog.setContentView(R.layout.layout_video_detail);
-            dialog.setTitle("Properties");
 
-            ((TextView)dialog.findViewById(R.id.detail_title)).setText(video.getTitle());
-            ((TextView)dialog.findViewById(R.id.detail_size)).setText(VideoSetting.getFormattedSize(video.getSize()) + "\n"+video.getSize()+" bytes");
-            ((TextView)dialog.findViewById(R.id.detail_date)).setText(video.getFormattedDate("dd/MM/yyyy hh:mm aa"));
-            ((TextView)dialog.findViewById(R.id.detail_path)).setText(video.getLocalPath());
-            ((TextView)dialog.findViewById(R.id.detail_resolution)).setText(video.getResolution());
-            ((TextView)dialog.findViewById(R.id.detail_duration)).setText(VideoSetting.getFormattedDuration(video.getDuration()));
-            ((TextView)dialog.findViewById(R.id.detail_bitrate)).setText(VideoSetting.getFormattedBitrate(video.getBitrate()));
-            ((TextView)dialog.findViewById(R.id.detail_fps)).setText(video.getFps()+"");
-            ((TextView)dialog.findViewById(R.id.detail_sync)).setText(video.getSynced()?"Synced":"Local only");
+    public Video getSingleSelectedVideo(){
 
-            Button dialogButton = (Button) dialog.findViewById(R.id.detail_btn_ok);
-            // if button is clicked, close the custom dialog
-            dialogButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    dialog.dismiss();
-                }
-            });
-
-            dialog.show();
+        if(getSelectedMode() == MyUtils.SELECTED_MODE_SINGLE) {
+            return getItem(mSelectedPositions.get(0));// get selected video
         }
-
+        return null;
     }
 
-    public void showRenameDialog() {
-        if(getSelectedMode() == MyUtils.SELECTED_MODE_SINGLE){
-            final Video video = getItem(mSelectedPositions.get(0));// get selected video
-
-            final Dialog dialog = new Dialog(getContext());
-            dialog.setContentView(R.layout.layout_rename);
-            dialog.setTitle("Properties");
-            final TextInputLayout tilEditext = (TextInputLayout) dialog.findViewById(R.id.tilRename);
-
-            final boolean isValid = true;
-
-            final EditText editText = dialog.findViewById(R.id.edRename);
-            editText.setText(video.getNameOnly());
-            editText.addTextChangedListener(new TextWatcher() {
-                @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                }
-
-                @Override
-                public void onTextChanged(CharSequence s, int start, int before, int count) {
-                }
-
-                @Override
-                public void afterTextChanged(Editable s) {
-                    if(isValidFilenameSynctax(s.toString())) {
-                        tilEditext.setError("A filename cannot contain any of the following charactor: \\/\":*<>| is not n");
-                    }
-                    else {
-                        tilEditext.setError("");
-                    }
-                }
-            });
-            Button btnOk = (Button) dialog.findViewById(R.id.rename_btn_ok);
-            // if button is clicked, close the custom dialog
-            btnOk.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    String newTitle = editText.getText().toString() + ".mp4";
-                    if(!TextUtils.equals(video.getTitle(), newTitle)){
-//                        MyUtils.toast(getContext(), "I will rename later: "+newTitle, Toast.LENGTH_LONG);
-                        try {
-                            tryToRenameFile(video, newTitle);
-                            dialog.dismiss();
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            tilEditext.setError(e.getMessage());
-                        }
-                    }else
-                        dialog.dismiss();
-
-                }
-            });
-
-            Button btnCancel = (Button) dialog.findViewById(R.id.rename_btn_cancel);
-            // if button is clicked, close the custom dialog
-            btnCancel.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    dialog.dismiss();
-                }
-            });
-            dialog.show();
+    public void removeVideo(Video v) {
+        try{
+            mVideos.remove(v);
+        }
+        catch (Exception e){
+            e.printStackTrace();
         }
     }
 
-    private void tryToRenameFile(final Video video, final String newTitle) throws Exception {
-        if(isValidFilenameSynctax(newTitle))
-            throw new Exception("A filename cannot contain any of the following charactor: \\/\":*<>| is not n");
-
-        File file = new File(video.getLocalPath());
-
-        final File fileWithNewName = new File(file.getParent(), newTitle);
-        if (fileWithNewName.exists()) {
-            throw new IOException("This filename is exists. Please choose another name");
-        }
-
-        // Rename file (or directory)
-        boolean success = file.renameTo(fileWithNewName);
-
-        if (!success) {
-            // File was not successfully renamed
-            throw new Exception("Cannot rename this file");
-        }
-        else {
-            AsyncTask.execute(new Runnable() {
-                @Override
-                public void run() {
-                    // and deleting
-                    synchronized (mSync) {
-                        VideoDatabase.getInstance(getContext()).getVideoDao().updateVideo(video);
-                    }
-                    runOnUiThread(new Runnable() {
-                        public void run() {
-                            if(mSelectedPositions.size()>0)
-                                mVideos.get(mSelectedPositions.indexOf(0)).updateTitle(newTitle, fileWithNewName.getAbsolutePath());
-                            showAllCheckboxes(false);
-                        }
-                    });
-                }
-            });
-        }
-    }
-
-    private boolean isValidFilenameSynctax(String filename) {
-        for(int i = 0; i< filename.length(); i++){
-            char c = filename.charAt(i);
-            if(c == '/' || c =='\\' || c=='"' || c == ':' || c=='*'||c=='<'|| c =='>' || c == '|')
-                return true;
-        }
-        return false;
-    }
 
     static class ViewHolder {
         protected TextView title;
@@ -380,11 +210,11 @@ public class VideoAdapter extends ArrayAdapter<Video> {
     }
 
     public String logSelection() {
-        String str = "";
+        StringBuilder str = new StringBuilder();
         for (int i: mSelectedPositions) {
-            str+=i;
+            str.append(i);
         }
-        return str;
+        return str.toString();
     }
 
 
@@ -415,8 +245,7 @@ public class VideoAdapter extends ArrayAdapter<Video> {
     public void selectAll(boolean value) {
         mSelectedPositions.clear();
         showAllCheckboxes(value);
-        if(value == true) {
-//            showAllCheckboxes();
+        if(value) {
             for (int i = 0; i < mVideos.size(); i++) {
                 mSelectedPositions.add(i);
             }

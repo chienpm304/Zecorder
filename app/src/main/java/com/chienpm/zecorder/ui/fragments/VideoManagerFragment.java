@@ -31,6 +31,7 @@ import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.data.database.VideoDatabase;
 import com.chienpm.zecorder.data.entities.Video;
 import com.chienpm.zecorder.ui.adapters.VideoAdapter;
+import com.chienpm.zecorder.ui.utils.DialogHelper;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 
 import java.io.File;
@@ -55,8 +56,6 @@ public class VideoManagerFragment extends Fragment{
     TextView mTvEmpty;
     private VideoAdapter mAdapter;
     private Object mSync = new Object();
-
-    // TODO: Rename and change types of parameters
 
     public VideoManagerFragment() {
         // Required empty public constructor
@@ -125,7 +124,7 @@ public class VideoManagerFragment extends Fragment{
                 break;
 
             case R.id.action_rename:
-                mAdapter.showRenameDialog();
+                DialogHelper.getInstance(mAdapter).showRenameDialog(mAdapter.getSingleSelectedVideo());
                 break;
 
             case R.id.action_share:
@@ -133,7 +132,7 @@ public class VideoManagerFragment extends Fragment{
                 break;
 
             case R.id.action_detail:
-                mAdapter.showDetailDialog();
+                DialogHelper.getInstance(mAdapter).showDetailDialog(mAdapter.getSingleSelectedVideo());
                 break;
 
             case R.id.action_delete:
