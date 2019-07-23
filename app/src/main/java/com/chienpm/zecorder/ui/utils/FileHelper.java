@@ -10,8 +10,6 @@ import com.chienpm.zecorder.ui.adapters.VideoAdapter;
 import java.io.File;
 import java.io.IOException;
 
-import static com.serenegiant.utils.UIThreadHelper.runOnUiThread;
-
 public class FileHelper {
     private static final String TAG = "FileHelper";
 
@@ -97,6 +95,5 @@ public class FileHelper {
         }
         mVideoAdapter.clearSelected();
         mVideoAdapter.showAllCheckboxes(false);
-//        mVideoAdapter.notifyDataSetChanged();
     }
 }
