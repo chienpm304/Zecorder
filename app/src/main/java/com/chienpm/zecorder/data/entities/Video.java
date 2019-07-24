@@ -1,10 +1,9 @@
 package com.chienpm.zecorder.data.entities;
 
-import android.arch.persistence.room.ColumnInfo;
-import android.arch.persistence.room.Entity;
-import android.arch.persistence.room.PrimaryKey;
-import android.support.annotation.NonNull;
-import android.text.TextUtils;
+import androidx.room.ColumnInfo;
+import androidx.room.Entity;
+import androidx.room.PrimaryKey;
+import androidx.annotation.NonNull;
 
 import com.chienpm.zecorder.controllers.settings.VideoSetting;
 

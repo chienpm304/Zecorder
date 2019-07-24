@@ -1,8 +1,7 @@
 package com.chienpm.zecorder.ui.adapters;
-import android.os.AsyncTask;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.app.FragmentActivity;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.FragmentActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,9 +14,7 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.controllers.settings.VideoSetting;
-import com.chienpm.zecorder.data.database.VideoDatabase;
 import com.chienpm.zecorder.data.entities.Video;
-import com.chienpm.zecorder.ui.utils.DialogHelper;
 import com.chienpm.zecorder.ui.utils.FileHelper;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 
