@@ -26,6 +26,7 @@ import android.provider.OpenableColumns;
 import android.util.Log;
 import android.util.Pair;
 
+import com.chienpm.zecorder.data.entities.Video;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.drive.DriveFolder;
 import com.google.android.gms.tasks.Task;
@@ -539,7 +540,7 @@ public class DriveServiceHelper {
                             parent = folderId;
                         }
 
-                        FileList result = mDriveService.files().list().setQ("'" + parent + "' in parents").setFields("files(id, name,size,createdTime,modifiedTime,starred,mimeType)").setSpaces("drive").execute();
+                        FileList result = mDriveService.files().list().setQ("'" + parent + "' in parents and trashed=false").setFields("files(id, name,size,createdTime,modifiedTime,starred,mimeType)").setSpaces("drive").execute();
 
                         for (int i = 0; i < result.getFiles().size(); i++) {
 

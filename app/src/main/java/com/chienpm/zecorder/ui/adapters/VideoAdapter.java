@@ -125,7 +125,6 @@ public class VideoAdapter extends ArrayAdapter<Video> {
 
             initViewHolder(viewVideoItem, holder);
 
-
             holder.checkBox.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {

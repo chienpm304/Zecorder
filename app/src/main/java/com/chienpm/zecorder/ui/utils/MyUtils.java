@@ -16,6 +16,7 @@ public class MyUtils {
     public static final int SELECTED_MODE_ALL = 1;
     public static final int SELECTED_MODE_MULTIPLE = 2;
     public static final int SELECTED_MODE_SINGLE = 3;
+    public static final String DRIVE_MASTER_FOLDER = "Zecorder";
 
 
     public static void showSnackBarNotification(View view, String msg, int length) {

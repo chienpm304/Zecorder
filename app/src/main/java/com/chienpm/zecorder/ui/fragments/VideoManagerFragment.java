@@ -9,7 +9,7 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.chienpm.zecorder.ui.activities.DriveActivity;
+import com.chienpm.zecorder.ui.activities.SyncActivity;
 import com.google.android.material.snackbar.Snackbar;
 import androidx.fragment.app.Fragment;
 import androidx.loader.app.LoaderManager;
@@ -121,7 +121,7 @@ public class VideoManagerFragment extends Fragment{
                 break;
 
             case R.id.action_sync:
-                startActivity(new Intent(getContext(), DriveActivity.class));
+                startActivity(new Intent(getContext(), SyncActivity.class));
                 break;
 
             case R.id.action_rename:

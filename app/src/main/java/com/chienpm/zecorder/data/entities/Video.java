@@ -1,15 +1,20 @@
 package com.chienpm.zecorder.data.entities;
 
+import android.text.TextUtils;
+
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 import androidx.annotation.NonNull;
 
 import com.chienpm.zecorder.controllers.settings.VideoSetting;
+import com.chienpm.zecorder.ui.utils.GoogleDriveFileHolder;
 
 import java.sql.Date;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 
 @Entity(tableName = "videos")
 public class Video implements Cloneable {
@@ -81,6 +86,14 @@ public class Video implements Cloneable {
         mSynced = video.mSynced;
         mCloudPath = video.mCloudPath;
 
+    }
+
+    public static ArrayList<Video> createTempVideoFromGoogleDriveData(List<GoogleDriveFileHolder> files) {
+        ArrayList<Video> videos = new ArrayList<>();
+        for(GoogleDriveFileHolder file: files){
+            videos.add(new Video(file.getName(), 0, 0, 0, 0,0, file.getSize(), "", file.getModifiedTime().getValue(), false, ""));
+        }
+        return videos;
     }
 
     private long getCurrentTime() {
@@ -225,5 +238,9 @@ public class Video implements Cloneable {
     @Override
     public Object clone() throws CloneNotSupportedException {
         return super.clone();
+    }
+
+    public boolean isLocalVideo() {
+        return !TextUtils.isEmpty(mLocalPath);
     }
 }
