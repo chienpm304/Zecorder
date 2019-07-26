@@ -32,6 +32,8 @@
     <string name="default_camera_position">Bottom Right</string>
     <string name="default_camera_size">Medium</string>
     <string name="default_audio_source">Internal Sound</string>
+    <string name="file_created">File created</string>
+    <string name="file_create_error">File create error</string>
 
 
 </resources>
