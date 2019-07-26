@@ -35,8 +35,10 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.Scope;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.api.services.drive.DriveScopes;
 import com.google.gson.Gson;
@@ -58,7 +60,7 @@ public class SyncActivity extends AppCompatActivity {
     private DriveServiceHelper mDriveServiceHelper;
     private static final String TAG = "SyncActivity";
     private Object mSync = new Object();
-    private TextView email, mTvEmpty;
+    private TextView mTvEmpty;
     private ProgressBar mProgressBar;
     private ListView mListViewVideos;
     private SyncVideoAdapter mSyncAdapter;
@@ -82,7 +84,8 @@ public class SyncActivity extends AppCompatActivity {
         GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(getApplicationContext());
 
         if (account != null && account.getGrantedScopes().containsAll(requiredScopes)) {
-            email.setText(account.getEmail());
+//            email.setText(account.getEmail());
+            MyUtils.showSnackBarNotification(mTvEmpty, "Signed in email: "+account.getEmail(), Snackbar.LENGTH_INDEFINITE);
             mDriveServiceHelper = new DriveServiceHelper(getGoogleDriveService(getApplicationContext(), account, "appName"));
             requestData();
         }
@@ -114,7 +117,7 @@ public class SyncActivity extends AppCompatActivity {
                     handleSignInResult(resultData);
                 }
                 else{
-                    MyUtils.toast(getApplicationContext(), "You must grant all permission to sync data", Toast.LENGTH_LONG);
+                    MyUtils.showSnackBarNotification(mTvEmpty, "You must grant all permission to sync data. Please try again!", Snackbar.LENGTH_INDEFINITE);
                     signIn();
                 }
                 break;
@@ -131,7 +134,6 @@ public class SyncActivity extends AppCompatActivity {
                     @Override
                     public void onSuccess(GoogleSignInAccount googleSignInAccount) {
                         Log.d(TAG, "Signed in as " + googleSignInAccount.getEmail());
-                        email.setText(googleSignInAccount.getEmail());
 
                         mDriveServiceHelper = new DriveServiceHelper(getGoogleDriveService(getApplicationContext(), googleSignInAccount, "appName"));
 
@@ -187,31 +189,60 @@ public class SyncActivity extends AppCompatActivity {
     }
 
     public void uploadVideo(Video video){
-        Log.d(TAG, "onClick: uploading: "+video.toString());
+        mLockRefresh = true;
+//        Log.d(TAG, "onClick: uploading: "+video.toString());
 //        mSyncAdapter.getView(0, null, null).findViewById(R.id.sync_progressBar).setVisibility(View.GONE);
 
         String folderId = getMasterFolderId();
-        if(!TextUtils.isEmpty(folderId)){
+        if(TextUtils.isEmpty(folderId)){
             MyUtils.showSnackBarNotification(mTvEmpty, "Folder Id is empty/ try again", Snackbar.LENGTH_LONG);
             return;
         }
-
+        MyUtils.showSnackBarNotification(mTvEmpty, "Uploading "+video.getTitle()+"...", Snackbar.LENGTH_INDEFINITE);
         mDriveServiceHelper.uploadFile(new File(video.getLocalPath()), "video/mpeg", getMasterFolderId())
-                .addOnSuccessListener(new OnSuccessListener<GoogleDriveFileHolder>() {
-                    @Override
-                    public void onSuccess(GoogleDriveFileHolder googleDriveFileHolder) {
-                        Gson gson = new Gson();
-                        Log.d(TAG, "onUpload: onSuccess: " + gson.toJson(googleDriveFileHolder));
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.d(TAG, "onUpload: onFailure: " + e.getMessage());
-                        e.printStackTrace();
-                    }
-                });
+                        .addOnSuccessListener(new OnSuccessListener<GoogleDriveFileHolder>() {
+                            @Override
+                            public void onSuccess(GoogleDriveFileHolder googleDriveFileHolder) {
+                                Gson gson = new Gson();
+                                Log.d(TAG, "onUpload: onSuccess: " + gson.toJson(googleDriveFileHolder));
+                                MyUtils.showSnackBarNotification(mTvEmpty, "Uploaded video "+video.getTitle(), Snackbar.LENGTH_LONG);
+                            }
+                        })
+                        .addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                Log.d(TAG, "onUpload: onFailure: " + e.getMessage());
+                                e.printStackTrace();
+                                MyUtils.showSnackBarNotification(mTvEmpty, "Failed to upload video "+video.getTitle(), Snackbar.LENGTH_LONG);
+                            }
+                        });
 
+    }
+
+    public void downloadVideo(Video video){
+        mLockRefresh = true;
+//
+//        String folderId = getMasterFolderId();
+//
+//        if(TextUtils.isEmpty(folderId)){
+//            MyUtils.showSnackBarNotification(mTvEmpty, "Folder Id is empty/ try again", Snackbar.LENGTH_LONG);
+//            return;
+//        }
+//
+//        mDriveServiceHelper.downloadFile(new java.io.File(getApplicationContext().getFilesDir(), "filename.txt"), "google_drive_file_id_here")
+//                        .addOnSuccessListener(new OnSuccessListener<Void>() {
+//                            @Override
+//                            public void onSuccess(Void aVoid) {
+//
+//                            }
+//                        })
+//                        .addOnFailureListener(new OnFailureListener() {
+//                            @Override
+//                            public void onFailure(@NonNull Exception e) {
+//
+//                            }
+//                        });
+        Log.d(TAG, "onClick: downloading: "+video.toString());
     }
 
     public void updateUI(){
@@ -230,15 +261,9 @@ public class SyncActivity extends AppCompatActivity {
         editor.apply();
     }
 
-    public void downloadVideo(Video video){
 
-        mLockRefresh = true;
-
-        Log.d(TAG, "onClick: downloading: "+video.toString());
-    }
 
     private void initView() {
-        email = findViewById(R.id.sync_email);
         mTvEmpty = findViewById(R.id.sync_tvEmpty);
         mListViewVideos = findViewById(R.id.sync_list_videos);
         mListViewVideos.setEmptyView(mTvEmpty);
