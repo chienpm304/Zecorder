@@ -63,6 +63,8 @@ public class SyncActivity extends AppCompatActivity {
     private ListView mListViewVideos;
     private SyncVideoAdapter mSyncAdapter;
 
+    private boolean mLockRefresh = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -229,6 +231,9 @@ public class SyncActivity extends AppCompatActivity {
     }
 
     public void downloadVideo(Video video){
+
+        mLockRefresh = true;
+
         Log.d(TAG, "onClick: downloading: "+video.toString());
     }
 
@@ -243,8 +248,10 @@ public class SyncActivity extends AppCompatActivity {
         srl.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                mProgressBar.setVisibility(View.VISIBLE);
-                getSupportLoaderManager().restartLoader(0, null, mLoadVideosCallback);
+                if(!mLockRefresh) {
+                    mProgressBar.setVisibility(View.VISIBLE);
+                    getSupportLoaderManager().restartLoader(0, null, mLoadVideosCallback);
+                }
                 srl.setRefreshing(false);
             }
 
