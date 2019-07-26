@@ -2,6 +2,7 @@ package com.chienpm.zecorder.ui.activities;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -14,6 +15,8 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.chienpm.zecorder.R;
+import com.chienpm.zecorder.data.database.VideoDatabase;
+import com.chienpm.zecorder.data.entities.Video;
 import com.chienpm.zecorder.ui.utils.DriveServiceHelper;
 import com.chienpm.zecorder.ui.utils.GoogleDriveFileHolder;
 import com.chienpm.zecorder.ui.utils.MyUtils;
@@ -27,6 +30,8 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.api.services.drive.DriveScopes;
 import com.google.gson.Gson;
 
+import java.io.File;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -88,21 +93,22 @@ public class DriveActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 if (mDriveServiceHelper == null) {
+                    Log.d(TAG, "onSearchFolder: mDriveServiceHelper NULL");
                     return;
                 }
 
-                mDriveServiceHelper.searchFolder("testDummy")
+                mDriveServiceHelper.searchFolder("Zecorder")
                         .addOnSuccessListener(new OnSuccessListener<List<GoogleDriveFileHolder>>() {
                             @Override
                             public void onSuccess(List<GoogleDriveFileHolder> googleDriveFileHolders) {
                                 Gson gson = new Gson();
-                                Log.d(TAG, "onSuccess: " + gson.toJson(googleDriveFileHolders));
+                                Log.d(TAG, "SeachFolder: onSuccess: " + gson.toJson(googleDriveFileHolders));
                             }
                         })
                         .addOnFailureListener(new OnFailureListener() {
                             @Override
                             public void onFailure(@NonNull Exception e) {
-                                Log.d(TAG, "onFailure: " + e.getMessage());
+                                Log.d(TAG, "SeachFolder: onFailure: " + e.getMessage());
                             }
                         });
             }
@@ -112,11 +118,12 @@ public class DriveActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 if (mDriveServiceHelper == null) {
+                    Log.d(TAG, "oncreateTextFile: mDriveServiceHelper NULL");
                     return;
                 }
                 // you can provide  folder id in case you want to save this file inside some folder.
                 // if folder id is null, it will save file to the root
-                mDriveServiceHelper.createTextFile("textfilename.txt", "some text", "1KZmg7OpD-JVeyGh4NfWUH74srsskmlbY")
+                mDriveServiceHelper.createTextFile("textfilename.txt", "some text", null)
                         .addOnSuccessListener(new OnSuccessListener<GoogleDriveFileHolder>() {
                             @Override
                             public void onSuccess(GoogleDriveFileHolder googleDriveFileHolder) {
@@ -143,19 +150,19 @@ public class DriveActivity extends AppCompatActivity {
                 }
                 // you can provide  folder id in case you want to save this file inside some folder.
                 // if folder id is null, it will save file to the root
-                mDriveServiceHelper.createFolder(getString(R.string.app_name), "1KZmg7OpD-JVeyGh4NfWUH74srsskmlbY")
+                mDriveServiceHelper.createFolderIfNotExist(getString(R.string.app_name), null)
                         .addOnSuccessListener(new OnSuccessListener<GoogleDriveFileHolder>() {
                             @Override
                             public void onSuccess(GoogleDriveFileHolder googleDriveFileHolder) {
                                 Gson gson = new Gson();
-                                Log.d(TAG, "onSuccess: " + gson.toJson(googleDriveFileHolder));
+                                Log.d(TAG, "onCreateFolder: onSuccess: " + gson.toJson(googleDriveFileHolder));
                                 MyUtils.toast(getApplicationContext(), "Created folder!", Toast.LENGTH_LONG);
                             }
                         })
                         .addOnFailureListener(new OnFailureListener() {
                             @Override
                             public void onFailure(@NonNull Exception e) {
-                                Log.d(TAG, "onFailure: " + e.getMessage());
+                                Log.d(TAG, "onCreateFolder: onFailure: " + e.getMessage());
                                 MyUtils.toast(getApplicationContext(), "Failed to Created folder!", Toast.LENGTH_LONG);
                             }
                         });
@@ -165,24 +172,39 @@ public class DriveActivity extends AppCompatActivity {
         uploadFile.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                AsyncTask.execute(new Runnable() {
+                    @Override
+                    public void run() {
 
-                if (mDriveServiceHelper == null) {
-                    return;
-                }
-                mDriveServiceHelper.uploadFile(new java.io.File(getApplicationContext().getFilesDir(), "dummy.txt"), "text/plain", null)
-                        .addOnSuccessListener(new OnSuccessListener<GoogleDriveFileHolder>() {
-                            @Override
-                            public void onSuccess(GoogleDriveFileHolder googleDriveFileHolder) {
-                                Gson gson = new Gson();
-                                Log.d(TAG, "onSuccess: " + gson.toJson(googleDriveFileHolder));
-                            }
-                        })
-                        .addOnFailureListener(new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                Log.d(TAG, "onFailure: " + e.getMessage());
-                            }
-                        });
+
+                        List<Video> videos = VideoDatabase.getInstance(getApplicationContext()).getVideoDao().getAllVideo();
+
+                        if (mDriveServiceHelper == null || videos.isEmpty()) {
+                            Log.d(TAG, "onUpload: mDriveService NULL or videos is empty ");
+                            return;
+                        }
+
+                        Video video = videos.get(0);
+
+                        Log.d(TAG, "onUpload video: "+video.toString());
+
+                        mDriveServiceHelper.uploadFile(new File(video.getLocalPath()), "video/mpeg", "1P5rarGXLVDs2ITI8ain2h1pqtIKY1u7N")
+                                .addOnSuccessListener(new OnSuccessListener<GoogleDriveFileHolder>() {
+                                    @Override
+                                    public void onSuccess(GoogleDriveFileHolder googleDriveFileHolder) {
+                                        Gson gson = new Gson();
+                                        Log.d(TAG, "onUpload: onSuccess: " + gson.toJson(googleDriveFileHolder));
+                                    }
+                                })
+                                .addOnFailureListener(new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(@NonNull Exception e) {
+                                        Log.d(TAG, "onUpload: onFailure: " + e.getMessage());
+                                        e.printStackTrace();
+                                    }
+                                });
+                    }
+                });
             }
         });
 
@@ -212,21 +234,22 @@ public class DriveActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 if (mDriveServiceHelper == null) {
+                    Log.d(TAG, "OnViewFolder: mDriveServiceHelper NULL");
                     return;
                 }
 
-                mDriveServiceHelper.queryFiles()
+                mDriveServiceHelper.queryFiles("1P5rarGXLVDs2ITI8ain2h1pqtIKY1u7N")
                         .addOnSuccessListener(new OnSuccessListener<List<GoogleDriveFileHolder>>() {
                             @Override
                             public void onSuccess(List<GoogleDriveFileHolder> googleDriveFileHolders) {
                                 Gson gson = new Gson();
-                                Log.d(TAG, "onSuccess: " + gson.toJson(googleDriveFileHolders));
+                                Log.d(TAG, "OnViewFolder: onSuccess: " + gson.toJson(googleDriveFileHolders));
                             }
                         })
                         .addOnFailureListener(new OnFailureListener() {
                             @Override
                             public void onFailure(@NonNull Exception e) {
-
+                                Log.d(TAG, "OnViewFolder: onFailure: "+e.getMessage());
                             }
                         });
 

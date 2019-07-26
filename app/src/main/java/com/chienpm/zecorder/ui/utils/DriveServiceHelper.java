@@ -366,10 +366,10 @@ public class DriveServiceHelper {
                 if (folderId == null) {
                     root = Collections.singletonList("root");
                 } else {
-
                     root = Collections.singletonList(folderId);
                 }
 
+                //Todo: set properties meta data here
                 File metadata = new File()
                         .setParents(root)
                         .setMimeType(mimeType)
@@ -400,6 +400,7 @@ public class DriveServiceHelper {
                 for (int i = 0; i < result.getFiles().size(); i++) {
 
                     GoogleDriveFileHolder googleDriveFileHolder = new GoogleDriveFileHolder();
+
                     googleDriveFileHolder.setId(result.getFiles().get(i).getId());
                     googleDriveFileHolder.setName(result.getFiles().get(i).getName());
 

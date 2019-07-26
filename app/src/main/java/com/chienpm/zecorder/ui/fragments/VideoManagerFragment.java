@@ -8,6 +8,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import com.chienpm.zecorder.ui.activities.DriveActivity;
 import com.google.android.material.snackbar.Snackbar;
 import androidx.fragment.app.Fragment;
 import androidx.loader.app.LoaderManager;
@@ -29,7 +31,6 @@ import android.widget.TextView;
 import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.data.database.VideoDatabase;
 import com.chienpm.zecorder.data.entities.Video;
-import com.chienpm.zecorder.ui.activities.SyncActivity;
 import com.chienpm.zecorder.ui.adapters.VideoAdapter;
 import com.chienpm.zecorder.ui.utils.DialogHelper;
 import com.chienpm.zecorder.ui.utils.MyUtils;
@@ -120,7 +121,7 @@ public class VideoManagerFragment extends Fragment{
                 break;
 
             case R.id.action_sync:
-                startActivity(new Intent(getContext(), SyncActivity.class));
+                startActivity(new Intent(getContext(), DriveActivity.class));
                 break;
 
             case R.id.action_rename:
