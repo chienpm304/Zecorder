@@ -11,6 +11,7 @@ public class GoogleDriveFileHolder {
     private DateTime createdTime;
     private Boolean starred;
     private String mimeType;
+    private String thumbnailLink;
 
 
     public DateTime getCreatedTime() {
@@ -67,5 +68,13 @@ public class GoogleDriveFileHolder {
 
     public void setMimeType(String mimeType) {
         this.mimeType = mimeType;
+    }
+
+    public void setThumbnailLink(String thumbnailLink) {
+        this.thumbnailLink = thumbnailLink;
+    }
+
+    public String getThumbnailLink() {
+        return thumbnailLink;
     }
 }

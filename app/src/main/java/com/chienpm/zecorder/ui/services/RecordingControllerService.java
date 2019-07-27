@@ -567,7 +567,7 @@ public class RecordingControllerService extends Service {
             long duration = Long.parseLong(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
             mmr.release();
 
-            mVideo = new Video(title, duration, bitrate, fps, width, height, size, localPath, 0, false, "");
+            mVideo = new Video(title, duration, bitrate, fps, width, height, size, localPath, 0, false, "", "");
             Log.d(TAG, "tryToExtractVideoFile: size: "+mVideo.toString());
 
         } catch (Exception e) {

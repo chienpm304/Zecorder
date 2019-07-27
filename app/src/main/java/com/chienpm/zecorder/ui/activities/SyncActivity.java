@@ -256,6 +256,9 @@ public class SyncActivity extends AppCompatActivity {
 
     public void updateUI(){
         mProgressBar.setVisibility(View.GONE);
+        if(mSyncAdapter.getCount()==0){
+            mTvEmpty.setText("All videos have already synchronized");
+        }
     }
 
     private String getMasterFolderId() {

@@ -1,5 +1,6 @@
 package com.chienpm.zecorder.ui.adapters;
 
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -74,12 +75,26 @@ public class SyncVideoAdapter extends ArrayAdapter<Video> {
 
         // If there is a valid list of {@link Earthquake}s, then add them to the adapter's
         // data set. This will trigger the ListView to notifySettingChanged.
-        if(mLocalVideos != null && !mLocalVideos.isEmpty()) {
-            mVideos.addAll(mLocalVideos);
-        }
+        if(mLocalVideos != null && mDriveVideos!=null){
+            int i,j;
+            for(Video v :mLocalVideos){
+                for(j = 0; j < mDriveVideos.size(); j++){
+                    if (TextUtils.equals(v.getTitle(), mDriveVideos.get(j).getTitle()))
+                        break;
+                }
+                if (j==mDriveVideos.size())
+                    mVideos.add(v);
+            }
 
-        if(mDriveVideos !=null && !mDriveVideos.isEmpty()){
-            mVideos.addAll(mDriveVideos);
+
+            for(Video v: mDriveVideos){
+                for(j = 0; j < mLocalVideos.size(); j++){
+                    if (TextUtils.equals(v.getTitle(), mLocalVideos.get(j).getTitle()))
+                        break;
+                }
+                if (j==mLocalVideos.size())
+                    mVideos.add(v);
+            }
         }
 
         notifyDataSetChanged();
@@ -123,10 +138,11 @@ public class SyncVideoAdapter extends ArrayAdapter<Video> {
         final Video video = getItem(position);
 
         if(video!=null){
-            String path = video.getLocalPath();
+
+            String thumbnailLink = video.getThumbnailLink();
 
             Glide.with(getContext())
-                    .load(path) // or URI/path
+                    .load(thumbnailLink) // or URI/path
                     .into(holder.thumb); //imageview to set thumbnail to
 
             holder.title.setText(video.getTitle());

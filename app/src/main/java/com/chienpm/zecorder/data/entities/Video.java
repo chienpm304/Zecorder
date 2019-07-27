@@ -4,6 +4,7 @@ import android.text.TextUtils;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 import androidx.annotation.NonNull;
 
@@ -56,9 +57,12 @@ public class Video implements Cloneable {
     @ColumnInfo(name = "cloud_path")
     private String mCloudPath;
 
+    @Ignore
+    private String mThumbnailLink;
+
     public Video(){}
 
-    public Video(String title, long duration, int bitrate, int fps, int width, int height, long size, String localPath, long createAt, Boolean isSynced, String cloudPath) {
+    public Video(String title, long duration, int bitrate, int fps, int width, int height, long size, String localPath, long createAt, Boolean isSynced, String cloudPath, String thumbnailLink) {
         mTitle = title;
         mDuration = duration;
         mBitrate = bitrate;
@@ -70,6 +74,7 @@ public class Video implements Cloneable {
         mCreateAt = getCurrentTime();
         mSynced = isSynced;
         mCloudPath = cloudPath;
+        mThumbnailLink = thumbnailLink;
     }
 
     public Video(Video video) {
@@ -85,13 +90,13 @@ public class Video implements Cloneable {
         mCreateAt = video.mCreateAt;
         mSynced = video.mSynced;
         mCloudPath = video.mCloudPath;
-
+        mThumbnailLink = video.mThumbnailLink;
     }
 
     public static ArrayList<Video> createTempVideoFromGoogleDriveData(List<GoogleDriveFileHolder> files) {
         ArrayList<Video> videos = new ArrayList<>();
         for(GoogleDriveFileHolder file: files){
-            videos.add(new Video(file.getName(), 0, 0, 0, 0,0, file.getSize(), "", file.getModifiedTime().getValue(), false, ""));
+            videos.add(new Video(file.getName(), 0, 0, 0, 0,0, file.getSize(), "", file.getModifiedTime().getValue(), false, file.getId(), file.getThumbnailLink()));
         }
         return videos;
     }
@@ -242,5 +247,12 @@ public class Video implements Cloneable {
 
     public boolean isLocalVideo() {
         return !TextUtils.isEmpty(mLocalPath);
+    }
+
+    public String getThumbnailLink() {
+        if(isLocalVideo())
+            return mLocalPath;
+        else
+            return mThumbnailLink;
     }
 }

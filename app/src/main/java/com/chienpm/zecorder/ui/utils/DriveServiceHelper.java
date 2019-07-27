@@ -23,6 +23,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.OpenableColumns;
+import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
 
@@ -540,7 +541,10 @@ public class DriveServiceHelper {
                             parent = folderId;
                         }
 
-                        FileList result = mDriveService.files().list().setQ("'" + parent + "' in parents and trashed=false").setFields("files(id, name,size,createdTime,modifiedTime,starred,mimeType)").setSpaces("drive").execute();
+                        FileList result = mDriveService.files().list().setQ("'" + parent + "' in parents and trashed=false")
+                                .setFields("files(id, name,size,createdTime,modifiedTime,starred,mimeType,thumbnailLink)")
+                                .setSpaces("drive")
+                                .execute();
 
                         for (int i = 0; i < result.getFiles().size(); i++) {
 
@@ -564,6 +568,9 @@ public class DriveServiceHelper {
                             }
                             if (result.getFiles().get(i).getMimeType() != null) {
                                 googleDriveFileHolder.setMimeType(result.getFiles().get(i).getMimeType());
+                            }
+                            if (!TextUtils.isEmpty(result.getFiles().get(i).getThumbnailLink())) {
+                                googleDriveFileHolder.setThumbnailLink(result.getFiles().get(i).getThumbnailLink());
                             }
 
                             googleDriveFileHolderList.add(googleDriveFileHolder);
