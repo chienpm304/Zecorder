@@ -2,8 +2,12 @@ package com.chienpm.zecorder.ui.utils;
 
 import android.content.Context;
 import com.google.android.material.snackbar.Snackbar;
+
+import android.os.Environment;
 import android.view.View;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
 
 public class MyUtils {
     public static final int RESULT_CODE_FAILED = -999999;
@@ -18,6 +22,17 @@ public class MyUtils {
     public static final int SELECTED_MODE_SINGLE = 3;
     public static final String DRIVE_MASTER_FOLDER = "Zecorder";
 
+    @NonNull
+    public static String createFileName() {
+        return "Zecorder-" +
+                Long.toHexString(System.currentTimeMillis()) + ".mp4";
+    }
+
+    @NonNull
+    public static String getBaseStorageDirectory() {
+        return Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_MOVIES) + "/Zecorder";
+    }
 
     public static void showSnackBarNotification(View view, String msg, int length) {
         Snackbar.make(view, msg, length).show();

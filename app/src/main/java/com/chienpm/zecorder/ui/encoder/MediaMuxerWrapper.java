@@ -30,6 +30,9 @@ import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+
+import com.chienpm.zecorder.ui.utils.MyUtils;
 import com.serenegiant.utils.FileUtils;
 
 import java.io.File;
@@ -56,9 +59,7 @@ public class MediaMuxerWrapper {
 		String ext = _ext;
 		if (TextUtils.isEmpty(ext)) ext = ".mp4";
 		try {
-			File outputFile = new File(Environment.getExternalStoragePublicDirectory(
-					Environment.DIRECTORY_MOVIES) + "/Zecorder", "Z-" +
-					Long.toHexString(System.currentTimeMillis()) + ".mp4");
+			File outputFile = new File(MyUtils.getBaseStorageDirectory(), MyUtils.createFileName());
 
 			if (!outputFile.getParentFile().exists()) {
 				outputFile.getParentFile().mkdirs();
@@ -72,6 +73,7 @@ public class MediaMuxerWrapper {
 		mEncoderCount = mStatredCount = 0;
 		mIsStarted = false;
 	}
+
 
 	public String getOutputPath() {
 		return mOutputPath;

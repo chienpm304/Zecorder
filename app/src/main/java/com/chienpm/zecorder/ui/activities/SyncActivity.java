@@ -230,27 +230,58 @@ public class SyncActivity extends AppCompatActivity {
 
     public void downloadVideo(Video video, SyncVideoAdapter.ViewHolder holder){
         mLockRefresh = true;
-//
-//        String folderId = getMasterFolderId();
-//
-//        if(TextUtils.isEmpty(folderId)){
-//            MyUtils.showSnackBarNotification(mTvEmpty, "Folder Id is empty/ try again", Snackbar.LENGTH_LONG);
-//            return;
-//        }
-//
-//        mDriveServiceHelper.downloadFile(new java.io.File(getApplicationContext().getFilesDir(), "filename.txt"), "google_drive_file_id_here")
-//                        .addOnSuccessListener(new OnSuccessListener<Void>() {
-//                            @Override
-//                            public void onSuccess(Void aVoid) {
-//
-//                            }
-//                        })
-//                        .addOnFailureListener(new OnFailureListener() {
-//                            @Override
-//                            public void onFailure(@NonNull Exception e) {
-//
-//                            }
-//                        });
+
+        String folderId = getMasterFolderId();
+
+        if(TextUtils.isEmpty(folderId)){
+            MyUtils.showSnackBarNotification(mTvEmpty, "Folder Id is empty/ try again", Snackbar.LENGTH_LONG);
+            return;
+        }
+        MyUtils.showSnackBarNotification(mTvEmpty, "Downloading "+video.getTitle()+"...", Snackbar.LENGTH_INDEFINITE);
+        holder.progress.setVisibility(View.VISIBLE);
+        File fileSave = new java.io.File(MyUtils.getBaseStorageDirectory(), video.getTitle());
+        mDriveServiceHelper.downloadFile(fileSave, video.getCloudPath())
+                        .addOnSuccessListener(new OnSuccessListener<Void>() {
+                            @Override
+                            public void onSuccess(Void aVoid) {
+                                holder.progress.setIndeterminate(false);
+                                holder.progress.setProgress(100);
+                                holder.progress.postInvalidate();
+                                holder.sync.setImageDrawable(getDrawable(R.drawable.ic_check));
+                                video.setLocalPath(fileSave.getAbsolutePath());
+                                saveVideoToDatabase(video);
+                            }
+
+                            private void saveVideoToDatabase(Video mVideo) {
+                                new Thread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        if(mVideo !=null){
+                                            Log.d(TAG, "onSaveVideo: "+mVideo.toString());
+                                            synchronized (mVideo) {
+                                                VideoDatabase.getInstance(getApplicationContext()).getVideoDao().insertVideo(mVideo);
+                                            }
+                                            runOnUiThread(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    MyUtils.showSnackBarNotification(mTvEmpty, "Downloaded video "+video.getTitle(), Snackbar.LENGTH_LONG);
+                                                }
+                                            });
+                                        }
+                                    }
+                                }).start();
+                            }
+                        })
+                        .addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                MyUtils.showSnackBarNotification(mTvEmpty, "Failed to upload video "+video.getTitle(), Snackbar.LENGTH_LONG);
+                                holder.progress.setIndeterminate(false);
+                                holder.progress.setProgress(0);
+                                holder.progress.postInvalidate();
+                                holder.sync.setImageDrawable(getDrawable(R.drawable.ic_error));
+                            }
+                        });
         Log.d(TAG, "onClick: downloading: "+video.toString());
     }
 

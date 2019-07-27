@@ -566,9 +566,11 @@ public class DriveServiceHelper {
                             if (result.getFiles().get(i).getStarred() != null) {
                                 googleDriveFileHolder.setStarred(result.getFiles().get(i).getStarred());
                             }
+
                             if (result.getFiles().get(i).getMimeType() != null) {
                                 googleDriveFileHolder.setMimeType(result.getFiles().get(i).getMimeType());
                             }
+
                             if (!TextUtils.isEmpty(result.getFiles().get(i).getThumbnailLink())) {
                                 googleDriveFileHolder.setThumbnailLink(result.getFiles().get(i).getThumbnailLink());
                             }
