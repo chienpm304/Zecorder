@@ -322,7 +322,7 @@ public class VideoManagerFragment extends Fragment{
     }
 
     private void showMenuItems(boolean value) {
-        for(int i = 2; i < mMenu.size(); i++){
+        for(int i = 3; i < mMenu.size(); i++){
             mMenu.getItem(i).setVisible(value);
         }
     }

@@ -24,14 +24,14 @@ public class SyncVideoAdapter extends ArrayAdapter<Video> {
     private boolean mLocalLoaded = false;
     private boolean mDriveLoaded = false;
 
-    static class ViewHolder {
-        protected TextView title;
-        protected TextView resolution;
-        protected TextView duration;
-        protected TextView size;
-        protected ImageView thumb;
-        protected ImageView sync;
-        protected ProgressBar progress;
+    public static class ViewHolder {
+        public TextView title;
+        public TextView resolution;
+        public TextView duration;
+        public TextView size;
+        public ImageView thumb;
+        public ImageView sync;
+        public ProgressBar progress;
     }
 
     private final SyncActivity mActivity;
@@ -103,11 +103,11 @@ public class SyncVideoAdapter extends ArrayAdapter<Video> {
                     Video video = getItem(position);
                     if(video.isLocalVideo()){
                         //upload to cloud
-                        mActivity.uploadVideo(video);
+                        mActivity.uploadVideo(video, holder);
                     }
                     else{
                         //download
-                        mActivity.downloadVideo(video);
+                        mActivity.downloadVideo(video, holder);
                     }
                     v.setEnabled(false);
                 }

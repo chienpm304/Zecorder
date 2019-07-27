@@ -380,13 +380,13 @@ public class RecordingControllerService extends Service {
 
                     toggleView(mCountdownLayout, View.VISIBLE);
 
-                    int countdown = (SettingManager.getCountdown(getApplication())+2) * 1000;
+                    int countdown = (SettingManager.getCountdown(getApplication())+1) * 1000;
 
                     new CountDownTimer(countdown, 1000) {
 
                         public void onTick(long millisUntilFinished) {
                             toggleView(mViewRoot, View.GONE);
-                            mTvCountdown.setText(""+(millisUntilFinished / 1000 -1));
+                            mTvCountdown.setText(""+(millisUntilFinished / 1000));
                         }
 
                         public void onFinish() {

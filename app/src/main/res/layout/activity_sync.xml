@@ -31,15 +31,6 @@
         android:layout_centerInParent="true"
         />
 
-    <TextView
-        android:id="@+id/sync_email"
-        android:text="authenticaion error"
-        android:padding="16dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        />
     <ProgressBar
         android:id="@+id/progress_fetching_data"
         android:layout_width="100dp"
