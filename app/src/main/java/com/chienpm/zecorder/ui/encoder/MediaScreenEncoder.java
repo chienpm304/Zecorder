@@ -1,6 +1,7 @@
 package com.chienpm.zecorder.ui.encoder;
 
 
+import android.graphics.Bitmap;
 import android.graphics.SurfaceTexture;
 import android.graphics.SurfaceTexture.OnFrameAvailableListener;
 import android.hardware.display.DisplayManager;
@@ -8,6 +9,7 @@ import android.hardware.display.VirtualDisplay;
 import android.media.MediaFormat;
 import android.media.projection.MediaProjection;
 import android.opengl.GLES20;
+import android.opengl.GLUtils;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
@@ -19,10 +21,11 @@ import com.serenegiant.glutils.EglTask;
 import com.serenegiant.glutils.GLDrawer2D;
 
 import java.io.IOException;
+import java.util.List;
 
 public class MediaScreenEncoder extends MediaVideoEncoderBase {
 	private static final boolean DEBUG = false;	// TODO set false on release
-	private static final String TAG = MediaScreenEncoder.class.getSimpleName();
+	private static final String TAG = "chienpm_record";
 
 	private static final String MIME_TYPE = MediaFormat.MIMETYPE_VIDEO_AVC;
     private static final int FRAME_RATE = 25;
@@ -32,9 +35,9 @@ public class MediaScreenEncoder extends MediaVideoEncoderBase {
     private final int bitrate, fps;
     private Surface mSurface;
     private final Handler mHandler;
+	private List<Bitmap> mBitmaps;
 
-
-	public MediaScreenEncoder(MediaMuxerWrapper muxer, MediaEncoderListener listener, MediaProjection projection, VideoSetting videoSetting, int density) {
+	public MediaScreenEncoder(MediaMuxerWrapper muxer, MediaEncoderListener listener, MediaProjection projection, VideoSetting videoSetting, int density, List<Bitmap> bitmaps) {
 		super(muxer, listener, videoSetting.getWidth(), videoSetting.getHeight(), videoSetting.getOrientation());
 		mMediaProjection = projection;
 		mDensity = density;
@@ -46,6 +49,7 @@ public class MediaScreenEncoder extends MediaVideoEncoderBase {
 		final HandlerThread thread = new HandlerThread(TAG);
 		thread.start();
 		mHandler = new Handler(thread.getLooper());
+		mBitmaps = bitmaps;
 	}
 
 	@Override
@@ -179,7 +183,7 @@ public class MediaScreenEncoder extends MediaVideoEncoderBase {
 				}
 			}
 		};
-
+		int count1 = 0, count2 = 0;
 		private final Runnable mDrawTask = new Runnable() {
 			@Override
 			public void run() {
@@ -198,11 +202,27 @@ public class MediaScreenEncoder extends MediaVideoEncoderBase {
 				}
 				if (mIsRecording) {
 					if (local_request_draw) {
+						Log.d(TAG, "DrawTask run in local_request_draw: "+ count1++);
+						//Todo: draw decorators here
 						mSourceTexture.updateTexImage();
 						mSourceTexture.getTransformMatrix(mTexMatrix);
 					}
+
+					Log.d(TAG, "DrawTask run outside local_request: "+ count2++);
 					mEncoderSurface.makeCurrent();
+
 					mDrawer.draw(mTexId, mTexMatrix, 0);
+					Bitmap bmToUse; Bitmap modImage = null;
+					for(Bitmap image: mBitmaps){
+						if (image.getHeight() == mHeight && image.getWidth() == mWidth) {
+							bmToUse = image;
+						} else {
+							modImage = RenderUtil.getResizedBitmap(image, mWidth, mHeight, modImage);
+							bmToUse = modImage;
+						}
+						generateSurfaceFrame(bmToUse);
+					}
+
 			    	mEncoderSurface.swap();
 					makeCurrent();
 					GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
@@ -215,6 +235,31 @@ public class MediaScreenEncoder extends MediaVideoEncoderBase {
 			}
 		};
 
+		private void generateSurfaceFrame(Bitmap bitmap) {
+
+			GLES20.glClearColor(0, 0, 0, 1);
+			GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+
+			int texture = createTexture(bitmap);
+			RenderUtil.renderTexture(texture, mWidth, mHeight);
+		}
+
+		public int createTexture(Bitmap bitmap) {
+			int[] textures = new int[1];
+			GLES20.glGenTextures(textures.length, textures, 0);
+			int texture = textures[0];
+			GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture);
+			GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
+			GLES20.glTexParameteri(
+					GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
+			GLES20.glTexParameteri(
+					GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
+			GLES20.glTexParameteri(
+					GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+			GLES20.glTexParameteri(
+					GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+			return texture;
+		}
 	}
 
 }

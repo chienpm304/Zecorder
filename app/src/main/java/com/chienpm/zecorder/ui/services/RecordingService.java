@@ -3,6 +3,8 @@ package com.chienpm.zecorder.ui.services;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.hardware.display.DisplayManager;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
@@ -12,6 +14,7 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
 
+import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.ui.encoder.MediaAudioEncoder;
 import com.chienpm.zecorder.ui.encoder.MediaEncoder;
 import com.chienpm.zecorder.ui.encoder.MediaMuxerWrapper;
@@ -21,6 +24,9 @@ import com.chienpm.zecorder.controllers.settings.SettingManager;
 import com.chienpm.zecorder.controllers.settings.VideoSetting;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public class RecordingService extends Service {
     private static final boolean DEBUG = false;	// TODO set false on release
@@ -110,7 +116,15 @@ public class RecordingService extends Service {
                         //todo: setting video parameter here
                         VideoSetting videoSetting = SettingManager.getVideoProfile(getApplicationContext());
                         mCurrentVideoSetting = videoSetting;
-                        new MediaScreenEncoder(mMuxer, mMediaEncoderListener, mMediaProjection, mCurrentVideoSetting, mScreenDensity);
+
+                        Bitmap ball = BitmapFactory.decodeResource(getResources(), R.drawable.chienpm);
+                        int dstWidth =120;
+                        int dstHeight = 120;
+                        Bitmap destBm = Bitmap.createScaledBitmap(ball, dstWidth, dstHeight, true);
+                        List<Bitmap> list = new ArrayList<>();
+                        list.add(destBm);
+
+                        new MediaScreenEncoder(mMuxer, mMediaEncoderListener, mMediaProjection, mCurrentVideoSetting, mScreenDensity, list);
                     }
                     if (true) {
                         // for audio capturing
