@@ -3,6 +3,7 @@ package com.chienpm.zecorder.ui.utils;
 import android.content.Context;
 import com.google.android.material.snackbar.Snackbar;
 
+import android.graphics.Canvas;
 import android.os.Environment;
 import android.view.View;
 import android.widget.Toast;
@@ -51,4 +52,7 @@ public class MyUtils {
         return false;
     }
 
+    public static void saveCanvas(Canvas canvas) {
+
+    }
 }

@@ -8,6 +8,7 @@ import android.graphics.BitmapFactory;
 import android.hardware.display.DisplayManager;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
+import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.DisplayMetrics;
@@ -117,12 +118,9 @@ public class RecordingService extends Service {
                         VideoSetting videoSetting = SettingManager.getVideoProfile(getApplicationContext());
                         mCurrentVideoSetting = videoSetting;
 
-                        Bitmap ball = BitmapFactory.decodeResource(getResources(), R.drawable.chienpm);
-                        int dstWidth =120;
-                        int dstHeight = 120;
-                        Bitmap destBm = Bitmap.createScaledBitmap(ball, dstWidth, dstHeight, true);
-                        List<Bitmap> list = new ArrayList<>();
-                        list.add(destBm);
+                        List<String> list = new ArrayList<>();
+//                        list.add(getURLForResource(R.drawable.chienpm));
+                        list.add("/storage/emulated/0/Download/image.jpeg");
 
                         new MediaScreenEncoder(mMuxer, mMediaEncoderListener, mMediaProjection, mCurrentVideoSetting, mScreenDensity, list);
                     }
@@ -140,6 +138,10 @@ public class RecordingService extends Service {
         }
 
     }
+    public String getURLForResource (int resourceId) {
+        return Uri.parse("android.resource://" + R.class.getPackage().getName() + "/drawable/" + resourceId).toString();
+    }
+
     public void pauseScreenRecord() {
         synchronized (sSync) {
             if (mMuxer != null) {

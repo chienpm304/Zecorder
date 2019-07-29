@@ -2,6 +2,10 @@ package com.chienpm.zecorder.ui.encoder;
 
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.SurfaceTexture;
 import android.graphics.SurfaceTexture.OnFrameAvailableListener;
 import android.hardware.display.DisplayManager;
@@ -19,6 +23,7 @@ import com.chienpm.zecorder.controllers.settings.VideoSetting;
 import com.serenegiant.glutils.EGLBase;
 import com.serenegiant.glutils.EglTask;
 import com.serenegiant.glutils.GLDrawer2D;
+import com.serenegiant.glutils.GLTexture;
 
 import java.io.IOException;
 import java.util.List;
@@ -35,9 +40,9 @@ public class MediaScreenEncoder extends MediaVideoEncoderBase {
     private final int bitrate, fps;
     private Surface mSurface;
     private final Handler mHandler;
-	private List<Bitmap> mBitmaps;
+	private List<String> mBitmapPaths;
 
-	public MediaScreenEncoder(MediaMuxerWrapper muxer, MediaEncoderListener listener, MediaProjection projection, VideoSetting videoSetting, int density, List<Bitmap> bitmaps) {
+	public MediaScreenEncoder(MediaMuxerWrapper muxer, MediaEncoderListener listener, MediaProjection projection, VideoSetting videoSetting, int density, List<String> bitmapPaths) {
 		super(muxer, listener, videoSetting.getWidth(), videoSetting.getHeight(), videoSetting.getOrientation());
 		mMediaProjection = projection;
 		mDensity = density;
@@ -49,7 +54,7 @@ public class MediaScreenEncoder extends MediaVideoEncoderBase {
 		final HandlerThread thread = new HandlerThread(TAG);
 		thread.start();
 		mHandler = new Handler(thread.getLooper());
-		mBitmaps = bitmaps;
+		mBitmapPaths = bitmapPaths;
 	}
 
 	@Override
@@ -102,20 +107,36 @@ public class MediaScreenEncoder extends MediaVideoEncoderBase {
     	private EGLBase.IEglSurface mEncoderSurface;
     	private GLDrawer2D mDrawer;
     	private final float[] mTexMatrix = new float[16];
+    	private Bitmap mBitmap = null;
+		private GLTexture mBitmapTexture;
+		private Surface mBitmapSurface;
 
-    	public DrawTask(final EGLBase.IContext sharedContext, final int flags) {
+		public DrawTask(final EGLBase.IContext sharedContext, final int flags) {
     		super(sharedContext, flags);
     	}
 
 		@Override
 		protected void onStart() {
 		    if (DEBUG) Log.d(TAG,"mScreenCaptureTask#onStart:");
-			mDrawer = new GLDrawer2D(true);
+
+		    mDrawer = new GLDrawer2D(true);
+
 			mTexId = mDrawer.initTex();
+
+			mBitmap = BitmapFactory.decodeFile(mBitmapPaths.get(0));
+
+			mBitmapTexture = new GLTexture(220, 260, GLES20.GL_TEXTURE_2D);
+
+//			mBitmapSurface = new Surface(mBitmapTexture.getTexture());
+
+
 			mSourceTexture = new SurfaceTexture(mTexId);
 			mSourceTexture.setDefaultBufferSize(mWidth, mHeight);	// これを入れないと映像が取れない
+
 			mSourceSurface = new Surface(mSourceTexture);
+
 			mSourceTexture.setOnFrameAvailableListener(mOnFrameAvailableListener, mHandler);
+
 			mEncoderSurface = getEgl().createFromSurface(mSurface);
 
 	    	if (DEBUG) Log.d(TAG,"setup VirtualDisplay");
@@ -183,7 +204,7 @@ public class MediaScreenEncoder extends MediaVideoEncoderBase {
 				}
 			}
 		};
-		int count1 = 0, count2 = 0;
+		int x = 0, y = 0;
 		private final Runnable mDrawTask = new Runnable() {
 			@Override
 			public void run() {
@@ -192,7 +213,7 @@ public class MediaScreenEncoder extends MediaVideoEncoderBase {
 					local_request_draw = requestDraw;
 					if (!requestDraw) {
 						try {
-							mSync.wait(intervals);
+                            mSync.wait(intervals);
 							local_request_draw = requestDraw;
 							requestDraw = false;
 						} catch (final InterruptedException e) {
@@ -202,28 +223,35 @@ public class MediaScreenEncoder extends MediaVideoEncoderBase {
 				}
 				if (mIsRecording) {
 					if (local_request_draw) {
-						Log.d(TAG, "DrawTask run in local_request_draw: "+ count1++);
 						//Todo: draw decorators here
 						mSourceTexture.updateTexImage();
 						mSourceTexture.getTransformMatrix(mTexMatrix);
 					}
 
-					Log.d(TAG, "DrawTask run outside local_request: "+ count2++);
+//					try {
+//						mBitmapTexture.loadTexture(mBitmapPaths.get(0));
+//					} catch (IOException e) {
+//						e.printStackTrace();
+//						Log.e(TAG, "onLoadTexture: " + e.getMessage());
+//					}
+
+//					Log.d(TAG, "DrawTask run outside local_request: "+ y++);
 					mEncoderSurface.makeCurrent();
 
-					mDrawer.draw(mTexId, mTexMatrix, 0);
-					Bitmap bmToUse; Bitmap modImage = null;
-					for(Bitmap image: mBitmaps){
-						if (image.getHeight() == mHeight && image.getWidth() == mWidth) {
-							bmToUse = image;
-						} else {
-							modImage = RenderUtil.getResizedBitmap(image, mWidth, mHeight, modImage);
-							bmToUse = modImage;
-						}
-						generateSurfaceFrame(bmToUse);
-					}
+//					mDrawer.draw(mTexId, mTexMatrix, 0);
 
-			    	mEncoderSurface.swap();
+//					generateSurfaceFrame(mBitmap);
+					int mBitmapTexId = createTexture(mBitmap);
+					RenderUtil.renderTextures(new int[]{mTexId, mBitmapTexId}, 1280, 720);
+
+					//					mDrawer.draw(mBitmapTexture);
+//					mDrawer.draw(mBitmapTexture);
+
+
+//					drawDecorations();
+
+					mEncoderSurface.swap();
+
 					makeCurrent();
 					GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 					GLES20.glFlush();
@@ -235,21 +263,51 @@ public class MediaScreenEncoder extends MediaVideoEncoderBase {
 			}
 		};
 
+		private void drawDecorations() {
+			Log.d(TAG, "DrawTask run in NOT local_request_draw: "+ x);
+			x++;
+			if(x%30 < 15) {
+				Canvas canvas = mSourceSurface.lockHardwareCanvas();
+
+				Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+				paint.setColor(Color.GREEN);
+				paint.setTextSize(50);
+
+				Log.d(TAG, "Canvas before drawn: " + canvas.getWidth() + "x" + canvas.getHeight() + "content: " + canvas);
+
+				canvas.drawBitmap(mBitmap, x % 1280, y++ % 720, paint);
+				canvas.drawText("Chienpm", x % 1280, y++ % 720, paint);
+				Log.d(TAG, "Canvas after drawn: " + canvas.getWidth() + "x" + canvas.getHeight() + "content: " + canvas.toString());
+
+				mSourceSurface.unlockCanvasAndPost(canvas);
+			}
+		}
+
 		private void generateSurfaceFrame(Bitmap bitmap) {
+			// No culling of back faces
+			GLES20.glDisable(GLES20.GL_CULL_FACE);
+
+			// No depth testing
+			GLES20.glDisable(GLES20.GL_DEPTH_TEST);
 
 			GLES20.glClearColor(0, 0, 0, 1);
 			GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
 			int texture = createTexture(bitmap);
-			RenderUtil.renderTexture(texture, mWidth, mHeight);
+			RenderUtil.renderTexture(texture, bitmap.getWidth(), bitmap.getHeight());
 		}
 
 		public int createTexture(Bitmap bitmap) {
 			int[] textures = new int[1];
+
+
 			GLES20.glGenTextures(textures.length, textures, 0);
 			int texture = textures[0];
+//			int texture = mBitmapTexture.getTexture();
 			GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture);
+
 			GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
+
 			GLES20.glTexParameteri(
 					GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
 			GLES20.glTexParameteri(

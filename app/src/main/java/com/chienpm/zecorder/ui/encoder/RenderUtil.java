@@ -80,6 +80,7 @@ public class RenderUtil {
 
     public static void renderTexture(int texture, int viewWidth, int viewHeight) {
         RenderContext context = createProgram();
+
         if (context == null) {
             return;
         }
@@ -103,6 +104,42 @@ public class RenderUtil {
         // Draw!
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
     }
+
+    public static void renderTextures(int[] textures, int viewWidth, int viewHeight) {
+        RenderContext context = createProgram();
+
+        if (context == null) {
+            return;
+        }
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
+
+        for(int texture: textures){
+            // Use our shader program
+            GLES20.glUseProgram(context.shaderProgram);
+            // Set viewport
+            if(texture == textures[1]){
+                viewWidth = 200;
+                viewHeight = 200;
+            }
+            GLES20.glViewport(0, 0, viewWidth, viewHeight);
+            // Disable blending
+            GLES20.glDisable(GLES20.GL_BLEND);
+            // Set the vertex attributes
+            GLES20.glVertexAttribPointer(
+                    context.texCoordHandle, 2, GLES20.GL_FLOAT, false, 0, context.texVertices);
+            GLES20.glEnableVertexAttribArray(context.texCoordHandle);
+            GLES20.glVertexAttribPointer(
+                    context.posCoordHandle, 2, GLES20.GL_FLOAT, false, 0, context.posVertices);
+            GLES20.glEnableVertexAttribArray(context.posCoordHandle);
+            // Set the input texture
+            GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture);
+            GLES20.glUniform1i(context.texSamplerHandle, 0);
+            // Draw!
+            GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+        }
+    }
+
 
     public static RenderContext createProgram() {
         int vertexShader = loadShader(GLES20.GL_VERTEX_SHADER, VERTEX_SHADER);
