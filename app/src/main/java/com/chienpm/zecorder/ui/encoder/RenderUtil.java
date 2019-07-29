@@ -4,11 +4,14 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.Rect;
+import android.graphics.Point;
 import android.graphics.RectF;
 import android.opengl.GLES20;
+import android.opengl.GLUtils;
 import android.os.Environment;
+import android.util.Size;
 import android.util.TypedValue;
 
 import java.io.Closeable;
@@ -17,6 +20,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.util.List;
 
 /**
  * Created by srikaram on 11-Sep-16.
@@ -105,7 +109,7 @@ public class RenderUtil {
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
     }
 
-    public static void renderTextures(int[] textures, int viewWidth, int viewHeight) {
+    public static void renderTextures(List<CustomDecorator> decors){//[] textures, int viewWidth, int viewHeight) {
         RenderContext context = createProgram();
 
         if (context == null) {
@@ -113,15 +117,11 @@ public class RenderUtil {
         }
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
 
-        for(int texture: textures){
-            // Use our shader program
+        for(CustomDecorator decor: decors){
+
             GLES20.glUseProgram(context.shaderProgram);
-            // Set viewport
-            if(texture == textures[1]){
-                viewWidth = 200;
-                viewHeight = 200;
-            }
-            GLES20.glViewport(0, 0, viewWidth, viewHeight);
+
+            GLES20.glViewport(decor.getPosition().x, decor.getPosition().y, decor.getSize().getWidth(), decor.getSize().getHeight());
             // Disable blending
             GLES20.glDisable(GLES20.GL_BLEND);
             // Set the vertex attributes
@@ -133,7 +133,7 @@ public class RenderUtil {
             GLES20.glEnableVertexAttribArray(context.posCoordHandle);
             // Set the input texture
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, decor.getTextureId());
             GLES20.glUniform1i(context.texSamplerHandle, 0);
             // Draw!
             GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
@@ -217,5 +217,97 @@ public class RenderUtil {
         private int posCoordHandle;
         private FloatBuffer texVertices;
         private FloatBuffer posVertices;
+    }
+
+    public static int createTexture(Bitmap bitmap) {
+        int[] textures = new int[1];
+
+
+        GLES20.glGenTextures(textures.length, textures, 0);
+        int texture = textures[0];
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture);
+
+        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
+
+        GLES20.glTexParameteri(
+                GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
+        GLES20.glTexParameteri(
+                GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
+        GLES20.glTexParameteri(
+                GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(
+                GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+        return texture;
+    }
+
+    public static class CustomDecorator{
+        int mTextureId = -1;
+        Bitmap mBitmap = null;
+        Size mSize;
+        Point mPosition;
+
+        public CustomDecorator(Bitmap bitmap, Size size, Point position) {
+            mSize = size;
+            mPosition = position;
+
+            if(bitmap != null) {
+                mBitmap = createScaledBitmap(bitmap, size);
+                mTextureId = RenderUtil.createTexture(mBitmap);
+            }
+        }
+
+        public int getTextureId() {
+            return mTextureId;
+        }
+
+        public void setTextureId(int textureId) {
+            mTextureId = textureId;
+        }
+
+        public Bitmap getBitmap() {
+            return mBitmap;
+        }
+
+        public void setBitmap(Bitmap bitmap) {
+            mBitmap = bitmap;
+        }
+
+        public Size getSize() {
+            return mSize;
+        }
+
+        public void setSize(Size size) {
+            mSize = size;
+        }
+
+        public Point getPosition() {
+            return mPosition;
+        }
+
+        public void setPosition(Point position) {
+            mPosition = position;
+        }
+
+        private Bitmap createScaledBitmap(Bitmap bm, Size newSize) {
+            int width = bm.getWidth();
+            int height = bm.getHeight();
+            float scaleWidth = ((float) newSize.getWidth()) / width;
+            float scaleHeight = ((float) newSize.getHeight()) / height;
+            // CREATE A MATRIX FOR THE MANIPULATION
+            Matrix matrix = new Matrix();
+            // RESIZE THE BIT MAP
+            matrix.postScale(scaleWidth, scaleHeight);
+
+            // "RECREATE" THE NEW BITMAP
+            Bitmap resizedBitmap = Bitmap.createBitmap(
+                    bm, 0, 0, width, height, matrix, false);
+            bm.recycle();
+            return resizedBitmap;
+        }
+
+        public void updateTexId() {
+            if(mBitmap !=null)
+                mTextureId = RenderUtil.createTexture(mBitmap);
+        }
     }
 }

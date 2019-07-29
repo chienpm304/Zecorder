@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.graphics.Point;
 import android.hardware.display.DisplayManager;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
@@ -13,6 +15,7 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.Size;
 import android.view.Display;
 
 import com.chienpm.zecorder.R;
@@ -20,15 +23,15 @@ import com.chienpm.zecorder.ui.encoder.MediaAudioEncoder;
 import com.chienpm.zecorder.ui.encoder.MediaEncoder;
 import com.chienpm.zecorder.ui.encoder.MediaMuxerWrapper;
 import com.chienpm.zecorder.ui.encoder.MediaScreenEncoder;
+import com.chienpm.zecorder.ui.encoder.RenderUtil;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 import com.chienpm.zecorder.controllers.settings.SettingManager;
 import com.chienpm.zecorder.controllers.settings.VideoSetting;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-
+import com.chienpm.zecorder.ui.encoder.RenderUtil.*;
 public class RecordingService extends Service {
     private static final boolean DEBUG = false;	// TODO set false on release
     private final IBinder mIBinder = new RecordingBinder();
@@ -118,11 +121,9 @@ public class RecordingService extends Service {
                         VideoSetting videoSetting = SettingManager.getVideoProfile(getApplicationContext());
                         mCurrentVideoSetting = videoSetting;
 
-                        List<String> list = new ArrayList<>();
-//                        list.add(getURLForResource(R.drawable.chienpm));
-                        list.add("/storage/emulated/0/Download/image.jpeg");
+                        List<CustomDecorator> decors = createDecorators();
 
-                        new MediaScreenEncoder(mMuxer, mMediaEncoderListener, mMediaProjection, mCurrentVideoSetting, mScreenDensity, list);
+                        new MediaScreenEncoder(mMuxer, mMediaEncoderListener, mMediaProjection, mCurrentVideoSetting, mScreenDensity, decors);
                     }
                     if (true) {
                         // for audio capturing
@@ -138,9 +139,31 @@ public class RecordingService extends Service {
         }
 
     }
-    public String getURLForResource (int resourceId) {
-        return Uri.parse("android.resource://" + R.class.getPackage().getName() + "/drawable/" + resourceId).toString();
+
+    private ArrayList<CustomDecorator> createDecorators() {
+        ArrayList<CustomDecorator> list = new ArrayList<>();
+        //main screen
+//        list.add(new CustomDecorator(null, new Size(mCurrentVideoSetting.getWidth(), mCurrentVideoSetting.getHeight()), new Point(0,0)));
+
+        //logo
+//        list.add(new CustomDecorator( "/storage/emulated/0/Download/image.jpeg", new Size(30, 30), new Point(10, 10)));
+
+
+
+        //watermask
+        Bitmap watermark = BitmapFactory.decodeResource(getResources(),R.drawable.wartermark);
+
+//        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+//        Bitmap bitmap = BitmapFactory.decodeFile("/storage/emulated/0/Download/image.jpeg", bmOptions);
+
+
+        list.add(new CustomDecorator(watermark, new Size(240, 240*watermark.getHeight()/watermark.getWidth()), new Point(0, 0)));
+
+        return list;
     }
+
+
+
 
     public void pauseScreenRecord() {
         synchronized (sSync) {
