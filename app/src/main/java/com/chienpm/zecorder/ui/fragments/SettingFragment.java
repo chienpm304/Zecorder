@@ -75,11 +75,17 @@ public class SettingFragment extends PreferenceFragmentCompat implements SharedP
                 preference.setSummary(listPreference.getEntries()[prefIndex]);
             }
         } else {
-            String summary = sharedPreferences.getString(key,"");
-            if(key.equals(getString(R.string.setting_common_countdown)))
-                summary += "s";
+            try {
+                String summary = sharedPreferences.getString(key, "");
+                if (key.equals(getString(R.string.setting_common_countdown)))
+                    summary += "s";
 
-            preference.setSummary(summary);
+                preference.setSummary(summary);
+            }
+            catch (Exception e){
+                e.printStackTrace();
+                Log.e(TAG, "onSharedPreferenceChanged: "+e.getMessage(), e);
+            }
         }
         if(isMyServiceRunning(RecordingControllerService.class)) {
 

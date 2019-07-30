@@ -1,4 +1,4 @@
-package com.chienpm.zecorder.ui.encoder;
+package com.chienpm.zecorder.controllers.encoder;
 /*
  * ScreenRecordingSample
  * Sample project to capture and save audio from internal and video from screen as MPEG4 file.

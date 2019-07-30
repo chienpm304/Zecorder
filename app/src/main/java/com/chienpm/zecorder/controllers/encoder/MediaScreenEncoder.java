@@ -1,7 +1,6 @@
-package com.chienpm.zecorder.ui.encoder;
+package com.chienpm.zecorder.controllers.encoder;
 
 
-import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.graphics.SurfaceTexture.OnFrameAvailableListener;
@@ -9,7 +8,6 @@ import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.media.MediaFormat;
 import android.media.projection.MediaProjection;
-import android.opengl.GLES20;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
@@ -23,7 +21,7 @@ import com.serenegiant.glutils.GLDrawer2D;
 
 import java.io.IOException;
 import java.util.List;
-import com.chienpm.zecorder.ui.encoder.RenderUtil.CustomDecorator;
+import com.chienpm.zecorder.controllers.encoder.RenderUtil.CustomDecorator;
 public class MediaScreenEncoder extends MediaVideoEncoderBase {
 	private static final boolean DEBUG = false;	// TODO set false on release
 	private static final String TAG = "chienpm_record";

@@ -1,12 +1,27 @@
 package com.chienpm.zecorder.ui.fragments;
 
+import android.content.Intent;
 import android.os.Bundle;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import com.chienpm.zecorder.R;
+import com.chienpm.zecorder.ui.utils.MyUtils;
+import com.facebook.AccessToken;
+import com.facebook.CallbackManager;
+import com.facebook.FacebookCallback;
+import com.facebook.FacebookException;
+import com.facebook.login.LoginManager;
+import com.facebook.login.LoginResult;
+import com.facebook.login.widget.LoginButton;
+import com.google.android.material.snackbar.Snackbar;
+
+import java.util.Arrays;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -26,21 +41,19 @@ public class LiveStreamFragment extends Fragment {
     private String mParam1;
     private String mParam2;
 
-//    private OnFragmentInteractionListener mListener;
+
+    private static final String EMAIL = "email";
+//    private static final String USER_POSTS = "user_posts";
+    private static final String AUTH_TYPE = "rerequest";
+
+    private View mViewRoot;
+    private CallbackManager mCallbackManager;
+    private LoginButton mLoginButton;
 
     public LiveStreamFragment() {
         // Required empty public constructor
     }
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment LiveStreamFragment.
-     */
-    // TODO: Rename and change types and number of parameters
     public static LiveStreamFragment newInstance(String param1, String param2) {
         LiveStreamFragment fragment = new LiveStreamFragment();
         Bundle args = new Bundle();
@@ -63,26 +76,58 @@ public class LiveStreamFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_live_stream, container, false);
+        mViewRoot = inflater.inflate(R.layout.fragment_live_stream, container, false);
+        return mViewRoot;
     }
 
-    // TODO: Rename method, update argument and hook method into UI event
-//    public void onButtonPressed(Uri uri) {
-//        if (mListener != null) {
-//            mListener.onFragmentInteraction(uri);
-//        }
-//    }
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        initViews();
 
-//    @Override
-//    public void onAttach(Context context) {
-//        super.onAttach(context);
-//        if (context instanceof OnFragmentInteractionListener) {
-//            mListener = (OnFragmentInteractionListener) context;
-//        } else {
-//            throw new RuntimeException(context.toString()
-//                    + " must implement OnFragmentInteractionListener");
-//        }
-//    }
+    }
+
+    private void initViews() {
+        mCallbackManager = CallbackManager.Factory.create();
+
+        mLoginButton = (LoginButton) mViewRoot.findViewById(R.id.login_button);
+
+        mLoginButton.setReadPermissions(Arrays.asList(EMAIL));
+
+        mLoginButton.setAuthType(AUTH_TYPE);
+
+        mLoginButton.setFragment(this);
+
+        // If you are using in a fragment, call mLoginButton.setFragment(this);
+
+        // Callback registration
+        mLoginButton.registerCallback(mCallbackManager, new FacebookCallback<LoginResult>() {
+            @Override
+            public void onSuccess(LoginResult loginResult) {
+                // App code
+//                AccessToken.getCurrentAccessToken()
+                MyUtils.showSnackBarNotification(mViewRoot, "Signed-in account: ", Snackbar.LENGTH_INDEFINITE);
+            }
+
+            @Override
+            public void onCancel() {
+                // App code
+                MyUtils.showSnackBarNotification(mViewRoot, "Signed in Canceled!", Snackbar.LENGTH_INDEFINITE);
+            }
+
+            @Override
+            public void onError(FacebookException exception) {
+                // App code
+                MyUtils.showSnackBarNotification(mViewRoot, "Signed in ERROR: "+exception.getMessage(), Snackbar.LENGTH_LONG);
+            }
+        });
+
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        mCallbackManager.onActivityResult(requestCode, resultCode, data);
+    }
 
     @Override
     public void onDetach() {
@@ -90,18 +135,4 @@ public class LiveStreamFragment extends Fragment {
 //        mListener = null;
     }
 
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
-//    public interface OnFragmentInteractionListener {
-//        // TODO: Update argument type and name
-//        void onFragmentInteraction(Uri uri);
-//    }
 }

@@ -74,4 +74,8 @@ dependencies {
     }
     api 'commons-codec:commons-codec:1.10'
 
+    implementation 'com.facebook.android:facebook-android-sdk:4.42.0'
+    implementation 'com.facebook.android:facebook-login:5.2.0'
+
+
 }

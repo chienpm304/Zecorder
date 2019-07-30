@@ -1,4 +1,4 @@
-package com.chienpm.zecorder.ui.encoder;
+package com.chienpm.zecorder.controllers.encoder;
 /*
  * ScreenRecordingSample
  * Sample project to cature and save audio from internal and video from screen as MPEG4 file.
@@ -26,14 +26,10 @@ import android.content.Context;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.media.MediaMuxer;
-import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-
 import com.chienpm.zecorder.ui.utils.MyUtils;
-import com.serenegiant.utils.FileUtils;
 
 import java.io.File;
 import java.io.IOException;

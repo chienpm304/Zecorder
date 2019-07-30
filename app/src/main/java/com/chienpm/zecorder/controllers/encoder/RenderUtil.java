@@ -1,4 +1,4 @@
-package com.chienpm.zecorder.ui.encoder;
+package com.chienpm.zecorder.controllers.encoder;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -21,9 +21,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.List;
-
-import static android.opengl.GLES20.GL_ONE;
-import static android.opengl.GLES20.GL_ONE_MINUS_SRC_ALPHA;
 
 
 /**

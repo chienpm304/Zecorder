@@ -1,4 +1,4 @@
-package com.chienpm.zecorder.ui.encoder;
+package com.chienpm.zecorder.controllers.encoder;
 /*
  * ScreenRecordingSample
  * Sample project to cature and save audio from internal and video from screen as MPEG4 file.
@@ -395,6 +395,7 @@ LOOP:	while (mIsCapturing) {
                     // write encoded data to muxer(need to adjust presentationTimeUs.
 					if (!mRequestPause) {
 	                   	mBufferInfo.presentationTimeUs = getPTSUs();
+	                   	//Todo: send these data buffer
 	                   	muxer.writeSampleData(mTrackIndex, encodedData, mBufferInfo);
 						prevOutputPTSUs = mBufferInfo.presentationTimeUs;
 					}
