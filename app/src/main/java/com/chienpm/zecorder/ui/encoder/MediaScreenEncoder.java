@@ -38,7 +38,7 @@ public class MediaScreenEncoder extends MediaVideoEncoderBase {
     private final Handler mHandler;
 	private List<CustomDecorator> mDecors;
 
-	public MediaScreenEncoder(MediaMuxerWrapper muxer, MediaEncoderListener listener, MediaProjection projection, VideoSetting videoSetting, int density, List<RenderUtil.CustomDecorator> decorators) {
+	public MediaScreenEncoder(MediaMuxerWrapper muxer, MediaEncoderListener listener, MediaProjection projection, VideoSetting videoSetting, int density, List<CustomDecorator> decorators) {
 		super(muxer, listener, videoSetting.getWidth(), videoSetting.getHeight(), videoSetting.getOrientation());
 		mMediaProjection = projection;
 		mDensity = density;
