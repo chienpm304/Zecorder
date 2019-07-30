@@ -15,6 +15,8 @@ import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.ui.services.RecordingControllerService;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 
+import java.util.Objects;
+
 public class SettingFragment extends PreferenceFragmentCompat implements SharedPreferences.OnSharedPreferenceChangeListener{
     static final String TAG = "chienpm_log";
     private SharedPreferences mSharedPreferences;
@@ -87,8 +89,8 @@ public class SettingFragment extends PreferenceFragmentCompat implements SharedP
                 Log.e(TAG, "onSharedPreferenceChanged: "+e.getMessage(), e);
             }
         }
-        if(isMyServiceRunning(RecordingControllerService.class)) {
 
+        if(isMyServiceRunning(RecordingControllerService.class)) {
             int settingKey = getResources().getIdentifier(key, "string", getActivity().getPackageName());
             if (isCanUpdateSettingImmediately(settingKey)) {
                 Log.d(TAG, "onSharedPreferenceChanged: "+key);
@@ -120,12 +122,18 @@ public class SettingFragment extends PreferenceFragmentCompat implements SharedP
     }
 
     private boolean isMyServiceRunning(Class<?> serviceClass) {
-        ActivityManager manager = (ActivityManager) getActivity().getSystemService(Context.ACTIVITY_SERVICE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (serviceClass.getName().equals(service.service.getClassName())) {
-                return true;
+        try {
+            ActivityManager manager = (ActivityManager) Objects.requireNonNull(getActivity()).getSystemService(Context.ACTIVITY_SERVICE);
+            for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+                if (serviceClass.getName().equals(service.service.getClassName())) {
+                    return true;
+                }
             }
         }
+        catch (Exception e){
+            return false;
+        }
+
         return false;
     }
     @Override

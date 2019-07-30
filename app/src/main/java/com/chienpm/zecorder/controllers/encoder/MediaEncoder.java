@@ -179,9 +179,10 @@ public abstract class MediaEncoder implements Runnable {
     * this method should be implemented in sub class, so set this as abstract method
     * @throws IOException
     */
-   /*package*/ abstract void prepare() throws IOException;
+   /*package*/ public abstract void prepare() throws IOException;
 
-	/*package*/ void startRecording() {
+	/*package*/
+	public void startRecording() {
    	if (DEBUG) Log.v(TAG, "startRecording");
 		synchronized (mSync) {
 			mIsCapturing = true;
@@ -194,7 +195,8 @@ public abstract class MediaEncoder implements Runnable {
    /**
     * the method to request stop encoding
     */
-	/*package*/ void stopRecording() {
+	/*package*/
+   public void stopRecording() {
 		if (DEBUG) Log.v(TAG, "stopRecording");
 		synchronized (mSync) {
 			if (!mIsCapturing || mRequestStop) {
@@ -207,7 +209,8 @@ public abstract class MediaEncoder implements Runnable {
 		}
 	}
 
-	/*package*/ void pauseRecording() {
+	/*package*/
+	public void pauseRecording() {
 		if (DEBUG) Log.v(TAG, "pauseRecording");
 		synchronized (mSync) {
 			if (!mIsCapturing || mRequestStop) {
@@ -219,7 +222,8 @@ public abstract class MediaEncoder implements Runnable {
 		}
 	}
 
-	/*package*/ void resumeRecording() {
+	/*package*/
+	public void resumeRecording() {
 		if (DEBUG) Log.v(TAG, "resumeRecording");
 		synchronized (mSync) {
 			if (!mIsCapturing || mRequestStop) {

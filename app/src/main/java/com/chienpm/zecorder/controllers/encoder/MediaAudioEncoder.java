@@ -50,7 +50,7 @@ public class MediaAudioEncoder extends MediaEncoder {
 	}
 
 	@Override
-	protected void prepare() throws IOException {
+	public void prepare() throws IOException {
 		if (DEBUG) Log.v(TAG, "prepare:");
         mTrackIndex = -1;
         mMuxerStarted = mIsEOS = false;
@@ -82,7 +82,7 @@ public class MediaAudioEncoder extends MediaEncoder {
 	}
 
     @Override
-	protected void startRecording() {
+	public void startRecording() {
 		super.startRecording();
 		// create and execute audio capturing thread using internal mic
 		if (mAudioThread == null) {
