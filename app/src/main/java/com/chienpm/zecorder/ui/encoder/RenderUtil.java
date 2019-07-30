@@ -22,6 +22,10 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.List;
 
+import static android.opengl.GLES20.GL_ONE;
+import static android.opengl.GLES20.GL_ONE_MINUS_SRC_ALPHA;
+
+
 /**
  * Created by srikaram on 11-Sep-16.
  */
@@ -78,37 +82,6 @@ public class RenderUtil {
         return dest;
     }
 
-//    public static String buildVideoName(String fileName) {
-//        return R.getOurFolder() + "/" + fileName + ".mp4";
-//    }
-
-    public static void renderTexture(int texture, int viewWidth, int viewHeight) {
-        RenderContext context = createProgram();
-
-        if (context == null) {
-            return;
-        }
-        // Use our shader program
-        GLES20.glUseProgram(context.shaderProgram);
-        // Set viewport
-        GLES20.glViewport(0, 0, viewWidth, viewHeight);
-        // Disable blending
-        GLES20.glDisable(GLES20.GL_BLEND);
-        // Set the vertex attributes
-        GLES20.glVertexAttribPointer(
-                context.texCoordHandle, 2, GLES20.GL_FLOAT, false, 0, context.texVertices);
-        GLES20.glEnableVertexAttribArray(context.texCoordHandle);
-        GLES20.glVertexAttribPointer(
-                context.posCoordHandle, 2, GLES20.GL_FLOAT, false, 0, context.posVertices);
-        GLES20.glEnableVertexAttribArray(context.posCoordHandle);
-        // Set the input texture
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture);
-        GLES20.glUniform1i(context.texSamplerHandle, 0);
-        // Draw!
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-    }
-
     public static void renderTextures(List<CustomDecorator> decors){//[] textures, int viewWidth, int viewHeight) {
         RenderContext context = createProgram();
 
@@ -121,9 +94,9 @@ public class RenderUtil {
 
             GLES20.glUseProgram(context.shaderProgram);
 
+
             GLES20.glViewport(decor.getPosition().x, decor.getPosition().y, decor.getSize().getWidth(), decor.getSize().getHeight());
-            // Disable blending
-            GLES20.glDisable(GLES20.GL_BLEND);
+
             // Set the vertex attributes
             GLES20.glVertexAttribPointer(
                     context.texCoordHandle, 2, GLES20.GL_FLOAT, false, 0, context.texVertices);
@@ -137,7 +110,12 @@ public class RenderUtil {
             GLES20.glUniform1i(context.texSamplerHandle, 0);
             // Draw!
             GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+
         }
+
+        GLES20.glFlush();
+        // Disable blending
+        GLES20.glDisable(GLES20.GL_BLEND);
     }
 
 
@@ -220,11 +198,17 @@ public class RenderUtil {
     }
 
     public static int createTexture(Bitmap bitmap) {
+
+        GLES20.glClearColor(0, 0, 0, 0);
+        GLES20.glEnable(GLES20.GL_BLEND);
+        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
+
         int[] textures = new int[1];
 
-
         GLES20.glGenTextures(textures.length, textures, 0);
+
         int texture = textures[0];
+
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture);
 
         GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
@@ -253,6 +237,7 @@ public class RenderUtil {
             if(bitmap != null) {
                 mBitmap = createScaledBitmap(bitmap, size);
                 mTextureId = RenderUtil.createTexture(mBitmap);
+                mSize = new Size(size.getWidth(), size.getWidth()*bitmap.getHeight()/bitmap.getWidth());
             }
         }
 

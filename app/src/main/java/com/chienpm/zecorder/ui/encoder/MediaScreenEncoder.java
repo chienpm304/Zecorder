@@ -233,8 +233,8 @@ public class MediaScreenEncoder extends MediaVideoEncoderBase {
 					mEncoderSurface.swap();
 					Log.d(TAG, "run check mTexId: "+mTexId);
 					makeCurrent();
-					GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-					GLES20.glFlush();
+//					GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+//					GLES20.glFlush();
 					frameAvailableSoon();
 					queueEvent(this);
 				} else {

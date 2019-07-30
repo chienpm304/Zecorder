@@ -5,8 +5,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.graphics.Point;
+import android.graphics.drawable.BitmapDrawable;
 import android.hardware.display.DisplayManager;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
@@ -151,13 +155,15 @@ public class RecordingService extends Service {
 
 
         //watermask
-        Bitmap watermark = BitmapFactory.decodeResource(getResources(),R.drawable.wartermark);
+        Bitmap bitmap = BitmapFactory.decodeResource(getResources(),R.drawable.wartermark);
 
-//        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-//        Bitmap bitmap = BitmapFactory.decodeFile("/storage/emulated/0/Download/image.jpeg", bmOptions);
+//        Bitmap watermark = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
+//        Canvas canvas = new Canvas(watermark);
+//        Paint paint = new Paint();
+//        canvas.drawBitmap(bitmap, 0, 0, paint);
+//        bitmap.recycle();
 
-
-        list.add(new CustomDecorator(watermark, new Size(240, 240*watermark.getHeight()/watermark.getWidth()), new Point(0, 0)));
+        list.add(new CustomDecorator(bitmap, new Size(240, 240), new Point(0, 0)));
 
         return list;
     }
