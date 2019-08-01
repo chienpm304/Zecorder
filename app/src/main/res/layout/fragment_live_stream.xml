@@ -18,11 +18,10 @@
         <!--User account-->
         <com.facebook.login.widget.ProfilePictureView
             android:id="@+id/img_profile_avatar"
-            android:layout_width="280px"
-            android:layout_height="280px"
+            android:layout_width="240px"
+            android:layout_height="240px"
 
             android:layout_margin="16dp"
-
 
             android:background="@color/ANTIQUEWHITE"
             app:layout_constraintEnd_toEndOf="parent"
@@ -33,7 +32,7 @@
             android:id="@+id/tv_profile_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="8dp"
             android:layout_marginBottom="16dp"
             android:text="Chien Pham"
             android:textColor="@color/BLACK"
@@ -50,7 +49,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:layout_marginTop="36dp"
+            android:layout_marginTop="24dp"
             android:text="Stream Tittle"
             android:textColor="@color/BLACK"
             android:textSize="20sp"
@@ -63,19 +62,19 @@
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-
-            android:hint="Today's livestream Tittle"
-
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="8dp"
+            android:hint="Stream's Tittle"
             app:layout_constraintTop_toBottomOf="@+id/tvTitle"
-
             >
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/ed_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-
+                android:maxLines="1"
+                android:lines="1"
                 />
 
         </com.google.android.material.textfield.TextInputLayout>
@@ -86,7 +85,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:layout_marginTop="36dp"
+            android:layout_marginTop="16dp"
             android:text="Description"
             android:textColor="@color/BLACK"
             android:textSize="20sp"
@@ -118,9 +117,10 @@
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-
-            android:hint="Today's livestream descriptions..."
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="8dp"
+            android:hint="Stream's description"
 
             app:layout_constraintTop_toBottomOf="@+id/tvDescription">
 
@@ -131,7 +131,7 @@
                 android:gravity="top"
                 android:inputType="textCapSentences|textNoSuggestions|textMultiLine"
                 android:maxLines="10"
-                android:minLines="6"
+                android:minLines="4"
                 android:scrollbars="vertical" />
 
         </com.google.android.material.textfield.TextInputLayout>
@@ -141,10 +141,7 @@
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-
             android:layout_margin="16dp"
-
-            android:layout_marginBottom="70dp"
             android:backgroundTint="@color/color_facebook"
             android:text="Request Stream"
 

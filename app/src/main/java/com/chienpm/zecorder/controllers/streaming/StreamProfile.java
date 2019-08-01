@@ -32,4 +32,13 @@ public class StreamProfile {
     public void setSecureStreamUrl(String mSecureStreamUrl) {
         this.mSecureStreamUrl = mSecureStreamUrl;
     }
+
+    @Override
+    public String toString() {
+        return "StreamProfile{" +
+                "mStreamId='" + mStreamId + '\'' +
+                ", mStreamUrl='" + mStreamUrl + '\'' +
+                ", mSecureStreamUrl='" + mSecureStreamUrl + '\'' +
+                '}';
+    }
 }

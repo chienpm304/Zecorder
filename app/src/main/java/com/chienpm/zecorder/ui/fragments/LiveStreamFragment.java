@@ -32,6 +32,7 @@ import com.facebook.FacebookException;
 import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
 import com.facebook.Profile;
+import com.facebook.ProfileTracker;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
 import com.facebook.login.widget.ProfilePictureView;
@@ -236,6 +237,7 @@ public class LiveStreamFragment extends Fragment {
                             Log.d(TAG, "PARSE JSON Secure_Stream_Id:"+ mSecureStreamUrl);
 
                             StreamProfile mStreamProfile = new StreamProfile(mStreamId, mStreamURL, mSecureStreamUrl);
+                            Log.d(TAG, "onRequest stream Completed: "+mStreamProfile.toString());
                             unlockUI();
                         }
                     });
@@ -258,17 +260,21 @@ public class LiveStreamFragment extends Fragment {
     }
 
     final FacebookCallback<LoginResult> mLoginResultCallback = new FacebookCallback<LoginResult>() {
+        private ProfileTracker mProfileTracker;
         @Override
         public void onSuccess(LoginResult loginResult) {
-            // App code
-            AccessToken token = AccessToken.getCurrentAccessToken();
-
-            MyUtils.showSnackBarNotification(mViewRoot, "Signed-in account: " + token.toString(), Snackbar.LENGTH_INDEFINITE);
-
-
-            toggleAccountProfileInfo(true);
-            updateProfileUI(Profile.getCurrentProfile());
-//            requestStreamURL(token);
+            if(Profile.getCurrentProfile() == null){
+                mProfileTracker = new ProfileTracker() {
+                    @Override
+                    protected void onCurrentProfileChanged(Profile oldProfile, Profile currentProfile) {
+                        MyUtils.showSnackBarNotification(mViewRoot, "Signed-in account: " + currentProfile.getName(), Snackbar.LENGTH_INDEFINITE);
+                        toggleAccountProfileInfo(true);
+                        //Todo: request profile
+                        updateProfileUI(currentProfile);
+                        mProfileTracker.stopTracking();
+                    }
+                };
+            }
         }
 
         @Override
@@ -320,7 +326,8 @@ public class LiveStreamFragment extends Fragment {
                 }
             }
             else{
-                signIn();
+//                signIn();
+                MyUtils.showSnackBarNotification(mViewRoot, "Requested Stream!", Snackbar.LENGTH_LONG);
             }
         }
     };
