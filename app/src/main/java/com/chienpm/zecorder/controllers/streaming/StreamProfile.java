@@ -1,20 +1,23 @@
 package com.chienpm.zecorder.controllers.streaming;
 
-public class StreamProfile {
-    private String mStreamId, mStreamUrl, mSecureStreamUrl;
+import java.io.Serializable;
 
-    public StreamProfile(String streamId, String streamURL, String secureStreamUrl) {
-        mStreamId = streamId;
-        mStreamUrl = streamURL;
+public class StreamProfile implements Serializable {
+    private String mId, mStreamUrl, mSecureStreamUrl, mTitle, mDescription, mHost, mApp, mPlayPath;
+    private int mPort;
+
+    public StreamProfile(String id, String streamURL, String secureStreamUrl) {
+        mId = id;
+        setStreamUrl(streamURL);
         mSecureStreamUrl = secureStreamUrl;
     }
 
-    public String getStreamId() {
-        return mStreamId;
+    public String getId() {
+        return mId;
     }
 
-    public void setStreamId(String mStreamId) {
-        this.mStreamId = mStreamId;
+    public void setId(String mStreamId) {
+        this.mId = mStreamId;
     }
 
     public String getStreamUrl() {
@@ -23,6 +26,19 @@ public class StreamProfile {
 
     public void setStreamUrl(String mStreamUrl) {
         this.mStreamUrl = mStreamUrl;
+        updateHostPortPlayPath();
+    }
+
+    private void updateHostPortPlayPath() {
+//        rtmp://live-api-s.facebook.com:80/rtmp/888586108172475?s_bl=1&s_sml=3&s_sw=0&s_vt=api-s&a=AbyhpmGw0kkfAUv4
+//        host: rtmp-api.facebook.com
+//        port: 80
+//        app: rtmp
+//        playpath: 10656346080699666?ds=1&s_l=1&a=xTxRpuj_8A2xtHy-
+        mHost = "live-api-s.facebook.com";
+        mPort = 80;
+        mApp = "rtmp";
+        mPlayPath = mStreamUrl.substring(mStreamUrl.lastIndexOf('/')+1);
     }
 
     public String getSecureStreamUrl() {
@@ -33,12 +49,66 @@ public class StreamProfile {
         this.mSecureStreamUrl = mSecureStreamUrl;
     }
 
+    public String getTitle() {
+        return mTitle;
+    }
+
+    public void setTitle(String title) {
+        mTitle = title;
+    }
+
+    public String getDescription() {
+        return mDescription;
+    }
+
+    public void setDescription(String description) {
+        mDescription = description;
+    }
+
+    public String getHost() {
+        return mHost;
+    }
+
+    public void setHost(String host) {
+        mHost = host;
+    }
+
+    public String getApp() {
+        return mApp;
+    }
+
+    public void setApp(String app) {
+        mApp = app;
+    }
+
+    public String getPlayPath() {
+        return mPlayPath;
+    }
+
+    public void setPlayPath(String playPath) {
+        mPlayPath = playPath;
+    }
+
+    public int getPort() {
+        return mPort;
+    }
+
+    public void setPort(int port) {
+        mPort = port;
+    }
+
     @Override
     public String toString() {
         return "StreamProfile{" +
-                "mStreamId='" + mStreamId + '\'' +
+                "mId='" + mId + '\'' +
                 ", mStreamUrl='" + mStreamUrl + '\'' +
                 ", mSecureStreamUrl='" + mSecureStreamUrl + '\'' +
+                ", mTitle='" + mTitle + '\'' +
+                ", mDescription='" + mDescription + '\'' +
+                ", mHost='" + mHost + '\'' +
+                ", mApp='" + mApp + '\'' +
+                ", mPlayPath='" + mPlayPath + '\'' +
+                ", mPort=" + mPort +
                 '}';
     }
 }

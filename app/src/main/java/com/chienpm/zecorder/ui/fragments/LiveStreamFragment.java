@@ -25,8 +25,11 @@ import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.bumptech.glide.load.data.StreamAssetPathFetcher;
 import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.controllers.streaming.StreamProfile;
+import com.chienpm.zecorder.ui.activities.StreamingActivity;
+import com.chienpm.zecorder.ui.utils.FacebookUtils;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
@@ -123,27 +126,17 @@ public class LiveStreamFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        if(isSignedIn()){
+        if(FacebookUtils.getInstance().isSignedIn()){
             updateProfileUI(Profile.getCurrentProfile());
         }
         else{
-//            signIn();
             toggleAccountProfileInfo(false);
         }
 
     }
 
-    private void signIn() {
-        mLoginButton.performClick();
-    }
-
     private boolean isRequestedStreamURL() {
         return !TextUtils.isEmpty(mStreamId) && !TextUtils.isEmpty(mStreamURL) && !TextUtils.isEmpty(mSecureStreamUrl);
-    }
-
-    private boolean isSignedIn() {
-        AccessToken accessToken = AccessToken.getCurrentAccessToken();
-        return accessToken != null && !accessToken.isExpired();
     }
 
     private void initViews() {
@@ -244,9 +237,24 @@ public class LiveStreamFragment extends Fragment {
                             Log.d(TAG, "PARSE JSON Stream_Url:"+ mStreamURL);
                             Log.d(TAG, "PARSE JSON Secure_Stream_Id:"+ mSecureStreamUrl);
 
+                            if(TextUtils.isEmpty(mStreamId) || TextUtils.isEmpty(mStreamURL) || TextUtils.isEmpty(mSecureStreamUrl)){
+                                MyUtils.showSnackBarNotification(mViewRoot, "Request stream failed. Please try again!", Snackbar.LENGTH_INDEFINITE);
+                                return;
+                            }
+
                             StreamProfile mStreamProfile = new StreamProfile(mStreamId, mStreamURL, mSecureStreamUrl);
-                            Log.d(TAG, "onRequest stream Completed: "+mStreamProfile.toString());
+                            mStreamProfile.setTitle(title);
+                            mStreamProfile.setDescription(description);
+
                             unlockUI();
+
+                            Intent streamIntent = new Intent(getContext(), StreamingActivity.class);
+                            Bundle bundle = new Bundle();
+                            bundle.putSerializable(MyUtils.STREAM_PROFILE, mStreamProfile);
+                            streamIntent.putExtras(bundle);
+                            startActivity(streamIntent);
+
+
                         }
                     });
         } catch (JSONException e) {
@@ -324,7 +332,7 @@ public class LiveStreamFragment extends Fragment {
     private final View.OnClickListener mRequestStreamClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            if(isSignedIn() && !isRequestedStreamURL()){
+            if(FacebookUtils.getInstance().isSignedIn() && !isRequestedStreamURL()){
 
                 if(isValidSettingInput()) {
 
@@ -336,7 +344,6 @@ public class LiveStreamFragment extends Fragment {
                 }
             }
             else{
-//                signIn();
                 MyUtils.showSnackBarNotification(mViewRoot, "Requested Stream!", Snackbar.LENGTH_LONG);
             }
         }

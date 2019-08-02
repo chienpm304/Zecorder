@@ -27,7 +27,7 @@ import com.chienpm.zecorder.ui.adapters.ViewPaperAdapter;
 import com.chienpm.zecorder.ui.fragments.LiveStreamFragment;
 import com.chienpm.zecorder.ui.fragments.SettingFragment;
 import com.chienpm.zecorder.ui.fragments.VideoManagerFragment;
-import com.chienpm.zecorder.ui.services.RecordingControllerService;
+import com.chienpm.zecorder.ui.services.recording.RecordingControllerService;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 
 import java.util.Objects;
@@ -108,6 +108,7 @@ public class MainActivity extends AppCompatActivity {
          * View initization
          */
         mImgRec =  findViewById(R.id.fab_rec);
+
         mImgRec.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

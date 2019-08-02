@@ -22,6 +22,7 @@ public class MyUtils {
     public static final int SELECTED_MODE_MULTIPLE = 2;
     public static final int SELECTED_MODE_SINGLE = 3;
     public static final String DRIVE_MASTER_FOLDER = "Zecorder";
+    public static final String STREAM_PROFILE = "Stream_Profile";
 
     @NonNull
     public static String createFileName() {

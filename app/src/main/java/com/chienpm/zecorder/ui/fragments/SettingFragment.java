@@ -12,7 +12,7 @@ import androidx.preference.PreferenceScreen;
 import android.util.Log;
 
 import com.chienpm.zecorder.R;
-import com.chienpm.zecorder.ui.services.RecordingControllerService;
+import com.chienpm.zecorder.ui.services.recording.RecordingControllerService;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 
 import java.util.Objects;

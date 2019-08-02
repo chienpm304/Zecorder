@@ -1,4 +1,4 @@
-package com.chienpm.zecorder.ui.services;
+package com.chienpm.zecorder.ui.services.streaming;
 
 import android.app.Service;
 import android.content.ComponentName;
@@ -8,9 +8,8 @@ import android.content.ServiceConnection;
 import android.content.res.Configuration;
 import android.graphics.PixelFormat;
 import android.hardware.Camera;
-import android.media.MediaMetadataRetriever;
-import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.IBinder;
 import android.text.TextUtils;
@@ -28,27 +27,19 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.chienpm.zecorder.R;
-import com.chienpm.zecorder.controllers.settings.VideoSetting;
-import com.chienpm.zecorder.data.database.VideoDatabase;
-import com.chienpm.zecorder.data.entities.Video;
-import com.chienpm.zecorder.ui.activities.MainActivity;
-import com.chienpm.zecorder.ui.services.RecordingService.RecordingBinder;
-import com.chienpm.zecorder.ui.utils.CameraPreview;
 import com.chienpm.zecorder.controllers.settings.CameraSetting;
-import com.chienpm.zecorder.ui.utils.MyUtils;
 import com.chienpm.zecorder.controllers.settings.SettingManager;
+import com.chienpm.zecorder.controllers.streaming.StreamProfile;
+import com.chienpm.zecorder.ui.activities.MainActivity;
+import com.chienpm.zecorder.ui.services.streaming.StreamingService.StreamingBinder;
+import com.chienpm.zecorder.ui.utils.CameraPreview;
+import com.chienpm.zecorder.ui.utils.MyUtils;
 
-import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Locale;
 
-
-public class RecordingControllerService extends Service {
+public class StreamingControllerService extends Service {
     private static final String TAG = "chienpm_controller";
 
-    private RecordingService mRecordingService;
+    private StreamingService mStreamingService;
     private Boolean mRecordingServiceBound = false;
 
     private View mViewRoot;
@@ -75,6 +66,7 @@ public class RecordingControllerService extends Service {
     private TextView mTvCountdown;
     private View mCountdownLayout;
     private int mCameraWidth = 160, mCameraHeight = 90;
+    private StreamProfile mStreamProfile;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -82,29 +74,28 @@ public class RecordingControllerService extends Service {
             return START_NOT_STICKY;
 
         String action = intent.getAction();
+        if(action!=null) {
+            if (action.equals(MyUtils.ACTION_UPDATE_SETTING)) {
+                handleUpdateSetting(intent);
+                return START_NOT_STICKY;
+            }
+            Log.d(TAG, "StreamingControllerService: onStartCommand()");
 
-        if(action.equals(MyUtils.ACTION_UPDATE_SETTING)){
-            handleUpdateSetting(intent);
-            return START_NOT_STICKY;
-        }
-        Log.d(TAG, "RecordingControllerService: onStartCommand()");
-
-        if(action != null){
-            if(TextUtils.equals(action, "Camera_Available")){
+            if (TextUtils.equals(action, "Camera_Available")) {
                 initCameraView();
             }
-
         }
 
         mScreenCaptureIntent = intent.getParcelableExtra(Intent.EXTRA_INTENT);
+        mStreamProfile = (StreamProfile) intent.getSerializableExtra(MyUtils.STREAM_PROFILE);
 
         if(mScreenCaptureIntent == null){
             Log.d(TAG, "mScreenCaptureIntent is NULL");
             stopSelf();
         }
         else{
-            Log.d(TAG, "RecordingControllerService: before run bindRecordingService()");
-            bindRecordingService();
+            Log.d(TAG, "StreamingControllerService: before run bindStreamService()");
+            bindStreamingService();
         }
         return super.onStartCommand(intent, flags, startId);
     }
@@ -152,7 +143,7 @@ public class RecordingControllerService extends Service {
         onConfigurationChanged(getResources().getConfiguration());
     }
 
-    public RecordingControllerService() {
+    public StreamingControllerService() {
 
     }
 
@@ -166,7 +157,7 @@ public class RecordingControllerService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d(TAG, "RecordingControllerService: onCreate");
+        Log.d(TAG, "StreamingControllerService: onCreate");
         updateScreenSize();
         initParam();
         initializeViews();
@@ -211,7 +202,7 @@ public class RecordingControllerService extends Service {
     }
 
     private void initCameraView() {
-        Log.d(TAG, "RecordingControllerService: initializeCamera()");
+        Log.d(TAG, "StreamingControllerService: initializeCamera()");
         CameraSetting cameraProfile = SettingManager.getCameraProfile(getApplication());
 
         mCameraLayout = LayoutInflater.from(this).inflate(R.layout.layout_camera_view, null);
@@ -294,7 +285,7 @@ public class RecordingControllerService extends Service {
     }
 
     private void initializeViews() {
-        Log.d(TAG, "RecordingControllerService: initializeViews()");
+        Log.d(TAG, "StreamingControllerService: initializeViews()");
         mViewRoot = LayoutInflater.from(this).inflate(R.layout.layout_recording, null);
         mViewCountdown = LayoutInflater.from(this).inflate(R.layout.layout_countdown, null);
 
@@ -393,7 +384,7 @@ public class RecordingControllerService extends Service {
                             toggleView(mCountdownLayout, View.GONE);
                             toggleView(mViewRoot, View.VISIBLE);
                             mRecordingStarted = true;
-                            mRecordingService.startRecording();
+                            mStreamingService.startRecording();
                             MyUtils.toast(getApplicationContext(), "Recording Started", Toast.LENGTH_LONG);
                         }
                     }.start();
@@ -415,15 +406,7 @@ public class RecordingControllerService extends Service {
                     //Todo: stop and save recording
                     mRecordingStarted = false;
 
-                    final VideoSetting videoSetting = mRecordingService.stopRecording();
-
-                    if(videoSetting != null ){
-                        saveVideoToDatabase(videoSetting);
-                    }
-                    else{
-                        MyUtils.toast(getApplicationContext(), "Recording Service Closed", Toast.LENGTH_LONG);
-                        return;
-                    }
+                    mStreamingService.stopRecording();
 
                 }
                 else{
@@ -521,87 +504,35 @@ public class RecordingControllerService extends Service {
         });
     }
 
-    private void saveVideoToDatabase(VideoSetting videoSetting) {
-        String outputFile = videoSetting.getOutputPath();
-        if(TextUtils.isEmpty(outputFile))
-            return;
-        MyUtils.toast(getApplicationContext(), "Recording Stopped"+outputFile, Toast.LENGTH_LONG);
-
-        final Video mVideo = tryToExtractVideoFile(videoSetting);
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                if(mVideo !=null){
-                    Log.d(TAG, "onSaveVideo: "+mVideo.toString());
-                    synchronized (mVideo) {
-                        VideoDatabase.getInstance(getApplicationContext()).getVideoDao().insertVideo(mVideo);
-                    }
-                    Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    intent.setAction(MyUtils.ACTION_OPEN_VIDEO_MANAGER_ACTIVITY);
-                    startActivity(intent);
-                }
-            }
-        }).start();
-    }
-
-
-    private Video tryToExtractVideoFile(VideoSetting videoSetting) {
-
-        Video mVideo = null;
-        try {
-            File file = new File(Uri.parse(videoSetting.getOutputPath()).getPath());
-            long size = file.length();
-            String title = file.getName();
-
-            int bitrate = videoSetting.getBirate();
-            int fps = videoSetting.getFPS();
-            int width = videoSetting.getWidth();
-            int height = videoSetting.getHeight();
-            String localPath = videoSetting.getOutputPath();
-
-            MediaMetadataRetriever mmr = new MediaMetadataRetriever();
-            mmr.setDataSource(file.getAbsolutePath());
-
-            long duration = Long.parseLong(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
-            mmr.release();
-
-            mVideo = new Video(title, duration, bitrate, fps, width, height, size, localPath, 0, false, "", "");
-            Log.d(TAG, "tryToExtractVideoFile: size: "+mVideo.toString());
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            Log.d(TAG, "tryToExtractVideoFile: error-"+ e.getMessage());
-        }
-        return mVideo;
-    }
 
     private void toggleView(View view, int visible) {
         view.setVisibility(visible);
     }
 
-    private void bindRecordingService() {
-        Log.d(TAG, "RecordingControllerService: bindRecordingService()");
-        Intent mRecordingServiceIntent = new Intent(getApplicationContext(), RecordingService.class);
-        mRecordingServiceIntent.putExtra(Intent.EXTRA_INTENT, mScreenCaptureIntent);
-        bindService(mRecordingServiceIntent, mRecordingServiceConnection, Context.BIND_AUTO_CREATE);
+    private void bindStreamingService() {
+        Log.d(TAG, "StreamingControllerService: bindStreamingService()");
+        Intent mStreamingServiceIntent = new Intent(getApplicationContext(), StreamingService.class);
+        mStreamingServiceIntent.putExtra(Intent.EXTRA_INTENT, mScreenCaptureIntent);
+        Bundle bundle = new Bundle();
+        bundle.putSerializable(MyUtils.STREAM_PROFILE, mStreamProfile);
+        mStreamingServiceIntent.putExtras(bundle);
+        bindService(mStreamingServiceIntent, mStreamingServiceConnection, Context.BIND_AUTO_CREATE);
     }
 
-    private ServiceConnection mRecordingServiceConnection = new ServiceConnection() {
+    private final ServiceConnection mStreamingServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            RecordingBinder binder = (RecordingBinder) service;
-            mRecordingService = binder.getService();
+            StreamingBinder binder = (StreamingBinder) service;
+            mStreamingService = binder.getService();
             mRecordingServiceBound = true;
 
-            MyUtils.toast(getApplicationContext(), "Recording service connected", Toast.LENGTH_SHORT);
+            MyUtils.toast(getApplicationContext(), "Streaming service connected", Toast.LENGTH_SHORT);
         }
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
             mRecordingServiceBound = false;
-            MyUtils.toast(getApplicationContext(), "Recording service disconnected", Toast.LENGTH_SHORT);
+            MyUtils.toast(getApplicationContext(), "Streaming service disconnected", Toast.LENGTH_SHORT);
         }
     };
 
@@ -661,8 +592,8 @@ public class RecordingControllerService extends Service {
             mWindowManager.removeViewImmediate(mCameraLayout);
             releaseCamera();
         }
-        if(mRecordingService!=null && mRecordingServiceBound) {
-            unbindService(mRecordingServiceConnection);
+        if(mStreamingService !=null && mRecordingServiceBound) {
+            unbindService(mStreamingServiceConnection);
             mRecordingServiceBound = false;
 
         }

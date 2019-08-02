@@ -32,13 +32,15 @@
         <activity android:name=".ui.activities.SyncActivity"></activity>
 
         <service
-            android:name=".ui.services.RecordingControllerService"
+            android:name=".ui.services.recording.RecordingControllerService"
             android:enabled="true"
             android:exported="false" />
         <service
-            android:name=".ui.services.RecordingService"
+            android:name=".ui.services.recording.RecordingService"
             android:enabled="true"
             android:exported="false" />
+        <service android:name=".ui.services.streaming.StreamingControllerService" />
+        <service android:name=".ui.services.streaming.StreamingService" />
 
         <activity
             android:name=".ui.activities.MainActivity"

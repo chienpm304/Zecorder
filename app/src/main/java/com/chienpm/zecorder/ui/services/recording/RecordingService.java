@@ -1,4 +1,4 @@
-package com.chienpm.zecorder.ui.services;
+package com.chienpm.zecorder.ui.services.recording;
 
 import android.app.Service;
 import android.content.Context;
