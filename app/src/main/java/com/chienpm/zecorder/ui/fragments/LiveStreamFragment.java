@@ -1,11 +1,14 @@
 package com.chienpm.zecorder.ui.fragments;
 
+import android.app.AlertDialog;
 import android.app.MediaRouteButton;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.view.ContextThemeWrapper;
 import androidx.fragment.app.Fragment;
 
 import android.text.Editable;
@@ -31,8 +34,10 @@ import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
 import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
+import com.facebook.HttpMethod;
 import com.facebook.Profile;
 import com.facebook.ProfileTracker;
+import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
 import com.facebook.login.widget.ProfilePictureView;
@@ -72,7 +77,7 @@ public class LiveStreamFragment extends Fragment {
     private View mViewRoot;
     ProfilePictureView mProfilePicture;
     TextView mProfileName;
-    Button mBtnRequestStream;
+    Button mBtnRequestStream, mBtnSignOut;
     private CallbackManager mCallbackManager;
     private LoginButton mLoginButton;
     String mStreamId ="", mStreamURL ="", mSecureStreamUrl ="";
@@ -118,11 +123,12 @@ public class LiveStreamFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        if(isSignedIn() && !isRequestedStreamURL()){
+        if(isSignedIn()){
             updateProfileUI(Profile.getCurrentProfile());
         }
         else{
-            signIn();
+//            signIn();
+            toggleAccountProfileInfo(false);
         }
 
     }
@@ -162,6 +168,8 @@ public class LiveStreamFragment extends Fragment {
         mProfileName = mViewRoot.findViewById(R.id.tv_profile_name);
         mBtnRequestStream = mViewRoot.findViewById(R.id.btn_request_stream);
         mBtnRequestStream.setOnClickListener(mRequestStreamClickListener);
+        mBtnSignOut = mViewRoot.findViewById(R.id.signout_button);
+        mBtnSignOut.setOnClickListener(mRequestSignOutListener);
         mEdTitle = mViewRoot.findViewById(R.id.ed_title);
         mEdDescription = mViewRoot.findViewById(R.id.ed_description);
         mBlockUiFrame = mViewRoot.findViewById(R.id.frameBlockUI);
@@ -263,11 +271,13 @@ public class LiveStreamFragment extends Fragment {
         private ProfileTracker mProfileTracker;
         @Override
         public void onSuccess(LoginResult loginResult) {
-            if(Profile.getCurrentProfile() == null){
+            if(loginResult.getAccessToken() == null)
+                toggleAccountProfileInfo(false);
+            else if(Profile.getCurrentProfile() == null){
                 mProfileTracker = new ProfileTracker() {
                     @Override
                     protected void onCurrentProfileChanged(Profile oldProfile, Profile currentProfile) {
-                        MyUtils.showSnackBarNotification(mViewRoot, "Signed-in account: " + currentProfile.getName(), Snackbar.LENGTH_INDEFINITE);
+                        MyUtils.showSnackBarNotification(mViewRoot, "Signed-in account: " + currentProfile.getName(), Snackbar.LENGTH_LONG);
                         toggleAccountProfileInfo(true);
                         //Todo: request profile
                         updateProfileUI(currentProfile);
@@ -281,7 +291,7 @@ public class LiveStreamFragment extends Fragment {
         public void onCancel() {
             // App code
 
-            MyUtils.showSnackBarNotification(mViewRoot, "Signed in Canceled!", Snackbar.LENGTH_INDEFINITE);
+            MyUtils.showSnackBarNotification(mViewRoot, "Signed in Canceled!", Snackbar.LENGTH_LONG);
             toggleAccountProfileInfo(false);
 
         }
@@ -331,6 +341,39 @@ public class LiveStreamFragment extends Fragment {
             }
         }
     };
+
+    private final View.OnClickListener mRequestSignOutListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            if (AccessToken.getCurrentAccessToken() == null) {
+                return; // already logged out
+            }
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+            builder
+                    .setTitle("Sign out")
+                    .setMessage("Are you sure you want to sign out this account?")
+                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            blockUI();
+                            new GraphRequest(AccessToken.getCurrentAccessToken(), "/me/permissions/", null, HttpMethod.DELETE,
+                                    new GraphRequest
+                                            .Callback() {
+                                        @Override
+                                        public void onCompleted(GraphResponse graphResponse) {
+                                            LoginManager.getInstance().logOut();
+                                            toggleAccountProfileInfo(false);
+                                            unlockUI();
+                                        }
+                                    }).executeAsync();
+                        }
+                    })
+                    .setNegativeButton(android.R.string.no, null)
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .show();
+        }
+    };
+
 
     private void blockUI() {
         getActivity().getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,

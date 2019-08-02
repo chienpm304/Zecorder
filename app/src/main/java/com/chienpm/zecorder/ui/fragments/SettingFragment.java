@@ -85,7 +85,7 @@ public class SettingFragment extends PreferenceFragmentCompat implements SharedP
                 preference.setSummary(summary);
             }
             catch (Exception e){
-                e.printStackTrace();
+//                e.printStackTrace();
                 Log.e(TAG, "onSharedPreferenceChanged: "+e.getMessage(), e);
             }
         }

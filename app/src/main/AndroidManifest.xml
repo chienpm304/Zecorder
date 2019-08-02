@@ -40,17 +40,20 @@
             android:enabled="true"
             android:exported="false" />
 
-        <activity android:name=".ui.activities.MainActivity"
-            android:windowSoftInputMode="adjustPan"
-            >
+        <activity
+            android:name=".ui.activities.MainActivity"
+            android:windowSoftInputMode="adjustPan">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
 
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
+
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data android:scheme="@string/fb_login_protocol_scheme" />

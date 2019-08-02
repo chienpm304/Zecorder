@@ -92,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    ImageView mImgRec;
+    private ImageView mImgRec;
 
     private void initViews() {
 
@@ -101,6 +101,7 @@ public class MainActivity extends AppCompatActivity {
 
         mTabLayout = findViewById(R.id.tabLayout);
         mTabLayout.setupWithViewPager(mViewPager);
+
         setupTabIcon();
 
         /*
@@ -126,6 +127,25 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        mViewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+            }
+
+            @Override
+            public void onPageSelected(int position) {
+                if(position == 1){
+                    mImgRec.setVisibility(View.GONE);
+                }
+                else{
+                    mImgRec.setVisibility(View.VISIBLE);
+                }
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int state) {
+            }
+        });
 
     }
 
@@ -133,7 +153,7 @@ public class MainActivity extends AppCompatActivity {
         mTabLayout.getTabAt(0).setIcon(tabIcons[0]);
         mTabLayout.getTabAt(1).setIcon(tabIcons[1]);
         mTabLayout.getTabAt(2).setIcon(tabIcons[2]);
-        mTabLayout.getTabAt(1).select();
+        mTabLayout.getTabAt(0).select();
     }
 
     private void setupViewPaper() {
