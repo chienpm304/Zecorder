@@ -5,7 +5,7 @@ package com.chienpm.zecorder.controllers.streaming;
  *
  * Copyright (c) 2014-2016 saki t_saki@serenegiant.com
  *
- * File name: StreamMuxerWrapper.java
+ * File name: MediaMuxerWrapper.java
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,87 +20,66 @@ package com.chienpm.zecorder.controllers.streaming;
  *  limitations under the License.
  *
  * All files in the folder are under this Apache License, Version 2.0.
-*/
+ */
 
 import android.content.Context;
 import android.media.MediaCodec;
-import android.os.AsyncTask;
+import android.media.MediaFormat;
+import android.media.MediaMuxer;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.chienpm.zecorder.controllers.settings.VideoSetting;
-import com.octiplex.android.rtmp.RtmpConnectionListener;
-import com.octiplex.android.rtmp.RtmpMuxer;
-import com.octiplex.android.rtmp.Time;
+import com.chienpm.zecorder.ui.utils.MyUtils;
 
+import net.ossrs.rtmp.ConnectCheckerRtmp;
+import net.ossrs.rtmp.SrsFlvMuxer;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public class StreamMuxerWrapper {
-	private static final boolean DEBUG = true;	// TODO set false on release
+	private static final boolean DEBUG = false;    // TODO set false on release
 	private static final String TAG = "chienpm_log_stream";
+	private final StreamProfile mStreamProfile;
 	private final VideoSetting mVideoSetting;
-	private StreamProfile mStreamProfile;
 
-	private String mOutputPath = "";
-//	private final MediaMuxer mMediaMuxer;	// API >= 18
-	private RtmpMuxer mMuxer;
+	private final SrsFlvMuxer mMuxer;    // API >= 18
 	private int mEncoderCount, mStatredCount;
 	private boolean mIsStarted;
 	private volatile boolean mIsPaused;
 	private StreamEncoder mVideoEncoder, mAudioEncoder;
-	private RtmpConnectionListener listener = new RtmpConnectionListener() {
-		@Override
-		public void onConnected() {
+	private boolean mStreamConnected = false;
 
-		}
 
-		@Override
-		public void onReadyToPublish() {
-
-		}
-
-		@Override
-		public void onConnectionError(IOException e) {
-
-		}
-	};
-
+	/**
+	 * Constructor
+	 *
+	 * @param _ext extension of output file
+	 * @throws IOException
+	 */
 	public StreamMuxerWrapper(final Context context, final StreamProfile streamProfile, VideoSetting videoSetting) throws IOException {
+
 		mStreamProfile = streamProfile;
+
 		mVideoSetting = videoSetting;
 
-//		Log.d(TAG, "StreamMuxerWrapper: open stream+" + streamProfile.toString());
+		mMuxer = initMuxer();
+	}
 
-		initMuxer();
+	private SrsFlvMuxer initMuxer() {
+		SrsFlvMuxer mMuxer;
+		mMuxer = new SrsFlvMuxer(mConnectCheckerRtmp);
+
+		mMuxer.setVideoResolution(mVideoSetting.getWidth(), mVideoSetting.getHeight());
 
 		mEncoderCount = mStatredCount = 0;
 		mIsStarted = false;
+		//Todo: test strem
+		mMuxer.start("rtmp://ingest-seo.mixer.com:1935/beam/93296292-9wazrlzmhpoypk8bl5r3p89isx3wut7e");
 
-
-	}
-
-	private void initMuxer()
-	{
-		mMuxer = new RtmpMuxer(mStreamProfile.getHost(), mStreamProfile.getPort(), new Time()
-		{
-			@Override
-			public long getCurrentTimestamp()
-			{
-				return System.currentTimeMillis();
-			}
-		});
-
-		// Always call start method from a background thread.
-		new AsyncTask<Void, Void, Void>()
-		{
-			@Override
-			protected Void doInBackground(Void... params)
-			{
-				mMuxer.start(listener, "app", null, null);
-				return null;
-			}
-		}.execute();
+		return mMuxer;
 	}
 
 	public synchronized void prepare() throws IOException {
@@ -111,14 +90,6 @@ public class StreamMuxerWrapper {
 	}
 
 	public synchronized void startRecording() {
-//		if(!isStreamConnected()){
-//			int res = mMuxer.open(mStreamProfile.getStreamUrl(), mVideoSetting.getWidth(), mVideoSetting.getHeight());
-//			if(res <=0 )
-//			{
-//				Log.d(TAG, "startRecording: FATAL ERROR: cannot connect to stream");
-//			}
-//		}
-			
 		if (mVideoEncoder != null)
 			mVideoEncoder.startRecording();
 		if (mAudioEncoder != null)
@@ -126,8 +97,6 @@ public class StreamMuxerWrapper {
 	}
 
 	public synchronized void stopRecording() {
-//		mMuxer.close();
-
 		if (mVideoEncoder != null)
 			mVideoEncoder.stopRecording();
 		mVideoEncoder = null;
@@ -162,16 +131,17 @@ public class StreamMuxerWrapper {
 
 //**********************************************************************
 //**********************************************************************
+
 	/**
 	 * assign encoder to this calss. this is called from encoder.
-	 * @param encoder instance of StreamVideoEncoderBase
+	 *
+	 * @param encoder instance of MediaVideoEncoderBase
 	 */
 	/*package*/
 	void addEncoder(final StreamEncoder encoder) {
 		if (encoder instanceof StreamVideoEncoderBase) {
 			if (mVideoEncoder != null)
 				throw new IllegalArgumentException("Video encoder already added.");
-
 			mVideoEncoder = encoder;
 		} else if (encoder instanceof StreamAudioEncoder) {
 			if (mAudioEncoder != null)
@@ -179,37 +149,41 @@ public class StreamMuxerWrapper {
 			mAudioEncoder = encoder;
 		} else
 			throw new IllegalArgumentException("unsupported encoder");
-
 		mEncoderCount = (mVideoEncoder != null ? 1 : 0) + (mAudioEncoder != null ? 1 : 0);
 	}
 
 	/**
 	 * request start recording from encoder
+	 *
 	 * @return true when muxer is ready to write
 	 */
 	/*package*/
 	synchronized boolean start() {
-		if (DEBUG) Log.v(TAG,  "start:");
+		if (DEBUG) Log.v(TAG, "start:");
 		mStatredCount++;
 		if ((mEncoderCount > 0) && (mStatredCount == mEncoderCount)) {
-//			mMediaMuxer.start();
+
 			mIsStarted = true;
 			notifyAll();
-			if (DEBUG) Log.v(TAG,  "MediaMuxer started:");
+			if (DEBUG) Log.v(TAG, "MediaMuxer started:");
+
 		}
 		return mIsStarted;
 	}
 
 	/**
 	 * request stop recording from encoder when encoder received EOS
-	*/
-	/*package*/ synchronized void stop() {
-		if (DEBUG) Log.v(TAG,  "stop:mStatredCount=" + mStatredCount);
+	 */
+	/*package*/
+	synchronized void stop() {
+		if (DEBUG) Log.v(TAG, "stop:mStatredCount=" + mStatredCount);
 		mStatredCount--;
 		if ((mEncoderCount > 0) && (mStatredCount <= 0)) {
 			mMuxer.stop();
+//			mMuxer.release();
 			mIsStarted = false;
-			if (DEBUG) Log.v(TAG,  "MediaMuxer stopped:");
+			mStreamConnected = false;
+			if (DEBUG) Log.v(TAG, "MediaMuxer stopped:");
 		}
 	}
 
@@ -222,37 +196,70 @@ public class StreamMuxerWrapper {
 //	synchronized int addTrack(final MediaFormat format) {
 //		if (mIsStarted)
 //			throw new IllegalStateException("muxer already started");
-//		final int trackIx = mMediaMuxer.addTrack(format);
+//		final int trackIx = mMuxer.addTrack(format);
 //		if (DEBUG) Log.i(TAG, "addTrack:trackNum=" + mEncoderCount + ",trackIx=" + trackIx + ",format=" + format);
 //		return trackIx;
 //	}
 
 	/**
 	 * write encoded data to muxer
+	 *
+	 * @param trackIndex
 	 * @param byteBuf
 	 * @param bufferInfo
 	 */
 	/*package*/
 	synchronized void writeSampleData(StreamEncoder encoder, final ByteBuffer byteBuf, final MediaCodec.BufferInfo bufferInfo) {
-		if(mMuxer.isStarted()){
-			Log.d(TAG, "writeSampleData: FALTAL ERROR stream is offline");
+		if (mStatredCount > 0 && mStreamConnected) {
+			if (encoder instanceof StreamAudioEncoder) {
+				mMuxer.sendAudio(byteBuf, bufferInfo);
+				Log.d(TAG, "write AUDIO offset: " + bufferInfo.presentationTimeUs + " size: " + bufferInfo.size);
+			} else if (encoder instanceof StreamVideoEncoderBase) {
+				mMuxer.sendVideo(byteBuf, bufferInfo);
+				Log.d(TAG, "write VIDEO offset: " + bufferInfo.presentationTimeUs + " size: " + bufferInfo.size);
+			} else {
+				Log.d(TAG, "writeSampleData: error");
+			}
 		}
-		else if (mStatredCount > 0) {
-			if(encoder instanceof StreamVideoEncoderBase) {
-//				mMuxer.(byteBuf.array(), bufferInfo.offset, bufferInfo.size, (int) bufferInfo.presentationTimeUs);
-				Log.d(TAG, "writeVIDEO: offset:"+bufferInfo.offset+"  -size:"+bufferInfo.size);
-			}
-			else if(encoder instanceof StreamAudioEncoder) {
-//				mMuxer.writeAudio(byteBuf.array(), bufferInfo.offset, bufferInfo.size, (int) bufferInfo.presentationTimeUs);
-				Log.d(TAG, "writeAudio: offset:"+bufferInfo.offset+"  -size:"+bufferInfo.size);
-			}
-			else {
-				Log.d(TAG, "writeSampleData: WRONG ENCODER TYPE");
-			}
-//			mMediaMuxer.writeSampleData(trackIndex, byteBuf, bufferInfo);
-		}
+
 	}
 
+
+	private final ConnectCheckerRtmp mConnectCheckerRtmp = new ConnectCheckerRtmp() {
+		@Override
+		public void onConnectionSuccessRtmp() {
+			Log.d(TAG, "ConnectCheckerRtmp: CONNECTION Success");
+			mStreamConnected = true;
+		}
+
+		@Override
+		public void onConnectionFailedRtmp(String reason) {
+			Log.d(TAG, "ConnectCheckerRtmp: CONNECTION Failed");
+			mStreamConnected = false;
+			mMuxer.reConnect(1000);
+		}
+
+		@Override
+		public void onNewBitrateRtmp(long bitrate) {
+//			Log.d(TAG, "ConnectCheckerRtmp: new Bitrate "+bitrate);
+		}
+
+		@Override
+		public void onDisconnectRtmp() {
+			Log.d(TAG, "ConnectCheckerRtmp: Disconnected");
+			mStreamConnected = false;
+		}
+
+		@Override
+		public void onAuthErrorRtmp() {
+			Log.d(TAG, "ConnectCheckerRtmp: Auth Error");
+		}
+
+		@Override
+		public void onAuthSuccessRtmp() {
+			Log.d(TAG, "ConnectCheckerRtmp: Auth Success");
+		}
+	};
 //**********************************************************************
 //**********************************************************************
 }

@@ -1,25 +1,19 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 29
+  compileSdkVersion 29
 
-    defaultConfig {
-        minSdkVersion 11
-        targetSdkVersion 29
-        versionCode 1
-        versionName "1.0"
-        consumerProguardFile "public-proguard-rules.txt"
+  defaultConfig {
+    minSdkVersion 16
+    targetSdkVersion 29
+    versionCode 165
+    versionName "1.6.5"
+  }
+  buildTypes {
+    release {
+      minifyEnabled false
     }
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
-    }
+  }
 }
 
-dependencies {
-    testImplementation 'junit:junit:4.12'
-    implementation 'androidx.annotation:annotation:1.1.0'
-    implementation 'androidx.legacy:legacy-support-core-utils:1.0.0'
-}
+dependencies {}

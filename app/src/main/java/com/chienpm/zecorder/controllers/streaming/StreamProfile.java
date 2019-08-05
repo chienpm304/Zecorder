@@ -30,6 +30,7 @@ public class StreamProfile implements Serializable {
     }
 
     private void updateHostPortPlayPath() {
+        //rtmp://ingest-seo.mixer.com:1935/beam/93296292-g7csbf82z04gxpf0jbtuy9u5x6n2zrta
 //        rtmp://live-api-s.facebook.com:80/rtmp/888586108172475?s_bl=1&s_sml=3&s_sw=0&s_vt=api-s&a=AbyhpmGw0kkfAUv4
 //        host: rtmp-api.facebook.com
 //        port: 80
