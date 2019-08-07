@@ -6,6 +6,7 @@ import android.graphics.SurfaceTexture;
 import android.graphics.SurfaceTexture.OnFrameAvailableListener;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
+import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 import android.media.projection.MediaProjection;
 import android.os.Handler;
@@ -23,6 +24,9 @@ import com.serenegiant.glutils.GLDrawer2D;
 import java.io.IOException;
 import java.util.List;
 
+import static net.ossrs.yasea.SrsEncoder.VFPS;
+import static net.ossrs.yasea.SrsEncoder.VGOP;
+
 public class StreamScreenEncoder extends StreamVideoEncoderBase {
 	private static final boolean DEBUG = false;	// TODO set false on release
 	private static final String TAG = "chienpm_record";
@@ -38,7 +42,7 @@ public class StreamScreenEncoder extends StreamVideoEncoderBase {
 	private List<RenderUtil.CustomDecorator> mDecors;
 
 	public StreamScreenEncoder(StreamMuxerWrapper muxer, StreamEncoderListener listener, MediaProjection projection, VideoSetting videoSetting, int density, List<RenderUtil.CustomDecorator> decorators) {
-		super(muxer, listener, videoSetting.getWidth(), videoSetting.getHeight(), videoSetting.getOrientation());
+		super(muxer, listener, videoSetting);
 		mMediaProjection = projection;
 		mDensity = density;
 		int _fps = videoSetting.getFPS();
@@ -78,7 +82,7 @@ public class StreamScreenEncoder extends StreamVideoEncoderBase {
 
 	@Override
 	public void stopRecording() {
-		if (DEBUG) Log.v(TAG,  "stopRecording:");
+		if (DEBUG) Log.v(TAG,  "stopStreaming:");
 		synchronized (mSync) {
 			mIsRecording = false;
 			mSync.notifyAll();
@@ -244,5 +248,4 @@ public class StreamScreenEncoder extends StreamVideoEncoderBase {
 
 
 	}
-
 }

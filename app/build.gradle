@@ -10,6 +10,9 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+//        ndk {
+//            abiFilters "armeabi-v7a", "arm64-v8a", "x86"
+//        }
     }
     buildTypes {
         release {
@@ -17,6 +20,11 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+//    externalNativeBuild {
+//        ndkBuild {
+//            path '../library/src/main/cpp/Android.mk'
+//        }
+//    }
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'
         exclude 'META-INF/LICENSE'
@@ -77,5 +85,5 @@ dependencies {
     implementation 'com.facebook.android:facebook-android-sdk:4.42.0'
     implementation 'com.facebook.android:facebook-login:5.2.0'
 
-    api project(':rtmp')
+    implementation project(path: ':library')
 }

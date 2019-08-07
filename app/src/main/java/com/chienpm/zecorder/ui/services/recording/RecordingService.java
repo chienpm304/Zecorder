@@ -109,7 +109,7 @@ public class RecordingService extends Service {
                 }
 
 
-                if (DEBUG) Log.v(TAG, "startRecording:");
+                if (DEBUG) Log.v(TAG, "startStreaming:");
                 try {
                     mMuxer = new MediaMuxerWrapper(this, ".mp4");    // if you record audio only, ".m4a" is also OK.
                     if (true) {

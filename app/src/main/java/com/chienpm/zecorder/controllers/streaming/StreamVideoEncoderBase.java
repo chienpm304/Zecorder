@@ -31,10 +31,20 @@ import android.view.Surface;
 
 import com.chienpm.zecorder.controllers.settings.VideoSetting;
 
+import net.ossrs.yasea.SrsEncoderHelper;
+
 import java.io.IOException;
+import java.lang.annotation.Native;
+
+import static net.ossrs.yasea.SrsEncoder.VCODEC;
+import static net.ossrs.yasea.SrsEncoder.VFPS;
+import static net.ossrs.yasea.SrsEncoder.VGOP;
+import static net.ossrs.yasea.SrsEncoder.vBitrate;
+import static net.ossrs.yasea.SrsEncoder.x264Preset;
 
 
 public abstract class StreamVideoEncoderBase extends StreamEncoder {
+
 	private static final boolean DEBUG = false;	// TODO set false on release
 	private static final String TAG = StreamVideoEncoderBase.class.getSimpleName();
 
@@ -43,10 +53,18 @@ public abstract class StreamVideoEncoderBase extends StreamEncoder {
 
     protected final int mWidth;
     protected final int mHeight;
+	private boolean useSoftEncoder = true;
+	private MediaCodecInfo vmci;
+	private boolean canSoftEncode = false;
+	private int mVideoColorFormat;
+	private StreamMuxerWrapper mMuxer;
 
-	public StreamVideoEncoderBase(final StreamMuxerWrapper muxer, final StreamEncoderListener listener, final int width, final int height, int orientation) {
+	public StreamVideoEncoderBase(StreamMuxerWrapper muxer, StreamEncoderListener listener, VideoSetting videoSetting) {
 		super(muxer, listener);
-		if(orientation == VideoSetting.ORIENTATION_PORTRAIT) {
+		mMuxer = muxer;
+		int width = videoSetting.getWidth();
+		int height = videoSetting.getHeight();
+		if(videoSetting.getOrientation() == VideoSetting.ORIENTATION_PORTRAIT) {
 			mWidth = height;
 			mHeight = width;
 		}
@@ -54,7 +72,9 @@ public abstract class StreamVideoEncoderBase extends StreamEncoder {
 			mWidth = width;
 			mHeight = height;
 		}
+		mVideoColorFormat = chooseVideoEncoder();
 	}
+
 
 	/**
 	 * エンコーダー用のMediaFormatを生成する。prepare_surface_encoder内から呼び出される
@@ -65,12 +85,19 @@ public abstract class StreamVideoEncoderBase extends StreamEncoder {
 	 */
 	protected MediaFormat create_encoder_format(final String mime, final int frame_rate, final int bitrate) {
 		if (DEBUG) Log.v(TAG, String.format("create_encoder_format:(%d,%d),mime=%s,frame_rate=%d,bitrate=%d", mWidth, mHeight, mime, frame_rate, bitrate));
-        final MediaFormat format = MediaFormat.createVideoFormat(mime, mWidth, mHeight);
-        format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);	// API >= 18
-        format.setInteger(MediaFormat.KEY_BIT_RATE, bitrate > 0 ? bitrate : calcBitRate(frame_rate));
-        format.setInteger(MediaFormat.KEY_FRAME_RATE, frame_rate);
-        format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 2);
-		return format;
+//        final MediaFormat format = MediaFormat.createVideoFormat(mime, mWidth, mHeight);
+//        format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);	// API >= 18
+//        format.setInteger(MediaFormat.KEY_BIT_RATE, bitrate > 0 ? bitrate : calcBitRate(frame_rate));
+//        format.setInteger(MediaFormat.KEY_FRAME_RATE, frame_rate);
+//        format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 2);
+//		return format;
+		MediaFormat videoFormat = MediaFormat.createVideoFormat(VCODEC, mWidth, mHeight);
+		videoFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, mVideoColorFormat);
+		videoFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 0);
+		videoFormat.setInteger(MediaFormat.KEY_BIT_RATE, vBitrate);
+		videoFormat.setInteger(MediaFormat.KEY_FRAME_RATE, VFPS);
+		videoFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, VGOP / VFPS);
+		return videoFormat;
 	}
 
 	protected Surface prepare_surface_encoder(final String mime, final int frame_rate, final int bitrate)
@@ -78,20 +105,42 @@ public abstract class StreamVideoEncoderBase extends StreamEncoder {
 
 		if (DEBUG) Log.v(TAG, String.format("prepare_surface_encoder:(%d,%d),mime=%s,frame_rate=%d,bitrate=%d", mWidth, mHeight, mime, frame_rate, bitrate));
 
-//		mTrackIndex = -1;/
+		if (!useSoftEncoder && (mWidth % 32 != 0 || mHeight % 32 != 0)) {
+			if (vmci.getName().contains("MTK")) {
+				//throw new AssertionError("MTK encoding revolution stride must be 32x");
+			}
+		}
+
+		SrsEncoderHelper.getInstance().setEncoderResolution(mWidth, mHeight);
+		SrsEncoderHelper.getInstance().setEncoderFps(VFPS);
+		SrsEncoderHelper.getInstance().setEncoderGop(VGOP);
+		SrsEncoderHelper.getInstance().setEncoderBitrate(vBitrate);
+		SrsEncoderHelper.getInstance().setEncoderPreset(x264Preset);
+
+		if (useSoftEncoder) {
+			canSoftEncode = SrsEncoderHelper.getInstance().openSoftEncoder();
+			if (!canSoftEncode) {
+				Log.d(TAG, "prepare_surface_encoder: CANNOT OPEN SOFTENCODER");
+				return null;
+			}
+		}
+
+
+		mTrackIndex = -1;
         mMuxerStarted = mIsEOS = false;
 
-        final MediaCodecInfo videoCodecInfo = selectVideoCodec(mime);
-        if (videoCodecInfo == null) {
-            throw new IllegalArgumentException("Unable to find an appropriate codec for " + mime);
-        }
-		if (DEBUG) Log.i(TAG, "selected codec: " + videoCodecInfo.getName());
+		try {
+			mMediaCodec = MediaCodec.createByCodecName(vmci.getName());
+		} catch (IOException e) {
+			Log.e(TAG, "create vencoder failed.");
+			e.printStackTrace();
+			return null;
+		}
 
-        final MediaFormat format = create_encoder_format(mime, frame_rate, bitrate);
-		if (DEBUG) Log.i(TAG, "format: " + format);
+		final MediaFormat format = create_encoder_format(mime, frame_rate, bitrate);
 
-        mMediaCodec = MediaCodec.createEncoderByType(mime);
         mMediaCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+        mTrackIndex = mMuxer.addTrack(format);
         // get Surface for encoder input
         // this method only can call between #configure and #start
         return mMediaCodec.createInputSurface();	// API >= 18
@@ -194,4 +243,88 @@ public abstract class StreamVideoEncoderBase extends StreamEncoder {
 		mIsEOS = true;
 	}
 
+	// choose the right supported color format. @see below:
+	private int chooseVideoEncoder() {
+		// choose the encoder "video/avc":
+		//      1. select default one when type matched.
+		//      2. google avc is unusable.
+		//      3. choose qcom avc.
+		vmci = chooseVideoEncoder(null);
+		//vmci = chooseVideoEncoder("google");
+		//vmci = chooseVideoEncoder("qcom");
+
+		int matchedColorFormat = 0;
+		MediaCodecInfo.CodecCapabilities cc = vmci.getCapabilitiesForType(VCODEC);
+		for (int i = 0; i < cc.colorFormats.length; i++) {
+			int cf = cc.colorFormats[i];
+			Log.i(TAG, String.format("vencoder %s supports color fomart 0x%x(%d)", vmci.getName(), cf, cf));
+
+			// choose YUV for h.264, prefer the bigger one.
+			// corresponding to the color space transform in onPreviewFrame
+			if (cf >= cc.COLOR_FormatYUV420Planar && cf <= cc.COLOR_FormatYUV420SemiPlanar) {
+				if (cf > matchedColorFormat) {
+					matchedColorFormat = cf;
+				}
+			}
+		}
+
+		for (int i = 0; i < cc.profileLevels.length; i++) {
+			MediaCodecInfo.CodecProfileLevel pl = cc.profileLevels[i];
+			Log.i(TAG, String.format("vencoder %s support profile %d, level %d", vmci.getName(), pl.profile, pl.level));
+		}
+
+		Log.i(TAG, String.format("vencoder %s choose color format 0x%x(%d)", vmci.getName(), matchedColorFormat, matchedColorFormat));
+		return matchedColorFormat;
+	}
+
+	// choose the video encoder by name.
+	private MediaCodecInfo chooseVideoEncoder(String name) {
+		int nbCodecs = MediaCodecList.getCodecCount();
+		for (int i = 0; i < nbCodecs; i++) {
+			MediaCodecInfo mci = MediaCodecList.getCodecInfoAt(i);
+			if (!mci.isEncoder()) {
+				continue;
+			}
+
+			String[] types = mci.getSupportedTypes();
+			for (int j = 0; j < types.length; j++) {
+				if (types[j].equalsIgnoreCase(VCODEC)) {
+					Log.i(TAG, String.format("vencoder %s types: %s", mci.getName(), types[j]));
+					if (name == null) {
+						return mci;
+					}
+
+					if (mci.getName().contains(name)) {
+						return mci;
+					}
+				}
+			}
+		}
+
+		return null;
+	}
+
+
+
+	private native void setEncoderResolution(int outWidth, int outHeight);
+	private native void setEncoderFps(int fps);
+	private native void setEncoderGop(int gop);
+	private native void setEncoderBitrate(int bitrate);
+	private native void setEncoderPreset(String preset);
+	private native byte[] RGBAToI420(byte[] frame, int width, int height, boolean flip, int rotate);
+	private native byte[] RGBAToNV12(byte[] frame, int width, int height, boolean flip, int rotate);
+	private native byte[] ARGBToI420Scaled(int[] frame, int width, int height, boolean flip, int rotate, int crop_x, int crop_y,int crop_width, int crop_height);
+	private native byte[] ARGBToNV12Scaled(int[] frame, int width, int height, boolean flip, int rotate, int crop_x, int crop_y,int crop_width, int crop_height);
+	private native byte[] ARGBToI420(int[] frame, int width, int height, boolean flip, int rotate);
+	private native byte[] ARGBToNV12(int[] frame, int width, int height, boolean flip, int rotate);
+	private native byte[] NV21ToNV12Scaled(byte[] frame, int width, int height, boolean flip, int rotate, int crop_x, int crop_y,int crop_width, int crop_height);
+	private native byte[] NV21ToI420Scaled(byte[] frame, int width, int height, boolean flip, int rotate, int crop_x, int crop_y,int crop_width, int crop_height);
+	private native int RGBASoftEncode(byte[] frame, int width, int height, boolean flip, int rotate, long pts);
+	private native boolean openSoftEncoder();
+	private native void closeSoftEncoder();
+
+	static {
+		System.loadLibrary("yuv");
+		System.loadLibrary("enc");
+	}
 }

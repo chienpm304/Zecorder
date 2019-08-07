@@ -41,15 +41,20 @@ public class StreamingActivity extends AppCompatActivity {
     private View mViewRoot;
     private Button mBtnStartStream, mBtnEndStream;
 
+    final boolean DEBUG = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_streaming);
         initViews();
-        Intent i = getIntent();
-        mStreamProfile = (StreamProfile) i.getSerializableExtra(MyUtils.STREAM_PROFILE);
-        Log.d(TAG, "onRequest stream Completed: "+mStreamProfile.toString());
+        if(DEBUG){
+            mStreamProfile = new StreamProfile("","","");
+        }
+        else {
+            Intent i = getIntent();
+            mStreamProfile = (StreamProfile) i.getSerializableExtra(MyUtils.STREAM_PROFILE);
+        }
 
     }
 
@@ -60,11 +65,15 @@ public class StreamingActivity extends AppCompatActivity {
 
         mBtnStartStream.setOnClickListener(mStartStreamListener);
         mBtnEndStream.setOnClickListener(mEndStreamListener);
+        if(DEBUG)
+            mBtnStartStream.performClick();
     }
 
     @Override
     protected void onStart() {
         super.onStart();
+        if(DEBUG)
+            return;
         if(FacebookUtils.getInstance().isSignedIn()){
             requestFullLiveProfile(AccessToken.getCurrentAccessToken());
         }
@@ -124,7 +133,7 @@ public class StreamingActivity extends AppCompatActivity {
                 requestScreenCaptureIntent();
 
             if(hasPermission()) {
-                startStreamingCntrollerService();
+                startStreamingControllerService();
             }
             else{
                 requestPermissions();
@@ -204,11 +213,11 @@ public class StreamingActivity extends AppCompatActivity {
     private void shouldStartRecordingControllerSerivce() {
         if (hasPermission() && !isMyServiceRunning(RecordingControllerService.class)) {
             MyUtils.showSnackBarNotification(mViewRoot, "Permissions Granted!", Snackbar.LENGTH_SHORT);
-            startStreamingCntrollerService();
+            startStreamingControllerService();
         }
     }
 
-    private void startStreamingCntrollerService() {
+    private void startStreamingControllerService() {
 
         Intent streamingControllerService = new Intent(StreamingActivity.this, StreamingControllerService.class);
 

@@ -183,7 +183,7 @@ public abstract class MediaEncoder implements Runnable {
 
 	/*package*/
 	public void startRecording() {
-   	if (DEBUG) Log.v(TAG, "startRecording");
+   	if (DEBUG) Log.v(TAG, "startStreaming");
 		synchronized (mSync) {
 			mIsCapturing = true;
 			mRequestStop = false;

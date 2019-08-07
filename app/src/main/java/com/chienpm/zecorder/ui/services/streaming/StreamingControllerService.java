@@ -384,7 +384,7 @@ public class StreamingControllerService extends Service {
                             toggleView(mCountdownLayout, View.GONE);
                             toggleView(mViewRoot, View.VISIBLE);
                             mRecordingStarted = true;
-                            mStreamingService.startRecording();
+                            mStreamingService.startStreaming();
                             MyUtils.toast(getApplicationContext(), "Recording Started", Toast.LENGTH_LONG);
                         }
                     }.start();

@@ -24,20 +24,23 @@ package com.chienpm.zecorder.controllers.streaming;
 
 import android.content.Context;
 import android.media.MediaCodec;
+import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
-import android.media.MediaMuxer;
-import android.text.TextUtils;
 import android.util.Log;
 
 import com.chienpm.zecorder.controllers.settings.VideoSetting;
-import com.chienpm.zecorder.ui.utils.MyUtils;
+import com.github.faucamp.simplertmp.RtmpHandler;
 
-import net.ossrs.rtmp.ConnectCheckerRtmp;
-import net.ossrs.rtmp.SrsFlvMuxer;
+import net.ossrs.yasea.SrsFlvMuxer;
 
-import java.io.File;
 import java.io.IOException;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
+
+import static net.ossrs.yasea.SrsEncoder.VFPS;
+import static net.ossrs.yasea.SrsEncoder.VGOP;
+import static net.ossrs.yasea.SrsEncoder.vBitrate;
+import static net.ossrs.yasea.SrsEncoder.x264Preset;
 
 public class StreamMuxerWrapper {
 	private static final boolean DEBUG = false;    // TODO set false on release
@@ -46,12 +49,15 @@ public class StreamMuxerWrapper {
 	private final VideoSetting mVideoSetting;
 
 	private final SrsFlvMuxer mMuxer;    // API >= 18
+	private final int mWidth, mHeight;
 	private int mEncoderCount, mStatredCount;
 	private boolean mIsStarted;
 	private volatile boolean mIsPaused;
 	private StreamEncoder mVideoEncoder, mAudioEncoder;
-	private boolean mStreamConnected = false;
+	private boolean useSoftEncoder = true;
 
+	private MediaCodecInfo vmci;
+	private boolean canSoftEncode;
 
 	/**
 	 * Constructor
@@ -64,39 +70,43 @@ public class StreamMuxerWrapper {
 		mStreamProfile = streamProfile;
 
 		mVideoSetting = videoSetting;
-
+		mWidth = videoSetting.getWidth();
+		mHeight = videoSetting.getHeight();
 		mMuxer = initMuxer();
 	}
 
 	private SrsFlvMuxer initMuxer() {
 		SrsFlvMuxer mMuxer;
-		mMuxer = new SrsFlvMuxer(mConnectCheckerRtmp);
+		mMuxer = new SrsFlvMuxer(new RtmpHandler(mRtmpListener));
 
-		mMuxer.setVideoResolution(mVideoSetting.getWidth(), mVideoSetting.getHeight());
+//		mMuxer.setVideoResolution(mVideoSetting.getWidth(), mVideoSetting.getHeight());
 
 		mEncoderCount = mStatredCount = 0;
 		mIsStarted = false;
 		//Todo: test strem
-		mMuxer.start("rtmp://ingest-seo.mixer.com:1935/beam/93296292-9wazrlzmhpoypk8bl5r3p89isx3wut7e");
-
 		return mMuxer;
 	}
 
 	public synchronized void prepare() throws IOException {
-		if (mVideoEncoder != null)
-			mVideoEncoder.prepare();
-		if (mAudioEncoder != null)
-			mAudioEncoder.prepare();
+		if(mMuxer!=null) {
+			mMuxer.start("rtmp://ingest-syd.mixer.com:1935/beam/93296292-c0g2p73umz20cglqzy75hpeiu5btx0x8");
+			mMuxer.setVideoResolution(mWidth, mHeight);
+			if (mVideoEncoder != null)
+				mVideoEncoder.prepare();
+			if (mAudioEncoder != null)
+				mAudioEncoder.prepare();
+		}
 	}
 
-	public synchronized void startRecording() {
+	public synchronized void startStreaming() {
 		if (mVideoEncoder != null)
 			mVideoEncoder.startRecording();
+
 		if (mAudioEncoder != null)
 			mAudioEncoder.startRecording();
 	}
 
-	public synchronized void stopRecording() {
+	public synchronized void stopStreaming() {
 		if (mVideoEncoder != null)
 			mVideoEncoder.stopRecording();
 		mVideoEncoder = null;
@@ -160,6 +170,7 @@ public class StreamMuxerWrapper {
 	/*package*/
 	synchronized boolean start() {
 		if (DEBUG) Log.v(TAG, "start:");
+
 		mStatredCount++;
 		if ((mEncoderCount > 0) && (mStatredCount == mEncoderCount)) {
 
@@ -180,9 +191,7 @@ public class StreamMuxerWrapper {
 		mStatredCount--;
 		if ((mEncoderCount > 0) && (mStatredCount <= 0)) {
 			mMuxer.stop();
-//			mMuxer.release();
 			mIsStarted = false;
-			mStreamConnected = false;
 			if (DEBUG) Log.v(TAG, "MediaMuxer stopped:");
 		}
 	}
@@ -193,13 +202,13 @@ public class StreamMuxerWrapper {
 	 * @return minus value indicate error
 	 */
 	/*package*/
-//	synchronized int addTrack(final MediaFormat format) {
-//		if (mIsStarted)
-//			throw new IllegalStateException("muxer already started");
-//		final int trackIx = mMuxer.addTrack(format);
-//		if (DEBUG) Log.i(TAG, "addTrack:trackNum=" + mEncoderCount + ",trackIx=" + trackIx + ",format=" + format);
-//		return trackIx;
-//	}
+	synchronized int addTrack(final MediaFormat format) {
+		if (mIsStarted)
+			throw new IllegalStateException("muxer already started");
+		final int trackIx = mMuxer.addTrack(format);
+		if (DEBUG) Log.i(TAG, "addTrack:trackNum=" + mEncoderCount + ",trackIx=" + trackIx + ",format=" + format);
+		return trackIx;
+	}
 
 	/**
 	 * write encoded data to muxer
@@ -209,57 +218,100 @@ public class StreamMuxerWrapper {
 	 * @param bufferInfo
 	 */
 	/*package*/
-	synchronized void writeSampleData(StreamEncoder encoder, final ByteBuffer byteBuf, final MediaCodec.BufferInfo bufferInfo) {
-		if (mStatredCount > 0 && mStreamConnected) {
-			if (encoder instanceof StreamAudioEncoder) {
-				mMuxer.sendAudio(byteBuf, bufferInfo);
-				Log.d(TAG, "write AUDIO offset: " + bufferInfo.presentationTimeUs + " size: " + bufferInfo.size);
-			} else if (encoder instanceof StreamVideoEncoderBase) {
-				mMuxer.sendVideo(byteBuf, bufferInfo);
-				Log.d(TAG, "write VIDEO offset: " + bufferInfo.presentationTimeUs + " size: " + bufferInfo.size);
-			} else {
-				Log.d(TAG, "writeSampleData: error");
-			}
+	synchronized void writeSampleData(int trackIndex, final ByteBuffer byteBuf, final MediaCodec.BufferInfo bufferInfo) {
+		if (mStatredCount > 0) {
+			mMuxer.writeSampleData(trackIndex, byteBuf, bufferInfo);
 		}
 
 	}
 
-
-	private final ConnectCheckerRtmp mConnectCheckerRtmp = new ConnectCheckerRtmp() {
+	private final RtmpHandler.RtmpListener mRtmpListener = new RtmpHandler.RtmpListener() {
 		@Override
-		public void onConnectionSuccessRtmp() {
-			Log.d(TAG, "ConnectCheckerRtmp: CONNECTION Success");
-			mStreamConnected = true;
+		public void onRtmpConnecting(String msg) {
+			Log.i(TAG, "onRtmpConnecting: "+msg);
 		}
 
 		@Override
-		public void onConnectionFailedRtmp(String reason) {
-			Log.d(TAG, "ConnectCheckerRtmp: CONNECTION Failed");
-			mStreamConnected = false;
-			mMuxer.reConnect(1000);
+		public void onRtmpConnected(String msg) {
+			Log.i(TAG, "onRtmpConnected: "+msg);
 		}
 
 		@Override
-		public void onNewBitrateRtmp(long bitrate) {
-//			Log.d(TAG, "ConnectCheckerRtmp: new Bitrate "+bitrate);
+		public void onRtmpVideoStreaming() {
+			Log.i(TAG, "onRtmpVideoStreaming ");
 		}
 
 		@Override
-		public void onDisconnectRtmp() {
-			Log.d(TAG, "ConnectCheckerRtmp: Disconnected");
-			mStreamConnected = false;
+		public void onRtmpAudioStreaming() {
+//			Log.i(TAG, "onRtmpAudioStreaming: ");
 		}
 
 		@Override
-		public void onAuthErrorRtmp() {
-			Log.d(TAG, "ConnectCheckerRtmp: Auth Error");
+		public void onRtmpStopped() {
+			Log.d(TAG, "onRtmpStopped: ");
 		}
 
 		@Override
-		public void onAuthSuccessRtmp() {
-			Log.d(TAG, "ConnectCheckerRtmp: Auth Success");
+		public void onRtmpDisconnected() {
+			Log.i(TAG, "onRtmpDisconnected: ");
+		}
+
+		@Override
+		public void onRtmpVideoFpsChanged(double fps) {
+			Log.i(TAG, "onRtmpVideoFpsChanged: "+String.format("Output Fps: %f", fps));
+		}
+
+		@Override
+		public void onRtmpVideoBitrateChanged(double bitrate) {
+			int rate = (int) bitrate;
+			if (rate / 1000 > 0) {
+				Log.i(TAG, String.format("Video bitrate: %f kbps", bitrate / 1000));
+			} else {
+				Log.i(TAG, String.format("Video bitrate: %d bps", rate));
+			}
+		}
+
+		@Override
+		public void onRtmpAudioBitrateChanged(double bitrate) {
+			int rate = (int) bitrate;
+			if (rate / 1000 > 0) {
+				Log.i(TAG, String.format("Audio bitrate: %f kbps", bitrate / 1000));
+			} else {
+				Log.i(TAG, String.format("Audio bitrate: %d bps", rate));
+			}
+		}
+
+		@Override
+		public void onRtmpSocketException(SocketException e) {
+			handleException(e);
+		}
+
+		@Override
+		public void onRtmpIOException(IOException e) {
+			handleException(e);
+		}
+
+		@Override
+		public void onRtmpIllegalArgumentException(IllegalArgumentException e) {
+			handleException(e);
+		}
+
+		@Override
+		public void onRtmpIllegalStateException(IllegalStateException e) {
+			handleException(e);
 		}
 	};
+
+	private void handleException(Exception e) {
+		try {
+			Log.e(TAG, "handleException: ", e);
+			stop();
+			stopStreaming();
+		} catch (Exception e1) {
+			//
+		}
+	}
+
 //**********************************************************************
 //**********************************************************************
 }

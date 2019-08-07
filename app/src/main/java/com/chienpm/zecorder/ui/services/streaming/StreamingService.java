@@ -17,9 +17,6 @@ import android.util.Size;
 import android.view.Display;
 
 import com.chienpm.zecorder.R;
-import com.chienpm.zecorder.controllers.encoder.MediaAudioEncoder;
-import com.chienpm.zecorder.controllers.encoder.MediaEncoder;
-import com.chienpm.zecorder.controllers.encoder.MediaScreenEncoder;
 import com.chienpm.zecorder.controllers.encoder.RenderUtil.CustomDecorator;
 import com.chienpm.zecorder.controllers.settings.SettingManager;
 import com.chienpm.zecorder.controllers.settings.VideoSetting;
@@ -102,7 +99,7 @@ public class StreamingService extends Service {
         return mIBinder;
     }
 
-    public void startRecording() {
+    public void startStreaming() {
         synchronized (sSync) {
             if(mMuxer==null) {
                 getScreenSize();
@@ -120,7 +117,7 @@ public class StreamingService extends Service {
 
                 mCurrentVideoSetting = SettingManager.getVideoProfile(getApplicationContext());
 
-                if (DEBUG) Log.v(TAG, "startRecording:");
+                if (DEBUG) Log.v(TAG, "startStreaming:");
                 try {
                     mMuxer = new StreamMuxerWrapper(this,  mStreamProfile, mCurrentVideoSetting);    // if you record audio only, ".m4a" is also OK.
                     if (true) {
@@ -137,7 +134,7 @@ public class StreamingService extends Service {
                         new StreamAudioEncoder(mMuxer, mMediaEncoderListener);
                     }
                     mMuxer.prepare();
-                    mMuxer.startRecording();
+                    mMuxer.startStreaming();
                 } catch (final IOException e) {
                     Log.e(TAG, "startScreenRecord:", e);
                 }
@@ -178,7 +175,7 @@ public class StreamingService extends Service {
 
     //Return output file
     public VideoSetting stopRecording() {
-        if (DEBUG) Log.v(TAG, "stopRecording:mMuxer=" + mMuxer);
+        if (DEBUG) Log.v(TAG, "stopStreaming:mMuxer=" + mMuxer);
 
         String outputFile = "";
 
@@ -187,7 +184,7 @@ public class StreamingService extends Service {
 
 //                outputFile = mMuxer.getOutputPath();
                 mCurrentVideoSetting.setOutputPath(outputFile);
-                mMuxer.stopRecording();
+                mMuxer.stopStreaming();
                 mMuxer = null;
                 // you should not wait here
             }

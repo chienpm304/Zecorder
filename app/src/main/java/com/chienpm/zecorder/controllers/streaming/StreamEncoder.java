@@ -67,7 +67,7 @@ public abstract class StreamEncoder implements Runnable {
     /**
      * Track Number
      */
-//    protected int mTrackIndex;
+    protected int mTrackIndex;
     /**
      * MediaCodec instance for encoding
      */
@@ -184,7 +184,7 @@ public abstract class StreamEncoder implements Runnable {
 
 	/*package*/
 	public void startRecording() {
-   	if (DEBUG) Log.v(TAG, "startRecording");
+   	if (DEBUG) Log.v(TAG, "startStreaming");
 		synchronized (mSync) {
 			mIsCapturing = true;
 			mRequestStop = false;
@@ -198,7 +198,7 @@ public abstract class StreamEncoder implements Runnable {
     */
 	/*package*/
    public void stopRecording() {
-		if (DEBUG) Log.v(TAG, "stopRecording");
+		if (DEBUG) Log.v(TAG, "stopStreaming");
 		synchronized (mSync) {
 			if (!mIsCapturing || mRequestStop) {
 				return;
@@ -327,8 +327,8 @@ public abstract class StreamEncoder implements Runnable {
     	if (mMediaCodec == null) return;
         ByteBuffer[] encoderOutputBuffers = mMediaCodec.getOutputBuffers();
         int encoderStatus, count = 0;
-        final StreamMuxerWrapper muxer = mWeakMuxer.get();
-        if (muxer == null) {
+        final StreamMuxerWrapper muxerWrapper = mWeakMuxer.get();
+        if (muxerWrapper == null) {
 //        	throw new NullPointerException("muxer is unexpectedly null");
         	Log.w(TAG, "muxer is unexpectedly null");
         	return;
@@ -359,14 +359,14 @@ LOOP:	while (mIsCapturing) {
 				// get output format from codec and pass them to muxer
 				// getOutputFormat should be called after INFO_OUTPUT_FORMAT_CHANGED otherwise crash.
                 final MediaFormat format = mMediaCodec.getOutputFormat(); // API >= 16
-//               	mTrackIndex = muxer.addTrack(format);
+               	mTrackIndex = muxerWrapper.addTrack(format);
                	mMuxerStarted = true;
-               	if (!muxer.start()) {
+               	if (!muxerWrapper.start()) {
                		// we should wait until muxer is ready
-               		synchronized (muxer) {
-	               		while (!muxer.isStarted())
+               		synchronized (muxerWrapper) {
+	               		while (!muxerWrapper.isStarted())
 						try {
-							muxer.wait(100);
+							muxerWrapper.wait(100);
 						} catch (final InterruptedException e) {
 							break LOOP;
 						}
@@ -401,7 +401,7 @@ LOOP:	while (mIsCapturing) {
 					if (!mRequestPause) {
 	                   	mBufferInfo.presentationTimeUs = getPTSUs();
 	                   	//Todo: send these data buffer
-	                   	muxer.writeSampleData(this, encodedData, mBufferInfo);
+	                   	muxerWrapper.writeSampleData(mTrackIndex, encodedData, mBufferInfo);
 						prevOutputPTSUs = mBufferInfo.presentationTimeUs;
 					}
                 }
