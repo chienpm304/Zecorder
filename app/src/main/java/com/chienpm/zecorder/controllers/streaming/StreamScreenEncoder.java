@@ -130,7 +130,8 @@ public class StreamScreenEncoder extends StreamVideoEncoderBase {
 
 			mEncoderSurface = getEgl().createFromSurface(mSurface);
 
-	    	if (DEBUG) Log.d(TAG,"setup VirtualDisplay");
+	    	if (DEBUG)
+	    		Log.d(TAG,"setup VirtualDisplay");
 			intervals = (long)(1000f / fps);
 		    display = mMediaProjection.createVirtualDisplay(
 		    	"Capturing Display",
@@ -234,7 +235,7 @@ public class StreamScreenEncoder extends StreamVideoEncoderBase {
 
 					RenderUtil.renderTextures(mDecors);
 					mEncoderSurface.swap();
-					Log.d(TAG, "run check mTexId: "+mTexId);
+//					Log.d(TAG, "run check mTexId: "+mTexId);
 					makeCurrent();
 //					GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 //					GLES20.glFlush();

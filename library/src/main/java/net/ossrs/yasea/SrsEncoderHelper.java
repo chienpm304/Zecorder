@@ -1,5 +1,9 @@
 package net.ossrs.yasea;
 
+import android.media.MediaCodec;
+
+import java.nio.ByteBuffer;
+
 public class SrsEncoderHelper {
     private static final SrsEncoderHelper ourInstance = new SrsEncoderHelper();
 
@@ -29,5 +33,25 @@ public class SrsEncoderHelper {
     static {
         System.loadLibrary("yuv");
         System.loadLibrary("enc");
+    }
+
+    public void swRgbaFrame(byte[] data, int width, int height, long pts) {
+        RGBASoftEncode(data, width, height, true, 180, pts);
+    }
+
+    private void onSoftEncodedData(byte[] es, long pts, boolean isKeyFrame) {
+        ByteBuffer bb = ByteBuffer.wrap(es);
+        MediaCodec.BufferInfo vebi = new MediaCodec.BufferInfo();
+        vebi.offset = 0;
+        vebi.size = es.length;
+        vebi.presentationTimeUs = pts;
+        vebi.flags = isKeyFrame ? MediaCodec.BUFFER_FLAG_KEY_FRAME : 0;
+        onEncodedAnnexbFrame(bb, vebi);
+    }
+
+    // when got encoded h264 es stream.
+    private void onEncodedAnnexbFrame(ByteBuffer es, MediaCodec.BufferInfo bi) {
+//        mp4Muxer.writeSampleData(videoMp4Track, es.duplicate(), bi);
+        flvMuxer.writeSampleData(videoFlvTrack, es, bi);
     }
 }

@@ -78,9 +78,6 @@ public class StreamMuxerWrapper {
 	private SrsFlvMuxer initMuxer() {
 		SrsFlvMuxer mMuxer;
 		mMuxer = new SrsFlvMuxer(new RtmpHandler(mRtmpListener));
-
-//		mMuxer.setVideoResolution(mVideoSetting.getWidth(), mVideoSetting.getHeight());
-
 		mEncoderCount = mStatredCount = 0;
 		mIsStarted = false;
 		//Todo: test strem
@@ -89,7 +86,8 @@ public class StreamMuxerWrapper {
 
 	public synchronized void prepare() throws IOException {
 		if(mMuxer!=null) {
-			mMuxer.start("rtmp://ingest-syd.mixer.com:1935/beam/93296292-c0g2p73umz20cglqzy75hpeiu5btx0x8");
+//			mMuxer.start("rtmp://ingest-syd.mixer.com:1935/beam/93296292-c0g2p73umz20cglqzy75hpeiu5btx0x8");
+			mMuxer.start("rtmp://live.restream.io/live/re_1565015_8da6a0e86ce0d7407b32");
 			mMuxer.setVideoResolution(mWidth, mHeight);
 			if (mVideoEncoder != null)
 				mVideoEncoder.prepare();

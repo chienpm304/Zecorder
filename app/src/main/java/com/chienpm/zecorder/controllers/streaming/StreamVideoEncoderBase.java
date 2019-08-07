@@ -157,7 +157,6 @@ public abstract class StreamVideoEncoderBase extends StreamEncoder {
      * @param mimeType
      * @return null if no codec matched
      */
-    @SuppressWarnings("deprecation")
 	protected static final MediaCodecInfo selectVideoCodec(final String mimeType) {
     	if (DEBUG) Log.v(TAG, "selectVideoCodec:");
 
@@ -302,29 +301,5 @@ public abstract class StreamVideoEncoderBase extends StreamEncoder {
 		}
 
 		return null;
-	}
-
-
-
-	private native void setEncoderResolution(int outWidth, int outHeight);
-	private native void setEncoderFps(int fps);
-	private native void setEncoderGop(int gop);
-	private native void setEncoderBitrate(int bitrate);
-	private native void setEncoderPreset(String preset);
-	private native byte[] RGBAToI420(byte[] frame, int width, int height, boolean flip, int rotate);
-	private native byte[] RGBAToNV12(byte[] frame, int width, int height, boolean flip, int rotate);
-	private native byte[] ARGBToI420Scaled(int[] frame, int width, int height, boolean flip, int rotate, int crop_x, int crop_y,int crop_width, int crop_height);
-	private native byte[] ARGBToNV12Scaled(int[] frame, int width, int height, boolean flip, int rotate, int crop_x, int crop_y,int crop_width, int crop_height);
-	private native byte[] ARGBToI420(int[] frame, int width, int height, boolean flip, int rotate);
-	private native byte[] ARGBToNV12(int[] frame, int width, int height, boolean flip, int rotate);
-	private native byte[] NV21ToNV12Scaled(byte[] frame, int width, int height, boolean flip, int rotate, int crop_x, int crop_y,int crop_width, int crop_height);
-	private native byte[] NV21ToI420Scaled(byte[] frame, int width, int height, boolean flip, int rotate, int crop_x, int crop_y,int crop_width, int crop_height);
-	private native int RGBASoftEncode(byte[] frame, int width, int height, boolean flip, int rotate, long pts);
-	private native boolean openSoftEncoder();
-	private native void closeSoftEncoder();
-
-	static {
-		System.loadLibrary("yuv");
-		System.loadLibrary("enc");
 	}
 }

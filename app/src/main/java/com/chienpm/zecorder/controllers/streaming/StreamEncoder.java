@@ -26,6 +26,9 @@ import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.util.Log;
 
+import net.ossrs.yasea.SrsEncoderHelper;
+import net.ossrs.yasea.SrsFlvMuxer;
+
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
@@ -290,6 +293,12 @@ public abstract class StreamEncoder implements Runnable {
      */
     protected void encode(final ByteBuffer buffer, final int length, final long presentationTimeUs) {
     	if (!mIsCapturing) return;
+    	byte[] byteByffers = buffer.array();
+    	//todo: test: sw
+		if(this instanceof StreamVideoEncoderBase) {
+			SrsEncoderHelper.getInstance().swRgbaFrame(byteByffers, 1280, 720, presentationTimeUs);
+
+		}
         final ByteBuffer[] inputBuffers = mMediaCodec.getInputBuffers();
         while (mIsCapturing) {
 	        final int inputBufferIndex = mMediaCodec.dequeueInputBuffer(TIMEOUT_USEC);
@@ -297,7 +306,7 @@ public abstract class StreamEncoder implements Runnable {
 	            final ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
 	            inputBuffer.clear();
 	            if (buffer != null) {
-	            	inputBuffer.put(buffer);
+	            	inputBuffer.put(byteByffers); //todo: test
 	            }
 //	            if (DEBUG) Log.v(TAG, "encode:queueInputBuffer");
 	            if (length <= 0) {
@@ -400,8 +409,10 @@ LOOP:	while (mIsCapturing) {
                     // write encoded data to muxer(need to adjust presentationTimeUs.
 					if (!mRequestPause) {
 	                   	mBufferInfo.presentationTimeUs = getPTSUs();
+
 	                   	//Todo: send these data buffer
 	                   	muxerWrapper.writeSampleData(mTrackIndex, encodedData, mBufferInfo);
+
 						prevOutputPTSUs = mBufferInfo.presentationTimeUs;
 					}
                 }
