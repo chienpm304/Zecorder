@@ -55,7 +55,7 @@ public class MediaMuxerWrapper {
 		String ext = _ext;
 		if (TextUtils.isEmpty(ext)) ext = ".mp4";
 		try {
-			File outputFile = new File(MyUtils.getBaseStorageDirectory(), MyUtils.createFileName());
+			File outputFile = new File(MyUtils.getBaseStorageDirectory(), MyUtils.createFileName(_ext));
 
 			if (!outputFile.getParentFile().exists()) {
 				outputFile.getParentFile().mkdirs();

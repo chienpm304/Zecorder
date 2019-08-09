@@ -37,11 +37,6 @@ import java.io.IOException;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 
-import static net.ossrs.yasea.SrsEncoder.VFPS;
-import static net.ossrs.yasea.SrsEncoder.VGOP;
-import static net.ossrs.yasea.SrsEncoder.vBitrate;
-import static net.ossrs.yasea.SrsEncoder.x264Preset;
-
 public class StreamMuxerWrapper {
 	private static final boolean DEBUG = false;    // TODO set false on release
 	private static final String TAG = "chienpm_log_stream";
@@ -87,7 +82,7 @@ public class StreamMuxerWrapper {
 	public synchronized void prepare() throws IOException {
 		if(mMuxer!=null) {
 //			mMuxer.start("rtmp://ingest-syd.mixer.com:1935/beam/93296292-c0g2p73umz20cglqzy75hpeiu5btx0x8");
-			mMuxer.start("rtmp://live.restream.io/live/re_1565015_8da6a0e86ce0d7407b32");
+			mMuxer.start("rtmp://live.restream.io/live/re_1565015_b0316aad8912c383fc6e");
 			mMuxer.setVideoResolution(mWidth, mHeight);
 			if (mVideoEncoder != null)
 				mVideoEncoder.prepare();
@@ -98,18 +93,18 @@ public class StreamMuxerWrapper {
 
 	public synchronized void startStreaming() {
 		if (mVideoEncoder != null)
-			mVideoEncoder.startRecording();
+			mVideoEncoder.startStreaming();
 
 		if (mAudioEncoder != null)
-			mAudioEncoder.startRecording();
+			mAudioEncoder.startStreaming();
 	}
 
 	public synchronized void stopStreaming() {
 		if (mVideoEncoder != null)
-			mVideoEncoder.stopRecording();
+			mVideoEncoder.stopStreaming();
 		mVideoEncoder = null;
 		if (mAudioEncoder != null)
-			mAudioEncoder.stopRecording();
+			mAudioEncoder.stopStreaming();
 		mAudioEncoder = null;
 	}
 
@@ -120,9 +115,9 @@ public class StreamMuxerWrapper {
 	public synchronized void pauseRecording() {
 		mIsPaused = true;
 		if (mVideoEncoder != null)
-			mVideoEncoder.pauseRecording();
+			mVideoEncoder.pauseStreaming();
 		if (mAudioEncoder != null)
-			mAudioEncoder.pauseRecording();
+			mAudioEncoder.pauseStreaming();
 	}
 
 	public synchronized void resumeRecording() {

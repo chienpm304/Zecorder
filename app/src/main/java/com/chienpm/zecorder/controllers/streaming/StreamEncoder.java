@@ -26,16 +26,13 @@ import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.util.Log;
 
-import net.ossrs.yasea.SrsEncoderHelper;
-import net.ossrs.yasea.SrsFlvMuxer;
-
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 
 public abstract class StreamEncoder implements Runnable {
 	private static final boolean DEBUG = false;	// TODO set false on release
-	private static final String TAG = com.serenegiant.media.MediaEncoder.class.getSimpleName();
+	private static final String TAG = "chienpm_log";
 
 	protected static final int TIMEOUT_USEC = 10000;	// 10[msec]
 	protected static final int MSG_FRAME_AVAILABLE = 1;
@@ -82,12 +79,11 @@ public abstract class StreamEncoder implements Runnable {
     /**
      * BufferInfo instance for dequeuing
      */
-    private MediaCodec.BufferInfo mBufferInfo;		// API >= 16(Android4.1.2)
+	protected MediaCodec.BufferInfo mBufferInfo;		// API >= 16(Android4.1.2)
 
     protected final StreamEncoderListener mListener;
 
 	protected volatile boolean mRequestPause;
-	private long mLastPausedTimeUs;
 
     public StreamEncoder(final StreamMuxerWrapper muxer, final StreamEncoderListener listener) {
     	if (listener == null) throw new NullPointerException("StreamEncoderListener is null");
@@ -186,8 +182,12 @@ public abstract class StreamEncoder implements Runnable {
    /*package*/ public abstract void prepare() throws IOException;
 
 	/*package*/
-	public void startRecording() {
+	public void startStreaming() {
    	if (DEBUG) Log.v(TAG, "startStreaming");
+
+		// the referent PTS for video and audio encoder.
+		mPresentTimeUs = System.nanoTime() / 1000;
+
 		synchronized (mSync) {
 			mIsCapturing = true;
 			mRequestStop = false;
@@ -200,7 +200,7 @@ public abstract class StreamEncoder implements Runnable {
     * the method to request stop encoding
     */
 	/*package*/
-   public void stopRecording() {
+   public void stopStreaming() {
 		if (DEBUG) Log.v(TAG, "stopStreaming");
 		synchronized (mSync) {
 			if (!mIsCapturing || mRequestStop) {
@@ -214,14 +214,14 @@ public abstract class StreamEncoder implements Runnable {
 	}
 
 	/*package*/
-	public void pauseRecording() {
-		if (DEBUG) Log.v(TAG, "pauseRecording");
+	public void pauseStreaming() {
+		if (DEBUG) Log.v(TAG, "pauseStreaming");
 		synchronized (mSync) {
 			if (!mIsCapturing || mRequestStop) {
 				return;
 			}
 			mRequestPause = true;
-			mLastPausedTimeUs = System.nanoTime() / 1000;
+			mPausetime = System.nanoTime() / 1000;
 			mSync.notifyAll();
 		}
 	}
@@ -229,14 +229,15 @@ public abstract class StreamEncoder implements Runnable {
 	/*package*/
 	public void resumeRecording() {
 		if (DEBUG) Log.v(TAG, "resumeRecording");
+
+
 		synchronized (mSync) {
 			if (!mIsCapturing || mRequestStop) {
 				return;
 			}
-			if (mLastPausedTimeUs != 0) {
-				offsetPTSUs = System.nanoTime() / 1000 - mLastPausedTimeUs;
-				mLastPausedTimeUs = 0;
-			}
+			long resumeTime = (System.nanoTime() / 1000) - mPausetime;
+			mPresentTimeUs = mPresentTimeUs + resumeTime;
+			mPausetime = 0;
 			mRequestPause = false;
 			mSync.notifyAll();
 		}
@@ -282,7 +283,7 @@ public abstract class StreamEncoder implements Runnable {
         // signalEndOfInputStream is only avairable for video encoding with surface
         // and equivalent sending a empty buffer with BUFFER_FLAG_END_OF_STREAM flag.
 //		mMediaCodec.signalEndOfInputStream();	// API >= 18
-        encode(null, 0, getPTSUs());
+        encode(null, 0, getPresentTimeUS());
 	}
 
     /**
@@ -293,12 +294,7 @@ public abstract class StreamEncoder implements Runnable {
      */
     protected void encode(final ByteBuffer buffer, final int length, final long presentationTimeUs) {
     	if (!mIsCapturing) return;
-    	byte[] byteByffers = buffer.array();
-    	//todo: test: sw
-		if(this instanceof StreamVideoEncoderBase) {
-			SrsEncoderHelper.getInstance().swRgbaFrame(byteByffers, 1280, 720, presentationTimeUs);
 
-		}
         final ByteBuffer[] inputBuffers = mMediaCodec.getInputBuffers();
         while (mIsCapturing) {
 	        final int inputBufferIndex = mMediaCodec.dequeueInputBuffer(TIMEOUT_USEC);
@@ -306,7 +302,7 @@ public abstract class StreamEncoder implements Runnable {
 	            final ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
 	            inputBuffer.clear();
 	            if (buffer != null) {
-	            	inputBuffer.put(byteByffers); //todo: test
+	            	inputBuffer.put(buffer); //todo: test
 	            }
 //	            if (DEBUG) Log.v(TAG, "encode:queueInputBuffer");
 	            if (length <= 0) {
@@ -408,12 +404,12 @@ LOOP:	while (mIsCapturing) {
                     }
                     // write encoded data to muxer(need to adjust presentationTimeUs.
 					if (!mRequestPause) {
-	                   	mBufferInfo.presentationTimeUs = getPTSUs();
-
+	                   	mBufferInfo.presentationTimeUs = getPresentTimeUS();
+//						Log.i(TAG, "drainST: "+this.getClass().getName()+": "+encodedData.toString());
 	                   	//Todo: send these data buffer
 	                   	muxerWrapper.writeSampleData(mTrackIndex, encodedData, mBufferInfo);
 
-						prevOutputPTSUs = mBufferInfo.presentationTimeUs;
+//						prevOutputPTSUs = mBufferInfo.presentationTimeUs;
 					}
                 }
                 // return buffer to encoder
@@ -427,29 +423,14 @@ LOOP:	while (mIsCapturing) {
         }
     }
 
-    /**
-     * previous presentationTimeUs for writing
-     */
-	private long prevOutputPTSUs = 0;
 
-	private long offsetPTSUs = 0;
-	/**
-	 * get next encoding presentationTimeUs
-	 * @return
-	 */
-    protected long getPTSUs() {
-    	long result;
-		synchronized (mSync) {
-			result = System.nanoTime() / 1000L - offsetPTSUs;
-		}
-		// presentationTimeUs should be monotonic
-		// otherwise muxer fail to write
-		if (result < prevOutputPTSUs) {
-			final long offset = prevOutputPTSUs - result;
-			offsetPTSUs -= offset;
-			result += offset;
-		}
-		return result;
+	private long mPresentTimeUs;
+	private long mPausetime;
+
+
+
+    protected long getPresentTimeUS() {
+		return System.nanoTime() / 1000 - mPresentTimeUs;
     }
 
 }

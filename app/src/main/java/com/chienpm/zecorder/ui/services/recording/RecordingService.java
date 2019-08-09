@@ -182,7 +182,7 @@ public class RecordingService extends Service {
 
     //Return output file
     public VideoSetting stopRecording() {
-        if (DEBUG) Log.v(TAG, "stopRecording:mMuxer=" + mMuxer);
+        if (DEBUG) Log.v(TAG, "stopStreaming:mMuxer=" + mMuxer);
 
         String outputFile = "";
 

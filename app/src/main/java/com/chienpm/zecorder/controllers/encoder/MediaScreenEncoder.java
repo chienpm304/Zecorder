@@ -77,7 +77,7 @@ public class MediaScreenEncoder extends MediaVideoEncoderBase {
 
 	@Override
 	public void stopRecording() {
-		if (DEBUG) Log.v(TAG,  "stopRecording:");
+		if (DEBUG) Log.v(TAG,  "stopStreaming:");
 		synchronized (mSync) {
 			mIsRecording = false;
 			mSync.notifyAll();
@@ -117,6 +117,7 @@ public class MediaScreenEncoder extends MediaVideoEncoderBase {
 			prepareTextures();
 
 			mSourceTexture = new SurfaceTexture(mTexId);
+
 			mSourceTexture.setDefaultBufferSize(mWidth, mHeight);	// これを入れないと映像が取れない
 
 			mSourceSurface = new Surface(mSourceTexture);
@@ -233,6 +234,7 @@ public class MediaScreenEncoder extends MediaVideoEncoderBase {
 					makeCurrent();
 //					GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 //					GLES20.glFlush();
+
 					frameAvailableSoon();
 					queueEvent(this);
 				} else {

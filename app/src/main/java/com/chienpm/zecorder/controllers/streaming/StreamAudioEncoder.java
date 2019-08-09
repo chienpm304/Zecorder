@@ -83,8 +83,8 @@ public class StreamAudioEncoder extends StreamEncoder {
 	}
 
     @Override
-	public void startRecording() {
-		super.startRecording();
+	public void startStreaming() {
+		super.startStreaming();
 		// create and execute audio capturing thread using internal mic
 		if (mAudioThread == null) {
 	        mAudioThread = new AudioThread();
@@ -154,7 +154,7 @@ public class StreamAudioEncoder extends StreamEncoder {
 					    			    // set audio data to encoder
 										buf.position(readBytes);
 										buf.flip();
-					    				encode(buf, readBytes, getPTSUs());
+					    				encode(buf, readBytes, getPresentTimeUS());
 					    				frameAvailableSoon();
 					    			}
 					    		}

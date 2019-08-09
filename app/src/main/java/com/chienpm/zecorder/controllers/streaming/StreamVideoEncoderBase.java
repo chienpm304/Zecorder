@@ -31,10 +31,8 @@ import android.view.Surface;
 
 import com.chienpm.zecorder.controllers.settings.VideoSetting;
 
-import net.ossrs.yasea.SrsEncoderHelper;
-
 import java.io.IOException;
-import java.lang.annotation.Native;
+import java.nio.ByteBuffer;
 
 import static net.ossrs.yasea.SrsEncoder.VCODEC;
 import static net.ossrs.yasea.SrsEncoder.VFPS;
@@ -46,7 +44,7 @@ import static net.ossrs.yasea.SrsEncoder.x264Preset;
 public abstract class StreamVideoEncoderBase extends StreamEncoder {
 
 	private static final boolean DEBUG = false;	// TODO set false on release
-	private static final String TAG = StreamVideoEncoderBase.class.getSimpleName();
+	private static final String TAG = "chienpm_log";
 
 	// parameters for recording
     private static final float BPP = 0.25f;
@@ -58,6 +56,7 @@ public abstract class StreamVideoEncoderBase extends StreamEncoder {
 	private boolean canSoftEncode = false;
 	private int mVideoColorFormat;
 	private StreamMuxerWrapper mMuxer;
+
 
 	public StreamVideoEncoderBase(StreamMuxerWrapper muxer, StreamEncoderListener listener, VideoSetting videoSetting) {
 		super(muxer, listener);
@@ -73,6 +72,14 @@ public abstract class StreamVideoEncoderBase extends StreamEncoder {
 			mHeight = height;
 		}
 		mVideoColorFormat = chooseVideoEncoder();
+	}
+
+	public void stopStreaming() {
+		if (useSoftEncoder) {
+			closeSoftEncoder();
+			canSoftEncode = false;
+		}
+		super.stopStreaming();
 	}
 
 
@@ -111,14 +118,14 @@ public abstract class StreamVideoEncoderBase extends StreamEncoder {
 			}
 		}
 
-		SrsEncoderHelper.getInstance().setEncoderResolution(mWidth, mHeight);
-		SrsEncoderHelper.getInstance().setEncoderFps(VFPS);
-		SrsEncoderHelper.getInstance().setEncoderGop(VGOP);
-		SrsEncoderHelper.getInstance().setEncoderBitrate(vBitrate);
-		SrsEncoderHelper.getInstance().setEncoderPreset(x264Preset);
+		setEncoderResolution(mWidth, mHeight);
+		setEncoderFps(VFPS);
+		setEncoderGop(VGOP);
+		setEncoderBitrate(vBitrate);
+		setEncoderPreset(x264Preset);
 
 		if (useSoftEncoder) {
-			canSoftEncode = SrsEncoderHelper.getInstance().openSoftEncoder();
+			canSoftEncode = openSoftEncoder();
 			if (!canSoftEncode) {
 				Log.d(TAG, "prepare_surface_encoder: CANNOT OPEN SOFTENCODER");
 				return null;
@@ -140,6 +147,7 @@ public abstract class StreamVideoEncoderBase extends StreamEncoder {
 		final MediaFormat format = create_encoder_format(mime, frame_rate, bitrate);
 
         mMediaCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+
         mTrackIndex = mMuxer.addTrack(format);
         // get Surface for encoder input
         // this method only can call between #configure and #start
@@ -301,5 +309,59 @@ public abstract class StreamVideoEncoderBase extends StreamEncoder {
 		}
 
 		return null;
+	}
+
+	//---------------------
+
+	//Native methods
+//	protected void drain() {
+//		//
+//		Log.i(TAG, "drain: called from StreamVideoEncodeBase - do nothing");
+//	}
+
+	protected void swRgbaFrame(byte[] data, int width, int height, long pts) {
+		RGBASoftEncode(data, width, height, true, 180, pts); //invoke to onSoftEncodedData
+	}
+
+	protected void onSoftEncodedData(byte[] es, long pts, boolean isKeyFrame) {
+		ByteBuffer bb = ByteBuffer.wrap(es);
+		MediaCodec.BufferInfo vebi = new MediaCodec.BufferInfo();
+		vebi.offset = 0;
+		vebi.size = es.length;
+		vebi.presentationTimeUs = pts;
+		vebi.flags = isKeyFrame ? MediaCodec.BUFFER_FLAG_KEY_FRAME : 0;
+		onEncodedAnnexbFrame(bb, vebi);
+
+		//do nothing to adaptive with native code
+	}
+
+	// when got encoded h264 es stream.
+	private void onEncodedAnnexbFrame(ByteBuffer es, MediaCodec.BufferInfo bi) {
+//        mp4Muxer.writeSampleData(videoMp4Track, es.duplicate(), bi);
+        mWeakMuxer.get().writeSampleData(mTrackIndex, es, bi);
+	}
+
+
+	//Signature
+	public native void setEncoderResolution(int outWidth, int outHeight);
+	public native void setEncoderFps(int fps);
+	public native void setEncoderGop(int gop);
+	public native void setEncoderBitrate(int bitrate);
+	public native void setEncoderPreset(String preset);
+	public native byte[] RGBAToI420(byte[] frame, int width, int height, boolean flip, int rotate);
+	public native byte[] RGBAToNV12(byte[] frame, int width, int height, boolean flip, int rotate);
+	public native byte[] ARGBToI420Scaled(int[] frame, int width, int height, boolean flip, int rotate, int crop_x, int crop_y,int crop_width, int crop_height);
+	public native byte[] ARGBToNV12Scaled(int[] frame, int width, int height, boolean flip, int rotate, int crop_x, int crop_y,int crop_width, int crop_height);
+	public native byte[] ARGBToI420(int[] frame, int width, int height, boolean flip, int rotate);
+	public native byte[] ARGBToNV12(int[] frame, int width, int height, boolean flip, int rotate);
+	public native byte[] NV21ToNV12Scaled(byte[] frame, int width, int height, boolean flip, int rotate, int crop_x, int crop_y,int crop_width, int crop_height);
+	public native byte[] NV21ToI420Scaled(byte[] frame, int width, int height, boolean flip, int rotate, int crop_x, int crop_y,int crop_width, int crop_height);
+	public native int RGBASoftEncode(byte[] frame, int width, int height, boolean flip, int rotate, long pts);
+	public native boolean openSoftEncoder();
+	public native void closeSoftEncoder();
+
+	static {
+		System.loadLibrary("yuv");
+		System.loadLibrary("enc");
 	}
 }

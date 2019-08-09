@@ -577,7 +577,7 @@ jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     }
 
     jclass clz = jenv->FindClass("net/ossrs/yasea/SrsEncoder");
-    jclass clz2 = jenv->FindClass("net/ossrs/yasea/SrsEncoderHelper");
+    jclass clz2 = jenv->FindClass("com/chienpm/zecorder/controllers/streaming/StreamVideoEncoderBase");
 
     if (clz == NULL || clz2 == NULL) {
         LIBENC_LOGE("Class \"net/ossrs/yasea/SrsEncoder\" not found");

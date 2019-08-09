@@ -1,31 +1,40 @@
 package com.chienpm.zecorder.controllers.streaming;
 
 
+import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.graphics.SurfaceTexture.OnFrameAvailableListener;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
-import android.media.MediaCodecInfo;
+import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.media.projection.MediaProjection;
+import android.opengl.GLES20;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 
+import androidx.annotation.NonNull;
+
 import com.chienpm.zecorder.controllers.encoder.RenderUtil;
 import com.chienpm.zecorder.controllers.settings.VideoSetting;
+import com.chienpm.zecorder.ui.utils.MyUtils;
 import com.serenegiant.glutils.EGLBase;
 import com.serenegiant.glutils.EglTask;
 import com.serenegiant.glutils.GLDrawer2D;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.List;
 
-import static net.ossrs.yasea.SrsEncoder.VFPS;
-import static net.ossrs.yasea.SrsEncoder.VGOP;
 
 public class StreamScreenEncoder extends StreamVideoEncoderBase {
 	private static final boolean DEBUG = false;	// TODO set false on release
@@ -81,13 +90,13 @@ public class StreamScreenEncoder extends StreamVideoEncoderBase {
 
 
 	@Override
-	public void stopRecording() {
+	public void stopStreaming() {
 		if (DEBUG) Log.v(TAG,  "stopStreaming:");
 		synchronized (mSync) {
 			mIsRecording = false;
 			mSync.notifyAll();
 		}
-		super.stopRecording();
+		super.stopStreaming();
 	}
 
 
@@ -195,6 +204,7 @@ public class StreamScreenEncoder extends StreamVideoEncoderBase {
 		private final OnFrameAvailableListener mOnFrameAvailableListener = new OnFrameAvailableListener() {
 			@Override
 			public void onFrameAvailable(final SurfaceTexture surfaceTexture) {
+
 				if (mIsRecording) {
 					synchronized (mSync) {
 						requestDraw = true;
@@ -235,11 +245,26 @@ public class StreamScreenEncoder extends StreamVideoEncoderBase {
 
 					RenderUtil.renderTextures(mDecors);
 					mEncoderSurface.swap();
+
+
 //					Log.d(TAG, "run check mTexId: "+mTexId);
 					makeCurrent();
+
+
+					ByteBuffer buffer = getCurrentByteBuffer();
+					byte[] bytes = buffer.array();
+
+					swRgbaFrame(bytes, mWidth, mHeight, getPresentTimeUS());
+
+//					encode(buffer, mBufferInfo.size, getPresentTimeUS());
+
+//					shootPicture();
+
 //					GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 //					GLES20.glFlush();
+
 					frameAvailableSoon();
+
 					queueEvent(this);
 				} else {
 					releaseSelf();
@@ -248,5 +273,47 @@ public class StreamScreenEncoder extends StreamVideoEncoderBase {
 		};
 
 
+	}
+
+	private void shootPicture() {
+		ByteBuffer buf = getCurrentByteBuffer();
+
+		Bitmap.CompressFormat compressFormat = Bitmap.CompressFormat.PNG;
+
+		File captureFile = new File(MyUtils.getBaseStorageDirectory(), MyUtils.createFileName(".jpg"));
+
+		if (!captureFile.getParentFile().exists()) {
+			captureFile.getParentFile().mkdirs();
+		}
+
+		if (captureFile.toString().endsWith(".jpg")) {
+			compressFormat = Bitmap.CompressFormat.JPEG;
+		}
+		BufferedOutputStream os = null;
+		try {
+			try {
+				os = new BufferedOutputStream(new FileOutputStream(captureFile));
+				final Bitmap bmp = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
+				buf.clear();
+				bmp.copyPixelsFromBuffer(buf);
+				bmp.compress(compressFormat, 100, os);
+				bmp.recycle();
+				os.flush();
+			} finally {
+				if (os != null) os.close();
+			}
+		} catch (final FileNotFoundException e) {
+			Log.w(TAG, "failed to save file", e);
+		} catch (final IOException e) {
+			Log.w(TAG, "failed to save file", e);
+		}
+	}
+
+	private ByteBuffer getCurrentByteBuffer() {
+		ByteBuffer buf = null;
+		buf = ByteBuffer.allocateDirect(mWidth * mHeight * 4);
+		buf.order(ByteOrder.LITTLE_ENDIAN);
+		GLES20.glReadPixels(0, 0, mWidth, mHeight, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, buf);
+		return buf;
 	}
 }

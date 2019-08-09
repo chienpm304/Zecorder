@@ -183,7 +183,7 @@ public abstract class MediaEncoder implements Runnable {
 
 	/*package*/
 	public void startRecording() {
-   	if (DEBUG) Log.v(TAG, "startStreaming");
+   	if (DEBUG) Log.v(TAG, "startRecording");
 		synchronized (mSync) {
 			mIsCapturing = true;
 			mRequestStop = false;
@@ -288,6 +288,7 @@ public abstract class MediaEncoder implements Runnable {
      * @param presentationTimeUs
      */
     protected void encode(final ByteBuffer buffer, final int length, final long presentationTimeUs) {
+//        Log.i(TAG, "encode: "+this.getClass().getName());
     	if (!mIsCapturing) return;
         final ByteBuffer[] inputBuffers = mMediaCodec.getInputBuffers();
         while (mIsCapturing) {
@@ -400,6 +401,7 @@ LOOP:	while (mIsCapturing) {
 					if (!mRequestPause) {
 	                   	mBufferInfo.presentationTimeUs = getPTSUs();
 	                   	//Todo: send these data buffer
+						Log.i(TAG, "drain : "+this.getClass().getName());
 	                   	muxer.writeSampleData(mTrackIndex, encodedData, mBufferInfo);
 						prevOutputPTSUs = mBufferInfo.presentationTimeUs;
 					}

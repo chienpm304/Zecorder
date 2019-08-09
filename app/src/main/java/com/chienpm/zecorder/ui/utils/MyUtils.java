@@ -25,9 +25,9 @@ public class MyUtils {
     public static final String STREAM_PROFILE = "Stream_Profile";
 
     @NonNull
-    public static String createFileName() {
+    public static String createFileName(@NonNull String ext) {
         return "Zecorder-" +
-                Long.toHexString(System.currentTimeMillis()) + ".mp4";
+                Long.toHexString(System.currentTimeMillis()) + ext;
     }
 
     @NonNull
