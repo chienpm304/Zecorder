@@ -27,7 +27,6 @@ import android.media.MediaFormat;
 import android.util.Log;
 
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 
 public abstract class StreamEncoder implements Runnable {
@@ -37,6 +36,7 @@ public abstract class StreamEncoder implements Runnable {
 	protected static final int TIMEOUT_USEC = 10000;	// 10[msec]
 	protected static final int MSG_FRAME_AVAILABLE = 1;
 	protected static final int MSG_STOP_RECORDING = 9;
+	protected StreamMuxerWrapper mMuxerWrapper;
 
 	public interface StreamEncoderListener {
 		public void onPrepared(StreamEncoder encoder);
@@ -72,24 +72,18 @@ public abstract class StreamEncoder implements Runnable {
      * MediaCodec instance for encoding
      */
     protected MediaCodec mMediaCodec;				// API >= 16(Android4.1.2)
-    /**
-     * Weak refarence of MediaMuxerWarapper instance
-     */
-    protected final WeakReference<StreamMuxerWrapper> mWeakMuxer;
-    /**
-     * BufferInfo instance for dequeuing
-     */
+
 	protected MediaCodec.BufferInfo mBufferInfo;		// API >= 16(Android4.1.2)
 
     protected final StreamEncoderListener mListener;
 
 	protected volatile boolean mRequestPause;
 
-    public StreamEncoder(final StreamMuxerWrapper muxer, final StreamEncoderListener listener) {
+    public StreamEncoder(final StreamMuxerWrapper muxerWrapper, final StreamEncoderListener listener) {
     	if (listener == null) throw new NullPointerException("StreamEncoderListener is null");
-    	if (muxer == null) throw new NullPointerException("StreamMuxerWrapper is null");
-		mWeakMuxer = new WeakReference<StreamMuxerWrapper>(muxer);
-		muxer.addEncoder(this);
+    	if (muxerWrapper == null) throw new NullPointerException("StreamMuxerWrapper is null");
+		mMuxerWrapper = muxerWrapper;
+		mMuxerWrapper.addEncoder(this);
 		mListener = listener;
         synchronized (mSync) {
             // create BufferInfo here for effectiveness(to reduce GC)
@@ -103,15 +97,6 @@ public abstract class StreamEncoder implements Runnable {
         }
 	}
 
-//    public String getOutputPath() {
-//    	final StreamMuxerWrapper muxer = mWeakMuxer.get();
-//    	return muxer != null ? muxer.getOutputPath() : null;
-//    }
-
-    /**
-     * the method to indicate frame data is soon available or already available
-     * @return return true if encoder is ready to encod.
-     */
     public boolean frameAvailableSoon() {
 //    	if (DEBUG) Log.v(TAG, "frameAvailableSoon");
         synchronized (mSync) {
@@ -266,10 +251,9 @@ public abstract class StreamEncoder implements Runnable {
 			}
         }
         if (mMuxerStarted) {
-       		final StreamMuxerWrapper muxer = mWeakMuxer != null ? mWeakMuxer.get() : null;
-       		if (muxer != null) {
+       		if (mMuxerWrapper != null) {
        			try {
-           			muxer.stop();
+					mMuxerWrapper.stop();
     			} catch (final Exception e) {
     				Log.e(TAG, "failed stopping muxer", e);
     			}
@@ -332,8 +316,8 @@ public abstract class StreamEncoder implements Runnable {
     	if (mMediaCodec == null) return;
         ByteBuffer[] encoderOutputBuffers = mMediaCodec.getOutputBuffers();
         int encoderStatus, count = 0;
-        final StreamMuxerWrapper muxerWrapper = mWeakMuxer.get();
-        if (muxerWrapper == null) {
+
+        if (mMuxerWrapper == null) {
 //        	throw new NullPointerException("muxer is unexpectedly null");
         	Log.w(TAG, "muxer is unexpectedly null");
         	return;
@@ -364,14 +348,14 @@ LOOP:	while (mIsCapturing) {
 				// get output format from codec and pass them to muxer
 				// getOutputFormat should be called after INFO_OUTPUT_FORMAT_CHANGED otherwise crash.
                 final MediaFormat format = mMediaCodec.getOutputFormat(); // API >= 16
-               	mTrackIndex = muxerWrapper.addTrack(format);
+               	mTrackIndex = mMuxerWrapper.addTrack(format);
                	mMuxerStarted = true;
-               	if (!muxerWrapper.start()) {
+               	if (!mMuxerWrapper.start()) {
                		// we should wait until muxer is ready
-               		synchronized (muxerWrapper) {
-	               		while (!muxerWrapper.isStarted())
+               		synchronized (mMuxerWrapper) {
+	               		while (!mMuxerWrapper.isStarted())
 						try {
-							muxerWrapper.wait(100);
+							mMuxerWrapper.wait(100);
 						} catch (final InterruptedException e) {
 							break LOOP;
 						}
@@ -407,7 +391,7 @@ LOOP:	while (mIsCapturing) {
 	                   	mBufferInfo.presentationTimeUs = getPresentTimeUS();
 //						Log.i(TAG, "drainST: "+this.getClass().getName()+": "+encodedData.toString());
 	                   	//Todo: send these data buffer
-	                   	muxerWrapper.writeSampleData(mTrackIndex, encodedData, mBufferInfo);
+	                   	mMuxerWrapper.writeSampleData(mTrackIndex, encodedData, mBufferInfo);
 
 //						prevOutputPTSUs = mBufferInfo.presentationTimeUs;
 					}

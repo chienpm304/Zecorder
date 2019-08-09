@@ -30,6 +30,7 @@ import android.util.Log;
 import android.view.Surface;
 
 import com.chienpm.zecorder.controllers.settings.VideoSetting;
+import com.chienpm.zecorder.ui.utils.MyUtils;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -51,7 +52,7 @@ public abstract class StreamVideoEncoderBase extends StreamEncoder {
 
     protected final int mWidth;
     protected final int mHeight;
-	private boolean useSoftEncoder = true;
+	protected boolean useSoftEncoder = true;
 	private MediaCodecInfo vmci;
 	private boolean canSoftEncode = false;
 	private int mVideoColorFormat;
@@ -103,7 +104,7 @@ public abstract class StreamVideoEncoderBase extends StreamEncoder {
 		videoFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 0);
 		videoFormat.setInteger(MediaFormat.KEY_BIT_RATE, vBitrate);
 		videoFormat.setInteger(MediaFormat.KEY_FRAME_RATE, VFPS);
-		videoFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, VGOP / VFPS);
+		videoFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 2);
 		return videoFormat;
 	}
 
@@ -281,7 +282,7 @@ public abstract class StreamVideoEncoderBase extends StreamEncoder {
 		}
 
 		Log.i(TAG, String.format("vencoder %s choose color format 0x%x(%d)", vmci.getName(), matchedColorFormat, matchedColorFormat));
-		return matchedColorFormat;
+		return matchedColorFormat; //matched color format 21
 	}
 
 	// choose the video encoder by name.
@@ -338,9 +339,48 @@ public abstract class StreamVideoEncoderBase extends StreamEncoder {
 	// when got encoded h264 es stream.
 	private void onEncodedAnnexbFrame(ByteBuffer es, MediaCodec.BufferInfo bi) {
 //        mp4Muxer.writeSampleData(videoMp4Track, es.duplicate(), bi);
-        mWeakMuxer.get().writeSampleData(mTrackIndex, es, bi);
+		MyUtils.logBytes("after decode ", es.array());
+        mMuxerWrapper.writeSampleData(mTrackIndex, es, bi);
 	}
 
+
+	protected byte[] hwRgbaFrame(byte[] data, int width, int height) {
+		switch (mVideoColorFormat) {
+			case MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar:
+				return RGBAToI420(data, width, height, true, 180);
+			case MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar:
+				return RGBAToNV12(data, width, height, true, 180);
+			default:
+				throw new IllegalStateException("Unsupported color format!");
+		}
+	}
+
+	protected void onProcessedYuvFrame(byte[] yuvFrame, long pts) {
+		ByteBuffer[] inBuffers = mMediaCodec.getInputBuffers();
+		ByteBuffer[] outBuffers = mMediaCodec.getOutputBuffers();
+
+		int inBufferIndex = mMediaCodec.dequeueInputBuffer(-1);
+		if (inBufferIndex >= 0) {
+			ByteBuffer bb = inBuffers[inBufferIndex];
+			bb.clear();
+			bb.put(yuvFrame, 0, yuvFrame.length);
+			mMediaCodec.queueInputBuffer(inBufferIndex, 0, yuvFrame.length, pts, 0);
+		}
+
+		for (; ; ) {
+			MediaCodec.BufferInfo vebi = new MediaCodec.BufferInfo();
+			int outBufferIndex = mMediaCodec.dequeueOutputBuffer(vebi, 0);
+			if (outBufferIndex >= 0) {
+				ByteBuffer bb = outBuffers[outBufferIndex];
+				onEncodedAnnexbFrame(bb, vebi);
+				mMediaCodec.releaseOutputBuffer(outBufferIndex, false);
+			} else {
+				break;
+			}
+		}
+	}
+
+//
 
 	//Signature
 	public native void setEncoderResolution(int outWidth, int outHeight);

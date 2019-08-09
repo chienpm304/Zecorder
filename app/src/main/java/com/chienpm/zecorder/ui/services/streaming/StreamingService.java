@@ -175,14 +175,14 @@ public class StreamingService extends Service {
 
     //Return output file
     public VideoSetting stopRecording() {
-        if (DEBUG) Log.v(TAG, "stopStreaming:mMuxer=" + mMuxer);
+        if (DEBUG) Log.v(TAG, "stopStreaming:mMuxerWrapper=" + mMuxer);
 
         String outputFile = "";
 
         synchronized (sSync) {
             if (mMuxer != null) {
 
-//                outputFile = mMuxer.getOutputPath();
+//                outputFile = mMuxerWrapper.getOutputPath();
                 mCurrentVideoSetting.setOutputPath(outputFile);
                 mMuxer.stopStreaming();
                 mMuxer = null;

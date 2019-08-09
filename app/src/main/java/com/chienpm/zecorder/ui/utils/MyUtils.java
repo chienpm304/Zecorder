@@ -5,6 +5,7 @@ import com.google.android.material.snackbar.Snackbar;
 
 import android.graphics.Canvas;
 import android.os.Environment;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -23,6 +24,7 @@ public class MyUtils {
     public static final int SELECTED_MODE_SINGLE = 3;
     public static final String DRIVE_MASTER_FOLDER = "Zecorder";
     public static final String STREAM_PROFILE = "Stream_Profile";
+    private static final String TAG = "chienpm_utils";
 
     @NonNull
     public static String createFileName(@NonNull String ext) {
@@ -55,5 +57,18 @@ public class MyUtils {
 
     public static void saveCanvas(Canvas canvas) {
 
+    }
+
+    public static void logBytes(String msg, byte[] bytes) {
+        StringBuilder str = new StringBuilder(msg + ": ");
+
+        if(bytes == null || bytes.length < 1)
+            str.append("bytes is null or length < 1");
+        else{
+            for(int i = 0; i < bytes.length; i++){
+                str.append(bytes[i]).append(" ");
+            }
+        }
+        Log.i(TAG, str.toString());
     }
 }

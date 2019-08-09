@@ -476,6 +476,7 @@ static jint libenc_RGBASoftEncode(JNIEnv *env, jobject thiz, jbyteArray frame, j
 
     if (!convert_to_i420((uint8_t *) rgba_frame, src_width, src_height, need_flip, rotate_degree,
                          FOURCC_RGBA)) {
+        LIBENC_LOGE("Cannot convert to i420");
         return JNI_ERR;
     }
 
@@ -494,6 +495,7 @@ static jint libenc_RGBASoftEncode(JNIEnv *env, jobject thiz, jbyteArray frame, j
     env->CallVoidMethod(thiz, mid, outputFrame, x264_ctx.pts, x264_ctx.is_key_frame);
 
     env->ReleaseByteArrayElements(frame, rgba_frame, JNI_ABORT);
+    LIBENC_LOGE("Encode success");
     return JNI_OK;
 }
 

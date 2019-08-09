@@ -36,6 +36,7 @@ import net.ossrs.yasea.SrsFlvMuxer;
 import java.io.IOException;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class StreamMuxerWrapper {
 	private static final boolean DEBUG = false;    // TODO set false on release
@@ -81,7 +82,8 @@ public class StreamMuxerWrapper {
 
 	public synchronized void prepare() throws IOException {
 		if(mMuxer!=null) {
-//			mMuxer.start("rtmp://ingest-syd.mixer.com:1935/beam/93296292-c0g2p73umz20cglqzy75hpeiu5btx0x8");
+//			mMuxerWrapper.start("rtmp://ingest-syd.mixer.com:1935/beam/93296292-c0g2p73umz20cglqzy75hpeiu5btx0x8");
+//			mMuxerWrapper.start("rtmp://ingest-seo.mixer.com:1935/beam/93296292-c0g2p73umz20cglqzy75hpeiu5btx0x8");
 			mMuxer.start("rtmp://live.restream.io/live/re_1565015_b0316aad8912c383fc6e");
 			mMuxer.setVideoResolution(mWidth, mHeight);
 			if (mVideoEncoder != null)
@@ -231,12 +233,12 @@ public class StreamMuxerWrapper {
 
 		@Override
 		public void onRtmpVideoStreaming() {
-			Log.i(TAG, "onRtmpVideoStreaming ");
+			Log.i(TAG, "on Rtmp Video Streaming ");
 		}
 
 		@Override
 		public void onRtmpAudioStreaming() {
-//			Log.i(TAG, "onRtmpAudioStreaming: ");
+			Log.i(TAG, "on Rtmp Audio Streaming: ");
 		}
 
 		@Override
@@ -303,6 +305,10 @@ public class StreamMuxerWrapper {
 		} catch (Exception e1) {
 			//
 		}
+	}
+
+	public AtomicInteger getVideoFrameCacheNumber() {
+		return mMuxer.getVideoFrameCacheNumber();
 	}
 
 //**********************************************************************

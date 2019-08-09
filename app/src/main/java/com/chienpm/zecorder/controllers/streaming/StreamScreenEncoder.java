@@ -16,15 +16,20 @@ import android.os.HandlerThread;
 import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
+import android.view.SurfaceView;
 
 import androidx.annotation.NonNull;
 
 import com.chienpm.zecorder.controllers.encoder.RenderUtil;
 import com.chienpm.zecorder.controllers.settings.VideoSetting;
+import com.chienpm.zecorder.ui.activities.MainActivity;
+import com.chienpm.zecorder.ui.utils.CameraPreview;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 import com.serenegiant.glutils.EGLBase;
 import com.serenegiant.glutils.EglTask;
 import com.serenegiant.glutils.GLDrawer2D;
+
+import net.ossrs.yasea.SrsEncoder;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -34,6 +39,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class StreamScreenEncoder extends StreamVideoEncoderBase {
@@ -246,26 +252,37 @@ public class StreamScreenEncoder extends StreamVideoEncoderBase {
 					RenderUtil.renderTextures(mDecors);
 					mEncoderSurface.swap();
 
-
-//					Log.d(TAG, "run check mTexId: "+mTexId);
 					makeCurrent();
 
 
-					ByteBuffer buffer = getCurrentByteBuffer();
-					byte[] bytes = buffer.array();
+					/**START ENCODE**/
+					AtomicInteger videoFrameCacheNumber = mMuxerWrapper.getVideoFrameCacheNumber();
+					if (videoFrameCacheNumber != null && videoFrameCacheNumber.get() < SrsEncoder.VGOP) {
 
-					swRgbaFrame(bytes, mWidth, mHeight, getPresentTimeUS());
 
-//					encode(buffer, mBufferInfo.size, getPresentTimeUS());
+						final long pts = getPresentTimeUS();
+						ByteBuffer buffer = getCurrentByteBuffer();
+						byte[] bytes = buffer.array();
+						MyUtils.logBytes("before decode", bytes);
 
-//					shootPicture();
+//					if(useSoftEncoder)
+						swRgbaFrame(bytes, mWidth, mHeight, pts);
+//					else {
+//						byte[] processedData = hwRgbaFrame(bytes, mWidth, mHeight);
+//						if (processedData != null) {
+//							onProcessedYuvFrame(processedData, pts);
+//						} else {
+//							Log.e(TAG, "on encode buffer", new IllegalArgumentException("libyuv failure"));
+//						}
+//					}
+//					shootPicture(buffer);
+						/**END ENCODE**/
 
-//					GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-//					GLES20.glFlush();
+						frameAvailableSoon();
 
-					frameAvailableSoon();
 
-					queueEvent(this);
+						queueEvent(this);
+					}
 				} else {
 					releaseSelf();
 				}
@@ -275,8 +292,7 @@ public class StreamScreenEncoder extends StreamVideoEncoderBase {
 
 	}
 
-	private void shootPicture() {
-		ByteBuffer buf = getCurrentByteBuffer();
+	private void shootPicture(ByteBuffer buf) {
 
 		Bitmap.CompressFormat compressFormat = Bitmap.CompressFormat.PNG;
 
