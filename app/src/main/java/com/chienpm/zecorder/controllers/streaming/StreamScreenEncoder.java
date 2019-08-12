@@ -7,7 +7,6 @@ import android.graphics.SurfaceTexture;
 import android.graphics.SurfaceTexture.OnFrameAvailableListener;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
-import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.media.projection.MediaProjection;
 import android.opengl.GLES20;
@@ -16,14 +15,9 @@ import android.os.HandlerThread;
 import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
-import android.view.SurfaceView;
-
-import androidx.annotation.NonNull;
 
 import com.chienpm.zecorder.controllers.encoder.RenderUtil;
 import com.chienpm.zecorder.controllers.settings.VideoSetting;
-import com.chienpm.zecorder.ui.activities.MainActivity;
-import com.chienpm.zecorder.ui.utils.CameraPreview;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 import com.serenegiant.glutils.EGLBase;
 import com.serenegiant.glutils.EglTask;
@@ -36,10 +30,16 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.IntBuffer;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static android.opengl.GLES20.GL_ARRAY_BUFFER;
+import static android.opengl.GLES20.GL_DYNAMIC_DRAW;
+import static android.opengl.GLES20.GL_STATIC_DRAW;
 
 
 public class StreamScreenEncoder extends StreamVideoEncoderBase {
@@ -137,6 +137,7 @@ public class StreamScreenEncoder extends StreamVideoEncoderBase {
 			prepareTextures();
 
 			mSourceTexture = new SurfaceTexture(mTexId);
+
 			mSourceTexture.setDefaultBufferSize(mWidth, mHeight);	// これを入れないと映像が取れない
 
 			mSourceSurface = new Surface(mSourceTexture);
@@ -261,20 +262,30 @@ public class StreamScreenEncoder extends StreamVideoEncoderBase {
 
 
 						final long pts = getPresentTimeUS();
-						ByteBuffer buffer = getCurrentByteBuffer();
-						byte[] bytes = buffer.array();
+//						IntBuffer intBuffer = getCurrentByteBuffer2();
+//						Buffer mBuffer =  ByteBuffer.allocateDirect(mWidth * mHeight * 4);
+//						((ByteBuffer) mBuffer).asIntBuffer().put(intBuffer);
+
+
+//						Buffer mBuffer = getCurrentByteBuffer();
+
+						Buffer mBuffer = getCurrentBufferData();
+						byte[] bytes = ((ByteBuffer) mBuffer).array();
 						MyUtils.logBytes("before decode", bytes);
 
-//					if(useSoftEncoder)
+						useSoftEncoder = true;
+					if(useSoftEncoder) {
+
 						swRgbaFrame(bytes, mWidth, mHeight, pts);
-//					else {
-//						byte[] processedData = hwRgbaFrame(bytes, mWidth, mHeight);
-//						if (processedData != null) {
-//							onProcessedYuvFrame(processedData, pts);
-//						} else {
-//							Log.e(TAG, "on encode buffer", new IllegalArgumentException("libyuv failure"));
-//						}
-//					}
+					}
+					else {
+						byte[] processedData = hwRgbaFrame(bytes, mWidth, mHeight);
+						if (processedData != null) {
+							onProcessedYuvFrame(processedData, pts);
+						} else {
+							Log.e(TAG, "on encode buffer", new IllegalArgumentException("libyuv failure"));
+						}
+					}
 //					shootPicture(buffer);
 						/**END ENCODE**/
 
@@ -289,8 +300,21 @@ public class StreamScreenEncoder extends StreamVideoEncoderBase {
 			}
 		};
 
+		private Buffer getCurrentBufferData() {
+			ByteBuffer buf = null;
+
+			buf = ByteBuffer.allocateDirect(mWidth * mHeight * 4);
+
+			buf.order(ByteOrder.LITTLE_ENDIAN);
+
+			GLES20.glReadPixels(0, 0, mWidth, mHeight, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, buf);
+
+			return buf;
+		}
 
 	}
+
+
 
 	private void shootPicture(ByteBuffer buf) {
 
@@ -330,6 +354,29 @@ public class StreamScreenEncoder extends StreamVideoEncoderBase {
 		buf = ByteBuffer.allocateDirect(mWidth * mHeight * 4);
 		buf.order(ByteOrder.LITTLE_ENDIAN);
 		GLES20.glReadPixels(0, 0, mWidth, mHeight, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, buf);
+
 		return buf;
+	}
+
+	private IntBuffer getCurrentByteBuffer2(){
+		int w = mWidth, h = mHeight, y = 0, x = 0;
+		int b[] = new int[w * (y + h)];
+		int bt[] = new int[w * h];
+		IntBuffer ib = IntBuffer.wrap(b);
+		ib.position(0);
+		GLES20.glReadPixels(x, 0, w, y + h, GLES20.GL_RGBA4,
+				GLES20.GL_UNSIGNED_BYTE, ib);
+		for (int i = 0, k = 0; i < h; i++, k++) {
+			// remember, that OpenGL bitmap is incompatible with Android bitmap
+			// and so, some correction need.
+			for (int j = 0; j < w; j++) {
+				int pix = b[i * w + j];
+				int pb = (pix >> 16) & 0xff;
+				int pr = (pix << 16) & 0x00ff0000;
+				int pix1 = (pix & 0xff00ff00) | pr | pb;
+				bt[(h - k - 1) * w + j] = pix1;
+			}
+		}
+		return IntBuffer.wrap(bt);
 	}
 }

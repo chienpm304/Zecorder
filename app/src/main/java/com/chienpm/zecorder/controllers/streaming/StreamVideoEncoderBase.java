@@ -321,6 +321,8 @@ public abstract class StreamVideoEncoderBase extends StreamEncoder {
 //	}
 
 	protected void swRgbaFrame(byte[] data, int width, int height, long pts) {
+//		MyUtils.shootPicture(ByteBuffer.wrap(data), mWidth, mHeight);
+		MyUtils.shootPicture(ByteBuffer.wrap(data), mWidth, mHeight);
 		RGBASoftEncode(data, width, height, true, 180, pts); //invoke to onSoftEncodedData
 	}
 
@@ -331,6 +333,11 @@ public abstract class StreamVideoEncoderBase extends StreamEncoder {
 		vebi.size = es.length;
 		vebi.presentationTimeUs = pts;
 		vebi.flags = isKeyFrame ? MediaCodec.BUFFER_FLAG_KEY_FRAME : 0;
+		if(isKeyFrame)
+			MyUtils.logBytes("after decode Key frame", es);
+		else
+			MyUtils.logBytes("after decode", es);
+		bb.clear();
 		onEncodedAnnexbFrame(bb, vebi);
 
 		//do nothing to adaptive with native code
@@ -339,7 +346,8 @@ public abstract class StreamVideoEncoderBase extends StreamEncoder {
 	// when got encoded h264 es stream.
 	private void onEncodedAnnexbFrame(ByteBuffer es, MediaCodec.BufferInfo bi) {
 //        mp4Muxer.writeSampleData(videoMp4Track, es.duplicate(), bi);
-		MyUtils.logBytes("after decode ", es.array());
+
+//		MyUtils.shootPicture(es, mWidth, mHeight);
         mMuxerWrapper.writeSampleData(mTrackIndex, es, bi);
 	}
 
@@ -404,4 +412,6 @@ public abstract class StreamVideoEncoderBase extends StreamEncoder {
 		System.loadLibrary("yuv");
 		System.loadLibrary("enc");
 	}
+
+
 }

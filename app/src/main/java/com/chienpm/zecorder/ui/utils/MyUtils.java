@@ -3,13 +3,22 @@ package com.chienpm.zecorder.ui.utils;
 import android.content.Context;
 import com.google.android.material.snackbar.Snackbar;
 
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.os.Environment;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public class MyUtils {
     public static final int RESULT_CODE_FAILED = -999999;
@@ -60,15 +69,53 @@ public class MyUtils {
     }
 
     public static void logBytes(String msg, byte[] bytes) {
-        StringBuilder str = new StringBuilder(msg + ": ");
+        StringBuilder str = new StringBuilder(msg + ": "+bytes.length+"\n");
 
         if(bytes == null || bytes.length < 1)
             str.append("bytes is null or length < 1");
         else{
-            for(int i = 0; i < bytes.length; i++){
-                str.append(bytes[i]).append(" ");
-            }
+
+            String base64Encoded = Base64.encodeToString(bytes, Base64.DEFAULT);
+            str.append("\nbase64: ").append(base64Encoded);//.append("\nbytes: ");
+//            for(int i = 0; i < bytes.length; i++){
+//                str.append( bytes[i]).append(" ");
+//            }
+
+
         }
         Log.i(TAG, str.toString());
+    }
+
+    public static void shootPicture(ByteBuffer buf, int mWidth, int mHeight) {
+
+        Bitmap.CompressFormat compressFormat = Bitmap.CompressFormat.PNG;
+
+        File captureFile = new File(MyUtils.getBaseStorageDirectory(), MyUtils.createFileName(".jpg"));
+
+        if (!captureFile.getParentFile().exists()) {
+            captureFile.getParentFile().mkdirs();
+        }
+
+        if (captureFile.toString().endsWith(".jpg")) {
+            compressFormat = Bitmap.CompressFormat.JPEG;
+        }
+        BufferedOutputStream os = null;
+        try {
+            try {
+                os = new BufferedOutputStream(new FileOutputStream(captureFile));
+                final Bitmap bmp = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
+                buf.clear();
+                bmp.copyPixelsFromBuffer(buf);
+                bmp.compress(compressFormat, 100, os);
+                bmp.recycle();
+                os.flush();
+            } finally {
+                if (os != null) os.close();
+            }
+        } catch (final FileNotFoundException e) {
+            Log.w(TAG, "failed to save file", e);
+        } catch (final IOException e) {
+            Log.w(TAG, "failed to save file", e);
+        }
     }
 }
