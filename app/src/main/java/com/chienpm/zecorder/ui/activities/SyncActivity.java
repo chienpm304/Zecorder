@@ -9,6 +9,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import android.view.View;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -35,10 +36,8 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.Scope;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.api.services.drive.DriveScopes;
 import com.google.gson.Gson;
@@ -65,7 +64,7 @@ public class SyncActivity extends AppCompatActivity {
     private ListView mListViewVideos;
     private SyncVideoAdapter mSyncAdapter;
 
-    private boolean mLockRefresh = false;
+    private Button mBtnTryAgain;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -118,7 +117,7 @@ public class SyncActivity extends AppCompatActivity {
                 }
                 else{
                     MyUtils.showSnackBarNotification(mTvEmpty, "You must grant all permission to sync data. Please try again!", Snackbar.LENGTH_INDEFINITE);
-//                    signIn();
+                    mBtnTryAgain.setVisibility(View.VISIBLE);
                 }
                 break;
 
@@ -189,7 +188,6 @@ public class SyncActivity extends AppCompatActivity {
     }
 
     public void uploadVideo(Video video, SyncVideoAdapter.ViewHolder holder){
-        mLockRefresh = true;
 //        Log.d(TAG, "onClick: uploading: "+video.toString());
 //        mSyncAdapter.getView(0, null, null).findViewById(R.id.sync_progressBar).setVisibility(View.GONE);
 
@@ -211,6 +209,7 @@ public class SyncActivity extends AppCompatActivity {
                                 holder.progress.setProgress(100);
                                 holder.progress.postInvalidate();
                                 holder.sync.setImageDrawable(getDrawable(R.drawable.ic_check));
+                                mSyncAdapter.addToUploaded(video);
                             }
                         })
                         .addOnFailureListener(new OnFailureListener() {
@@ -229,8 +228,6 @@ public class SyncActivity extends AppCompatActivity {
     }
 
     public void downloadVideo(Video video, SyncVideoAdapter.ViewHolder holder){
-        mLockRefresh = true;
-
         String folderId = getMasterFolderId();
 
         if(TextUtils.isEmpty(folderId)){
@@ -265,6 +262,8 @@ public class SyncActivity extends AppCompatActivity {
                                                 @Override
                                                 public void run() {
                                                     MyUtils.showSnackBarNotification(mTvEmpty, "Downloaded video "+video.getTitle(), Snackbar.LENGTH_LONG);
+                                                    //remove video in adapter when downloaded
+                                                    mSyncAdapter.addToDownloaded(mVideo);
                                                 }
                                             });
                                         }
@@ -311,14 +310,23 @@ public class SyncActivity extends AppCompatActivity {
         mListViewVideos = findViewById(R.id.sync_list_videos);
         mListViewVideos.setEmptyView(mTvEmpty);
         mProgressBar = findViewById(R.id.progress_fetching_data);
+        mBtnTryAgain = findViewById(R.id.btnTryAgain);
+
+        mBtnTryAgain.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                    signIn();
+                    mBtnTryAgain.setVisibility(View.GONE);
+            }
+        });
 
         final SwipeRefreshLayout srl = (SwipeRefreshLayout)findViewById(R.id.sync_swipe_layout);
         srl.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                if(!mLockRefresh) {
-                    mProgressBar.setVisibility(View.VISIBLE);
-                    getSupportLoaderManager().restartLoader(0, null, mLoadVideosCallback);
+                if(mSyncAdapter.isSyncCompleted()) {
+                    mSyncAdapter.removeAll();
+                    updateUI();
                 }
                 srl.setRefreshing(false);
             }

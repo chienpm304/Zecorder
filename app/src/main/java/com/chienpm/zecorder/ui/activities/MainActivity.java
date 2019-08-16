@@ -95,7 +95,6 @@ public class MainActivity extends AppCompatActivity {
     private ImageView mImgRec;
 
     private void initViews() {
-
         mViewPager = findViewById(R.id.viewpaper);
         setupViewPaper();
 

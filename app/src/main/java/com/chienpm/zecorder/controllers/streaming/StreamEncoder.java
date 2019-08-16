@@ -286,7 +286,7 @@ public abstract class StreamEncoder implements Runnable {
 	            final ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
 	            inputBuffer.clear();
 	            if (buffer != null) {
-	            	inputBuffer.put(buffer); //todo: test
+	            	inputBuffer.put(buffer);
 	            }
 //	            if (DEBUG) Log.v(TAG, "encode:queueInputBuffer");
 	            if (length <= 0) {
@@ -408,7 +408,7 @@ LOOP:	while (mIsCapturing) {
     }
 
 
-	private long mPresentTimeUs;
+	private long mPresentTimeUs=0;
 	private long mPausetime;
 
 

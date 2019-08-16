@@ -17,6 +17,8 @@ import com.chienpm.zecorder.controllers.settings.VideoSetting;
 import com.chienpm.zecorder.data.entities.Video;
 import com.chienpm.zecorder.ui.utils.FileHelper;
 import com.chienpm.zecorder.ui.utils.MyUtils;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -62,9 +64,34 @@ public class VideoAdapter extends ArrayAdapter<Video> {
         Video[] list = new Video[videos.size()];
         videos.toArray(list);
 
-        FileHelper.getInstance(this).deleteVideosFromDatabase(list);
-        FileHelper.getInstance(this).deleteFilesFromStorage(list);
-
+        FileHelper.getInstance(this).deleteVideoFromDatabaseCallable(list)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        FileHelper
+                                .getInstance(VideoAdapter.this)
+                                .deleteFilesFromStorageCallable(list)
+                                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                    @Override
+                                    public void onSuccess(Void aVoid) {
+                                        notifyDataSetChanged();
+                                        showAllCheckboxes(false);
+                                    }
+                                })
+                                .addOnFailureListener(new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(@NonNull Exception e) {
+                                        Log.e(TAG, "delete Video from storage failed", e);
+                                    }
+                                });;
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.e(TAG, "delete Video from database failed", e);
+                    }
+                });
     }
 
     public void clearSelected() {

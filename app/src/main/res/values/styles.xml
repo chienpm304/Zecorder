@@ -9,13 +9,18 @@
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorPrimaryDark</item>
         <item name="preferenceTheme">@style/PreferenceThemeOverlay</item>
-
+        <item name="actionBarStyle">@style/MyActionBar</item>
     </style>
 
 
-
-    <style name="preferenceCatagory">
-
+    <style name="MyActionBar" parent="@style/Widget.AppCompat.Light.ActionBar.Solid.Inverse">
+        <!--<item name="background">@color/red</item>-->
+        <item name="titleTextStyle">@style/MyActionBarTitle</item>
     </style>
+
+    <style name="MyActionBarTitle" parent="@style/TextAppearance.AppCompat.Widget.ActionBar.Title">
+        <item name="android:textColor">@color/WHITE</item>
+    </style>
+
 
 </resources>

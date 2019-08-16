@@ -153,11 +153,15 @@ public class VideoManagerFragment extends Fragment{
     private void reloadData() {
         getLoaderManager().restartLoader(0, null, mLoadVideosCallback);
         mAdapter.verifyData();
+        updateUI();
+        toggleSelectMultipleCheckbox(false);
+        MyUtils.showSnackBarNotification(mViewRoot, "Scanned video!", Snackbar.LENGTH_LONG);
+    }
+
+    private void updateUI() {
         if(mAdapter.getCount() == 0){
             mTvEmpty.setText("No Video Recored");
         }
-        toggleSelectMultipleCheckbox(false);
-        MyUtils.showSnackBarNotification(mViewRoot, "Scanned video!", Snackbar.LENGTH_LONG);
     }
 
     private void requestConfirmDeletion(String title, String message) {
@@ -170,8 +174,9 @@ public class VideoManagerFragment extends Fragment{
                     synchronized (mSync) {
                         mAdapter.deleteSelectedVideo();
                         toggleSelectMultipleCheckbox(false);
+                        updateUI();
                     }
-                    MyUtils.showSnackBarNotification(mViewRoot, "Deleted video from database", Snackbar.LENGTH_LONG);
+                    MyUtils.showSnackBarNotification(mViewRoot, "Delete video completed", Snackbar.LENGTH_LONG);
                 }
             })
             .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
@@ -209,7 +214,8 @@ public class VideoManagerFragment extends Fragment{
         srl.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                reloadData();
+                mAdapter.notifyDataSetChanged();
+                updateUI();
                 srl.setRefreshing(false);
             }
 
@@ -294,7 +300,7 @@ public class VideoManagerFragment extends Fragment{
                 setMenuItemVisibility(R.id.action_sync, true);
                 setMenuItemVisibility(R.id.action_delete, false);
                 setMenuItemVisibility(R.id.action_cancel, true);
-                mMenu.findItem(R.id.action_sync).setTitle("Sync all");
+//                mMenu.findItem(R.id.action_sync).setTitle("Sync all");
 //                mMenu.findItem(R.id.action_delete).setTitle("Delete all");
                 break;
 
@@ -302,7 +308,7 @@ public class VideoManagerFragment extends Fragment{
                 setMenuItemVisibility(R.id.action_sync, true);
                 setMenuItemVisibility(R.id.action_delete, true);
                 setMenuItemVisibility(R.id.action_cancel, true);
-                mMenu.findItem(R.id.action_sync).setTitle("Sync selected");
+//                mMenu.findItem(R.id.action_sync).setTitle("Sync selected");
                 mMenu.findItem(R.id.action_delete).setTitle("Delete selected");
 
                 break;

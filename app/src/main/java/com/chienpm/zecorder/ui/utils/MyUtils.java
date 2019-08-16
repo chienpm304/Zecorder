@@ -14,6 +14,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -78,12 +79,26 @@ public class MyUtils {
             String base64Encoded = Base64.encodeToString(bytes, Base64.DEFAULT);
             str.append("\nbase64: ").append(base64Encoded);//.append("\nbytes: ");
 //            for(int i = 0; i < bytes.length; i++){
-//                str.append( bytes[i]).append(" ");
+////                str.append( bytes[i]).append(" ");
+//                str.append(String.format("%02x ", bytes[i]));
 //            }
-
+//            str.append(getHex(bytes));
 
         }
         Log.i(TAG, str.toString());
+    }
+
+    static final String HEXES = "0123456789ABCDEF";
+    public static String getHex( byte [] raw ) {
+        if ( raw == null ) {
+            return null;
+        }
+        final StringBuilder hex = new StringBuilder( 2 * raw.length );
+        for ( final byte b : raw ) {
+            hex.append(HEXES.charAt((b & 0xF0) >> 4))
+                    .append(HEXES.charAt((b & 0x0F))).append(' ');
+        }
+        return hex.toString();
     }
 
     public static void shootPicture(ByteBuffer buf, int mWidth, int mHeight) {
@@ -107,6 +122,16 @@ public class MyUtils {
                 buf.clear();
                 bmp.copyPixelsFromBuffer(buf);
                 bmp.compress(compressFormat, 100, os);
+
+                //Log
+                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                bmp.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream);
+                byte[] byteArray = byteArrayOutputStream .toByteArray();
+
+                String encoded = Base64.encodeToString(byteArray, Base64.DEFAULT);
+                Log.i(TAG, "shootPicture: "+encoded);
+                //endlog
+
                 bmp.recycle();
                 os.flush();
             } finally {

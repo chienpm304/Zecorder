@@ -6,9 +6,14 @@ import android.util.Log;
 import com.chienpm.zecorder.data.database.VideoDatabase;
 import com.chienpm.zecorder.data.entities.Video;
 import com.chienpm.zecorder.ui.adapters.VideoAdapter;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 public class FileHelper {
     private static final String TAG = "FileHelper";
@@ -22,6 +27,8 @@ public class FileHelper {
     private FileHelper(VideoAdapter mVideoAdapter) {
         this.mVideoAdapter = mVideoAdapter;
     }
+
+    private final Executor mExecutor = Executors.newSingleThreadExecutor();
 
     public static FileHelper getInstance(VideoAdapter mAdapter){
         if (mInstance == null && mAdapter != null) {
@@ -85,15 +92,58 @@ public class FileHelper {
         }
     }
 
+    public Task<Void> deleteVideoFromDatabaseCallable(final Video... videos) {
+        return Tasks.call(mExecutor, new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                if(videos.length > 0) {
+                    AsyncTask.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            AsyncTask.execute(new Runnable() {
+                                @Override
+                                public void run() {
+                                    // and deleting
+                                    synchronized (mSync) {
+                                        VideoDatabase.getInstance(mVideoAdapter.getContext()).getVideoDao().deleteVideos(videos);
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+                return null;
+            }
+        });
+
+
+    }
+
     public void deleteFilesFromStorage(Video[] videos) {
         for(Video v: videos){
             File file = new File(v.getLocalPath());
             if(file.exists()){
-                if(file.delete());
+                if(file.delete())
                     mVideoAdapter.removeVideo(v);
             }
         }
         mVideoAdapter.clearSelected();
         mVideoAdapter.showAllCheckboxes(false);
+    }
+
+    public Task<Void> deleteFilesFromStorageCallable(Video[] videos) {
+        return Tasks.call(mExecutor, new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                for(Video v: videos){
+                    File file = new File(v.getLocalPath());
+                    if(file.exists()){
+                        if(file.delete())
+                            mVideoAdapter.removeVideo(v);
+                    }
+                }
+                return null;
+            }
+        });
     }
 }

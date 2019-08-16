@@ -323,7 +323,7 @@ public abstract class StreamVideoEncoderBase extends StreamEncoder {
 	protected void swRgbaFrame(byte[] data, int width, int height, long pts) {
 //		MyUtils.shootPicture(ByteBuffer.wrap(data), mWidth, mHeight);
 		MyUtils.shootPicture(ByteBuffer.wrap(data), mWidth, mHeight);
-		RGBASoftEncode(data, width, height, true, 180, pts); //invoke to onSoftEncodedData
+		RGBASoftEncode(data, width, height, true, 0, pts); //invoke to onSoftEncodedData
 	}
 
 	protected void onSoftEncodedData(byte[] es, long pts, boolean isKeyFrame) {

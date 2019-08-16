@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static android.opengl.GLES20.GL_ARRAY_BUFFER;
 import static android.opengl.GLES20.GL_DYNAMIC_DRAW;
+import static android.opengl.GLES20.GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS;
 import static android.opengl.GLES20.GL_STATIC_DRAW;
 
 
@@ -251,6 +252,7 @@ public class StreamScreenEncoder extends StreamVideoEncoderBase {
 						decor.updateTexId();
 
 					RenderUtil.renderTextures(mDecors);
+
 					mEncoderSurface.swap();
 
 					makeCurrent();
@@ -260,33 +262,9 @@ public class StreamScreenEncoder extends StreamVideoEncoderBase {
 					AtomicInteger videoFrameCacheNumber = mMuxerWrapper.getVideoFrameCacheNumber();
 					if (videoFrameCacheNumber != null && videoFrameCacheNumber.get() < SrsEncoder.VGOP) {
 
+						encodeIncomeFrame();
 
-						final long pts = getPresentTimeUS();
-//						IntBuffer intBuffer = getCurrentByteBuffer2();
-//						Buffer mBuffer =  ByteBuffer.allocateDirect(mWidth * mHeight * 4);
-//						((ByteBuffer) mBuffer).asIntBuffer().put(intBuffer);
-
-
-//						Buffer mBuffer = getCurrentByteBuffer();
-
-						Buffer mBuffer = getCurrentBufferData();
-						byte[] bytes = ((ByteBuffer) mBuffer).array();
-						MyUtils.logBytes("before decode", bytes);
-
-						useSoftEncoder = true;
-					if(useSoftEncoder) {
-
-						swRgbaFrame(bytes, mWidth, mHeight, pts);
-					}
-					else {
-						byte[] processedData = hwRgbaFrame(bytes, mWidth, mHeight);
-						if (processedData != null) {
-							onProcessedYuvFrame(processedData, pts);
-						} else {
-							Log.e(TAG, "on encode buffer", new IllegalArgumentException("libyuv failure"));
-						}
-					}
-//					shootPicture(buffer);
+						//shootPicture(buffer);
 						/**END ENCODE**/
 
 						frameAvailableSoon();
@@ -300,15 +278,47 @@ public class StreamScreenEncoder extends StreamVideoEncoderBase {
 			}
 		};
 
+		private void encodeIncomeFrame() {
+			final long pts = getPresentTimeUS();
+//						IntBuffer intBuffer = getCurrentByteBuffer2();
+//						Buffer mBuffer =  ByteBuffer.allocateDirect(mWidth * mHeight * 4);
+//						((ByteBuffer) mBuffer).asIntBuffer().put(intBuffer);
+
+
+//						Buffer mBuffer = getCurrentByteBuffer();
+
+			Buffer mBuffer = getCurrentBufferData();
+			byte[] bytes = ((ByteBuffer) mBuffer).array();
+			MyUtils.logBytes("before decode", bytes);
+
+			useSoftEncoder = true;
+			if(useSoftEncoder) {
+
+				swRgbaFrame(bytes, mWidth, mHeight, pts);
+
+			}
+			else {
+				byte[] processedData = hwRgbaFrame(bytes, mWidth, mHeight);
+				if (processedData != null) {
+					onProcessedYuvFrame(processedData, pts);
+				} else {
+					Log.e(TAG, "on encode buffer", new IllegalArgumentException("libyuv failure"));
+				}
+			}
+		}
+
 		private Buffer getCurrentBufferData() {
 			ByteBuffer buf = null;
 
 			buf = ByteBuffer.allocateDirect(mWidth * mHeight * 4);
 
-			buf.order(ByteOrder.LITTLE_ENDIAN);
+			buf.order(ByteOrder.nativeOrder());
 
 			GLES20.glReadPixels(0, 0, mWidth, mHeight, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, buf);
 
+			buf.clear();
+
+			Log.i(TAG, "Get Current Buffer Data status: "+GLES20.glGetError());
 			return buf;
 		}
 

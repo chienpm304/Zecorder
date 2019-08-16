@@ -25,6 +25,29 @@ public class SyncVideoAdapter extends ArrayAdapter<Video> {
     private boolean mLocalLoaded = false;
     private boolean mDriveLoaded = false;
 
+    public void addToDownloaded(Video mVideo) {
+        mLocalVideos.add(mVideo);
+    }
+
+    public void addToUploaded(Video mVideo){
+        mDriveVideos.add(mVideo);
+    }
+
+    public boolean isSyncCompleted(){
+        return mVideos.size() == mLocalVideos.size() + mDriveVideos.size();
+    }
+
+    public void removeAll() {
+        if(mDriveVideos!=null)
+            mDriveVideos.clear();
+        if(mLocalVideos!=null)
+            mLocalVideos.clear();
+        if(mVideos!=null)
+            mVideos.clear();
+        notifyDataSetChanged();
+
+    }
+
     public static class ViewHolder {
         public TextView title;
         public TextView resolution;
@@ -95,7 +118,12 @@ public class SyncVideoAdapter extends ArrayAdapter<Video> {
                 if (j==mLocalVideos.size())
                     mVideos.add(v);
             }
+            mLocalVideos.clear();
+            mDriveVideos.clear();
         }
+
+
+
 
         notifyDataSetChanged();
 

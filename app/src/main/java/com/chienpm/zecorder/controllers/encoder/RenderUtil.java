@@ -32,12 +32,12 @@ public class RenderUtil {
     private static final Paint EMPTY_PAINT = new Paint();
     private static final String VERTEX_SHADER =
             "attribute vec4 a_position;\n" +
-                    "attribute vec2 a_texcoord;\n" +
-                    "varying vec2 v_texcoord;\n" +
-                    "void main() {\n" +
-                    "  gl_Position = a_position;\n" +
-                    "  v_texcoord = a_texcoord;\n" +
-                    "}\n";
+            "attribute vec2 a_texcoord;\n" +
+            "varying vec2 v_texcoord;\n" +
+            "void main() {\n" +
+            "  gl_Position = a_position;\n" +
+            "  v_texcoord = a_texcoord;\n" +
+            "}\n";
     private static final String FRAGMENT_SHADER =
             "precision mediump float;\n" +
                     "uniform sampler2D tex_sampler;\n" +
@@ -105,6 +105,7 @@ public class RenderUtil {
             // Set the input texture
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, decor.getTextureId());
+
             GLES20.glUniform1i(context.texSamplerHandle, 0);
             // Draw!
             GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);

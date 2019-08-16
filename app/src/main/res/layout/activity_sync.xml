@@ -33,7 +33,19 @@
 
     <ProgressBar
         android:id="@+id/progress_fetching_data"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_centerInParent="true"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnTryAgain"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="TRY AGAIN"
+        android:textSize="24sp"
+        android:layout_centerInParent="true"
+        android:visibility="gone"
+        />
 </RelativeLayout>
