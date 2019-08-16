@@ -214,8 +214,10 @@ public class VideoManagerFragment extends Fragment{
         srl.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                mAdapter.notifyDataSetChanged();
-                updateUI();
+//                getLoaderManager().restartLoader(0, null, )
+//                mAdapter.notifyDataSetChanged();
+//                updateUI();
+                reloadData();
                 srl.setRefreshing(false);
             }
 

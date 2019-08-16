@@ -94,7 +94,7 @@ public class SyncActivity extends AppCompatActivity {
         GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(getApplicationContext());
 
         if (account != null && account.getGrantedScopes().containsAll(requiredScopes)) {
-            MyUtils.showSnackBarNotification(mTvEmpty,"Signed in as " + account.getEmail(), Snackbar.LENGTH_INDEFINITE);
+            MyUtils.showSnackBarNotification(mTvEmpty,"Signed in as " + account.getEmail(), Snackbar.LENGTH_LONG);
             mDriveServiceHelper = new DriveServiceHelper(getGoogleDriveService(getApplicationContext(), account, getResources().getString(R.string.app_name)));
             requestData();
         }
@@ -293,7 +293,7 @@ public class SyncActivity extends AppCompatActivity {
                         .addOnFailureListener(new OnFailureListener() {
                             @Override
                             public void onFailure(@NonNull Exception e) {
-                                MyUtils.showSnackBarNotification(mTvEmpty, "Failed to upload video "+video.getTitle(), Snackbar.LENGTH_LONG);
+                                MyUtils.showSnackBarNotification(mTvEmpty, "Failed to download video "+video.getTitle(), Snackbar.LENGTH_LONG);
                                 holder.progress.setIndeterminate(false);
                                 holder.progress.setProgress(0);
                                 holder.progress.postInvalidate();

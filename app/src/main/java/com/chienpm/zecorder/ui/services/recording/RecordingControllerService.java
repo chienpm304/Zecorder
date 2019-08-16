@@ -408,7 +408,6 @@ public class RecordingControllerService extends Service {
                 toggleNavigationButton(View.GONE);
 
                 if(mRecordingServiceBound){
-                    //Todo: stop and save recording
                     mRecordingStarted = false;
 
                     final VideoSetting videoSetting = mRecordingService.stopRecording();

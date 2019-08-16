@@ -64,7 +64,8 @@ public class VideoAdapter extends ArrayAdapter<Video> {
         Video[] list = new Video[videos.size()];
         videos.toArray(list);
 
-        FileHelper.getInstance(this).deleteVideoFromDatabaseCallable(list)
+        FileHelper.getInstance(this).
+                deleteVideoFromDatabaseCallable(list)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void aVoid) {

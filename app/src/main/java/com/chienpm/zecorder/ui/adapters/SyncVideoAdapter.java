@@ -34,8 +34,6 @@ public class SyncVideoAdapter extends ArrayAdapter<Video> {
 
     public void addSyncingVideos(Video mVideo){
         mSyncingVideos.add(mVideo);
-        if(isSyncCompleted())
-            mActivity.notifySyncCompleted();
     }
 
     public boolean isSyncCompleted(){
@@ -71,6 +69,13 @@ public class SyncVideoAdapter extends ArrayAdapter<Video> {
     private ArrayList<Video> mDriveVideos;
     private ArrayList<Video> mSyncingVideos;
     private ArrayList<Video> mSyncedVideos;
+    private static final int MAX_QUEUE = 3;
+
+    //pending to upload queue
+
+    //pending to download queue
+
+
 
 
     public SyncVideoAdapter(SyncActivity syncActivity, ArrayList<Video> videos) {
@@ -158,7 +163,7 @@ public class SyncVideoAdapter extends ArrayAdapter<Video> {
                         //download
                         mActivity.downloadVideo(video, holder);
                     }
-                    mSyncingVideos.add(video);
+                    addSyncingVideos(video);
                     v.setEnabled(false);
                 }
             });
