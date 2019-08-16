@@ -52,17 +52,9 @@ public class VideoAdapter extends ArrayAdapter<Video> {
         return MyUtils.SELECTED_MODE_MULTIPLE;
     }
 
+
     public void deleteSelectedVideo() {
-        final ArrayList<Video> videos = new ArrayList<>();
-
-        for(int i: mSelectedPositions){
-            Video video = mVideos.get(i);
-            videos.add(video);
-            //delete from storage
-        };
-
-        Video[] list = new Video[videos.size()];
-        videos.toArray(list);
+        Video[] list = getSelectedVideo();
 
         FileHelper.getInstance(this).
                 deleteVideoFromDatabaseCallable(list)
@@ -93,6 +85,22 @@ public class VideoAdapter extends ArrayAdapter<Video> {
                         Log.e(TAG, "delete Video from database failed", e);
                     }
                 });
+    }
+
+    @NonNull
+    public Video[] getSelectedVideo() {
+        final ArrayList<Video> videos = new ArrayList<>();
+
+        for(int i: mSelectedPositions){
+            Video video = mVideos.get(i);
+            videos.add(video);
+            //delete from storage
+        }
+        ;
+
+        Video[] list = new Video[videos.size()];
+        videos.toArray(list);
+        return list;
     }
 
     public void clearSelected() {
@@ -146,7 +154,7 @@ public class VideoAdapter extends ArrayAdapter<Video> {
     public View getView(final int position, @Nullable View convertView, @NonNull ViewGroup parent) {
         View viewVideoItem = convertView;
         final ViewHolder holder;
-        if(viewVideoItem == null){
+        if(viewVideoItem == null || position < 0 || position > getCount()-1){
             holder = new ViewHolder();
 
             viewVideoItem = LayoutInflater.from(getContext()).inflate(R.layout.video_list_item, parent, false);

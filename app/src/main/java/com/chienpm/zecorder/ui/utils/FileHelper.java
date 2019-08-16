@@ -138,8 +138,8 @@ public class FileHelper {
                 for(Video v: videos){
                     File file = new File(v.getLocalPath());
                     if(file.exists()){
-                        if(file.delete())
-                            mVideoAdapter.removeVideo(v);
+                        if(file.delete());
+                        mVideoAdapter.remove(v);
                     }
                 }
                 return null;

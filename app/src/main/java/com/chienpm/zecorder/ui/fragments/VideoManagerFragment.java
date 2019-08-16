@@ -10,6 +10,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.chienpm.zecorder.ui.activities.SyncActivity;
+import com.chienpm.zecorder.ui.utils.FileHelper;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.snackbar.Snackbar;
 import androidx.fragment.app.Fragment;
 import androidx.loader.app.LoaderManager;
@@ -142,13 +145,17 @@ public class VideoManagerFragment extends Fragment{
                 break;
 
             case R.id.action_cancel:
-                mAdapter.showAllCheckboxes(false);
-                mAdapter.selectAll(false);
-                setMenuItemVisibility(R.id.action_select_multiple, false);
+                performCancel();
                 break;
 
         }
         return false;
+    }
+
+    private void performCancel() {
+        mAdapter.showAllCheckboxes(false);
+        mAdapter.selectAll(false);
+        setMenuItemVisibility(R.id.action_select_multiple, false);
     }
 
     private void reloadData() {
@@ -160,6 +167,7 @@ public class VideoManagerFragment extends Fragment{
     }
 
     private void updateUI() {
+        performCancel();
         if(mAdapter.getCount() == 0){
             mTvEmpty.setText("No Video Recored");
         }
@@ -171,12 +179,41 @@ public class VideoManagerFragment extends Fragment{
             .setMessage(message)
             .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int which) {
-                    // Continue with delete operation
-                    synchronized (mSync) {
-                        mAdapter.deleteSelectedVideo();
-                        toggleSelectMultipleCheckbox(false);
+                    Video[] videos = mAdapter.getSelectedVideo();
+
+                    FileHelper.getInstance(mAdapter)
+                            .deleteVideoFromDatabaseCallable(videos)
+                            .addOnSuccessListener(new OnSuccessListener<Void>() {
+
+                                @Override
+                                public void onSuccess(Void aVoid) {
+                                    FileHelper
+                                            .getInstance(mAdapter)
+                                            .deleteFilesFromStorageCallable(videos)
+                                            .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                                @Override
+                                                public void onSuccess(Void aVoid) {
+                                                    reloadData();
+
+                                                }
+                                            })
+
+                                            .addOnFailureListener(new OnFailureListener() {
+                                                @Override
+                                                public void onFailure(@NonNull Exception e) {
+                                                    Log.e(TAG, "delete Video from DB failed", e);
+                                                }
+                                            });;
+                                }
+                            })
+                            .addOnFailureListener(new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception e) {
+                                    reloadData();
+                                    Log.e(TAG, "delete Video from SD failed", e);
+                                }
+                            });
                         updateUI();
-                    }
                     MyUtils.showSnackBarNotification(mViewRoot, "Delete video completed", Snackbar.LENGTH_LONG);
                 }
             })
