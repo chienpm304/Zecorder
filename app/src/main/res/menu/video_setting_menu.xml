@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+<menu
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    >
 
     <item
         android:id="@+id/action_select_multiple"
@@ -14,7 +16,7 @@
         android:title="Scan videos"/>
 
     <item android:id="@+id/action_sync"
-        android:title="Sync"/>
+        android:title="Sync all"/>
 
     <item android:id="@+id/action_rename"
         android:title="Rename" />

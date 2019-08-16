@@ -33,7 +33,9 @@
             android:value="@string/facebook_app_id" />
 
         <activity android:name=".ui.activities.SyncActivity">
-
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ui.activities.MainActivity" />
         </activity>
 
         <service

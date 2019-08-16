@@ -1,6 +1,8 @@
 package com.chienpm.zecorder.ui.activities;
 
 import android.app.Activity;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -18,6 +20,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.NotificationCompat;
 import androidx.loader.app.LoaderManager;
 import androidx.loader.content.AsyncTaskLoader;
 import androidx.loader.content.Loader;
@@ -31,6 +34,7 @@ import com.chienpm.zecorder.ui.adapters.SyncVideoAdapter;
 import com.chienpm.zecorder.ui.utils.DriveServiceHelper;
 import com.chienpm.zecorder.ui.utils.GoogleDriveFileHolder;
 import com.chienpm.zecorder.ui.utils.MyUtils;
+import com.chienpm.zecorder.ui.utils.NotificationHelper;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -65,6 +69,13 @@ public class SyncActivity extends AppCompatActivity {
     private SyncVideoAdapter mSyncAdapter;
 
     private Button mBtnTryAgain;
+
+    NotificationCompat.Builder mNotiBuilder;
+
+    PendingIntent mPendingIntent;
+    private NotificationManager mNotifyManager;
+    private int mId = 1;
+    private boolean startedNotification = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -196,6 +207,10 @@ public class SyncActivity extends AppCompatActivity {
             MyUtils.showSnackBarNotification(mTvEmpty, "Folder Id is empty/ try again", Snackbar.LENGTH_LONG);
             return;
         }
+
+        if(!startedNotification) {
+            notifySyncStarted();
+        }
         MyUtils.showSnackBarNotification(mTvEmpty, "Uploading "+video.getTitle()+"...", Snackbar.LENGTH_INDEFINITE);
         holder.progress.setVisibility(View.VISIBLE);
         mDriveServiceHelper.uploadFile(new File(video.getLocalPath()), "video/mpeg", getMasterFolderId())
@@ -205,11 +220,9 @@ public class SyncActivity extends AppCompatActivity {
                                 Gson gson = new Gson();
                                 Log.d(TAG, "onUpload: onSuccess: " + gson.toJson(googleDriveFileHolder));
                                 MyUtils.showSnackBarNotification(mTvEmpty, "Uploaded video "+video.getTitle(), Snackbar.LENGTH_LONG);
-                                holder.progress.setIndeterminate(false);
-                                holder.progress.setProgress(100);
-                                holder.progress.postInvalidate();
                                 holder.sync.setImageDrawable(getDrawable(R.drawable.ic_check));
-                                mSyncAdapter.addToUploaded(video);
+                                mSyncAdapter.addSyncedVideos(video);
+                                //todo: update notification
                             }
                         })
                         .addOnFailureListener(new OnFailureListener() {
@@ -237,14 +250,18 @@ public class SyncActivity extends AppCompatActivity {
         MyUtils.showSnackBarNotification(mTvEmpty, "Downloading "+video.getTitle()+"...", Snackbar.LENGTH_INDEFINITE);
         holder.progress.setVisibility(View.VISIBLE);
         File fileSave = new java.io.File(MyUtils.getBaseStorageDirectory(), video.getTitle());
+
+        if(!startedNotification) {
+            notifySyncStarted();
+        }
+
         mDriveServiceHelper.downloadFile(fileSave, video.getCloudPath())
                         .addOnSuccessListener(new OnSuccessListener<Void>() {
                             @Override
                             public void onSuccess(Void aVoid) {
-                                holder.progress.setIndeterminate(false);
-                                holder.progress.setProgress(100);
-                                holder.progress.postInvalidate();
+
                                 holder.sync.setImageDrawable(getDrawable(R.drawable.ic_check));
+
                                 video.setLocalPath(fileSave.getAbsolutePath());
                                 saveVideoToDatabase(video);
                             }
@@ -263,7 +280,9 @@ public class SyncActivity extends AppCompatActivity {
                                                 public void run() {
                                                     MyUtils.showSnackBarNotification(mTvEmpty, "Downloaded video "+video.getTitle(), Snackbar.LENGTH_LONG);
                                                     //remove video in adapter when downloaded
-                                                    mSyncAdapter.addToDownloaded(mVideo);
+                                                    mSyncAdapter.addSyncedVideos(mVideo);
+                                                    //todo: update notification
+
                                                 }
                                             });
                                         }
@@ -282,6 +301,27 @@ public class SyncActivity extends AppCompatActivity {
                             }
                         });
         Log.d(TAG, "onClick: downloading: "+video.toString());
+    }
+
+    private void notifySyncStarted() {
+        mNotiBuilder
+                .setContentText("Synchronizing in progress...")
+                .setProgress(100, 0, true)
+                .setOngoing(true);
+
+        mNotifyManager.notify(mId, mNotiBuilder.build());
+        startedNotification = true;
+    }
+
+    public void notifySyncCompleted(){
+        mNotiBuilder
+                .setContentText("Synchronizing Completed")
+                .setProgress(0, 0, false)
+                .setOngoing(false);
+
+        mNotifyManager.notify(mId, mNotiBuilder.build());
+        startedNotification = false;
+
     }
 
     public void updateUI(){
@@ -306,6 +346,27 @@ public class SyncActivity extends AppCompatActivity {
 
 
     private void initView() {
+        //setup notification action
+        // Create an explicit intent for an Activity in your app
+        Intent intent = new Intent(this, SyncActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        mPendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+
+        //create notification channel
+        NotificationHelper.getInstance().createNotificationChannel(this);
+        mNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        //create notification builder
+        mNotiBuilder = new NotificationCompat.Builder(this, NotificationHelper.CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_download)
+                .setContentTitle("Synchronize Videos")
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setContentIntent(mPendingIntent)
+                .setAutoCancel(false);
+
+        //create notification list Ids
+
+
+        //Views
         mTvEmpty = findViewById(R.id.sync_tvEmpty);
         mListViewVideos = findViewById(R.id.sync_list_videos);
         mListViewVideos.setEmptyView(mTvEmpty);
@@ -325,7 +386,7 @@ public class SyncActivity extends AppCompatActivity {
             @Override
             public void onRefresh() {
                 if(mSyncAdapter.isSyncCompleted()) {
-                    mSyncAdapter.removeAll();
+                    mSyncAdapter.removedSyncedVideos();
                     updateUI();
                 }
                 srl.setRefreshing(false);
@@ -383,8 +444,6 @@ public class SyncActivity extends AppCompatActivity {
             mSyncAdapter.clear();
         }
     };
-
-
 
     static class VideoAsyncTaskLoader extends AsyncTaskLoader<ArrayList<Video>> {
 

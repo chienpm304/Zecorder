@@ -25,25 +25,32 @@ public class SyncVideoAdapter extends ArrayAdapter<Video> {
     private boolean mLocalLoaded = false;
     private boolean mDriveLoaded = false;
 
-    public void addToDownloaded(Video mVideo) {
-        mLocalVideos.add(mVideo);
+    public void addSyncedVideos(Video mVideo) {
+        mSyncedVideos.add(mVideo);
+        notifyDataSetChanged();
+        if(isSyncCompleted())
+            mActivity.notifySyncCompleted();
     }
 
-    public void addToUploaded(Video mVideo){
-        mDriveVideos.add(mVideo);
+    public void addSyncingVideos(Video mVideo){
+        mSyncingVideos.add(mVideo);
+        if(isSyncCompleted())
+            mActivity.notifySyncCompleted();
     }
 
     public boolean isSyncCompleted(){
-        return mVideos.size() == mLocalVideos.size() + mDriveVideos.size();
+        return mSyncedVideos.size() == mSyncingVideos.size();
     }
 
-    public void removeAll() {
-        if(mDriveVideos!=null)
-            mDriveVideos.clear();
-        if(mLocalVideos!=null)
-            mLocalVideos.clear();
-        if(mVideos!=null)
-            mVideos.clear();
+    public void removedSyncedVideos() {
+        for(Video v: mSyncedVideos)
+            mVideos.remove(v);
+
+        if(mSyncedVideos!=null && mSyncingVideos!=null) {
+            mSyncedVideos.clear();
+            mSyncingVideos.clear();
+        }
+
         notifyDataSetChanged();
 
     }
@@ -62,16 +69,18 @@ public class SyncVideoAdapter extends ArrayAdapter<Video> {
     private final ArrayList<Video> mVideos;
     private ArrayList<Video> mLocalVideos;
     private ArrayList<Video> mDriveVideos;
+    private ArrayList<Video> mSyncingVideos;
+    private ArrayList<Video> mSyncedVideos;
 
-    private ArrayList<Integer> mProgressValues;
 
     public SyncVideoAdapter(SyncActivity syncActivity, ArrayList<Video> videos) {
         super(syncActivity, 0, videos);
         mActivity = syncActivity;
         mVideos = videos;
-        mProgressValues = new ArrayList<>();
         mLocalVideos = new ArrayList<>();
         mDriveVideos = new ArrayList<>();
+        mSyncingVideos = new ArrayList<>();
+        mSyncedVideos = new ArrayList<>();
     }
 
     public void setDriveVideos(ArrayList<Video> driveVideos) {
@@ -122,9 +131,6 @@ public class SyncVideoAdapter extends ArrayAdapter<Video> {
             mDriveVideos.clear();
         }
 
-
-
-
         notifyDataSetChanged();
 
         mActivity.updateUI();
@@ -152,6 +158,7 @@ public class SyncVideoAdapter extends ArrayAdapter<Video> {
                         //download
                         mActivity.downloadVideo(video, holder);
                     }
+                    mSyncingVideos.add(video);
                     v.setEnabled(false);
                 }
             });
@@ -167,30 +174,41 @@ public class SyncVideoAdapter extends ArrayAdapter<Video> {
 
         if(video!=null){
 
-            String thumbnailLink = video.getThumbnailLink();
-
-            Glide.with(getContext())
-                    .load(thumbnailLink) // or URI/path
-                    .into(holder.thumb); //imageview to set thumbnail to
-
-            holder.title.setText(video.getTitle());
-
-            String resolution = VideoSetting.getShortResolution(video.getWidth(), video.getHeight());
-            holder.resolution.setText(resolution);
-
-            String size = VideoSetting.getFormattedSize(video.getSize());
-            holder.size.setText(size);
-
-            String duration = VideoSetting.getFormattedDuration(video.getDuration());
-            holder.duration.setText(duration);
-
-            if(video.isLocalVideo()){
-                //to upload
-                holder.sync.setImageDrawable(getContext().getDrawable(R.drawable.ic_upload));
+            if(mSyncedVideos.contains(video)){
+                holder.progress.setIndeterminate(false);
+                holder.progress.setProgress(100);
+                holder.progress.postInvalidate();
             }
-            else{//on drive
-                //need download
-                holder.sync.setImageDrawable(getContext().getDrawable(R.drawable.ic_download));
+            else if(mSyncingVideos.contains(video)){
+                holder.progress.setIndeterminate(true);
+            }
+            else{
+                holder.sync.setEnabled(true);
+                holder.progress.setVisibility(View.GONE);
+                if(video.isLocalVideo()){
+                    //to upload
+                    holder.sync.setImageDrawable(getContext().getDrawable(R.drawable.ic_upload));
+                }
+                else{//on drive
+                    //need download
+                    holder.sync.setImageDrawable(getContext().getDrawable(R.drawable.ic_download));
+                }
+                String thumbnailLink = video.getThumbnailLink();
+
+                Glide.with(getContext())
+                        .load(thumbnailLink) // or URI/path
+                        .into(holder.thumb); //imageview to set thumbnail to
+
+                holder.title.setText(video.getTitle());
+
+                String resolution = VideoSetting.getShortResolution(video.getWidth(), video.getHeight());
+                holder.resolution.setText(resolution);
+
+                String size = VideoSetting.getFormattedSize(video.getSize());
+                holder.size.setText(size);
+
+                String duration = VideoSetting.getFormattedDuration(video.getDuration());
+                holder.duration.setText(duration);
             }
         }
 
