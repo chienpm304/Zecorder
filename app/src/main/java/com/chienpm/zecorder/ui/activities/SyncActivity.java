@@ -9,7 +9,6 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
-
 import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
@@ -127,7 +126,7 @@ public class SyncActivity extends AppCompatActivity {
                     handleSignInResult(resultData);
                 }
                 else{
-                    MyUtils.showSnackBarNotification(mTvEmpty, "You must grant all permission to sync data. Please try again!", Snackbar.LENGTH_INDEFINITE);
+                    MyUtils.showSnackBarNotification(mTvEmpty, "You must grant all permission to sync data. Please try again!", Snackbar.LENGTH_LONG);
                     mBtnTryAgain.setVisibility(View.VISIBLE);
                 }
                 break;
@@ -143,7 +142,7 @@ public class SyncActivity extends AppCompatActivity {
                 .addOnSuccessListener(new OnSuccessListener<GoogleSignInAccount>() {
                     @Override
                     public void onSuccess(GoogleSignInAccount googleSignInAccount) {
-                        MyUtils.showSnackBarNotification(mTvEmpty,"Signed in as " + googleSignInAccount.getEmail(), Snackbar.LENGTH_INDEFINITE);
+                        MyUtils.showSnackBarNotification(mTvEmpty,"Signed in as " + googleSignInAccount.getEmail(), Snackbar.LENGTH_LONG);
 
                         mDriveServiceHelper = new DriveServiceHelper(getGoogleDriveService(getApplicationContext(), googleSignInAccount, "appName"));
 
@@ -198,7 +197,7 @@ public class SyncActivity extends AppCompatActivity {
         getSupportLoaderManager().initLoader(0, null, mLoadVideosCallback);
     }
 
-    public void uploadVideo(Video video, SyncVideoAdapter.ViewHolder holder){
+    public void uploadVideo(Video video){
 //        Log.d(TAG, "onClick: uploading: "+video.toString());
 //        mSyncAdapter.getView(0, null, null).findViewById(R.id.sync_progressBar).setVisibility(View.GONE);
 
@@ -211,16 +210,15 @@ public class SyncActivity extends AppCompatActivity {
         if(!startedNotification) {
             notifySyncStarted();
         }
-        MyUtils.showSnackBarNotification(mTvEmpty, "Uploading "+video.getTitle()+"...", Snackbar.LENGTH_INDEFINITE);
-        holder.progress.setVisibility(View.VISIBLE);
+        MyUtils.showSnackBarNotification(mTvEmpty, "Uploading "+video.getTitle()+"...", Snackbar.LENGTH_SHORT);
+
         mDriveServiceHelper.uploadFile(new File(video.getLocalPath()), "video/mpeg", getMasterFolderId())
                         .addOnSuccessListener(new OnSuccessListener<GoogleDriveFileHolder>() {
                             @Override
                             public void onSuccess(GoogleDriveFileHolder googleDriveFileHolder) {
                                 Gson gson = new Gson();
                                 Log.d(TAG, "onUpload: onSuccess: " + gson.toJson(googleDriveFileHolder));
-                                MyUtils.showSnackBarNotification(mTvEmpty, "Uploaded video "+video.getTitle(), Snackbar.LENGTH_LONG);
-                                holder.sync.setImageDrawable(getDrawable(R.drawable.ic_check));
+                                MyUtils.showSnackBarNotification(mTvEmpty, "Uploaded video "+video.getTitle(), Snackbar.LENGTH_SHORT);
                                 mSyncAdapter.addSyncedVideos(video);
                                 //todo: update notification
                             }
@@ -230,26 +228,22 @@ public class SyncActivity extends AppCompatActivity {
                             public void onFailure(@NonNull Exception e) {
                                 Log.d(TAG, "onUpload: onFailure: " + e.getMessage());
                                 e.printStackTrace();
-                                MyUtils.showSnackBarNotification(mTvEmpty, "Failed to upload video "+video.getTitle(), Snackbar.LENGTH_LONG);
-                                holder.progress.setIndeterminate(false);
-                                holder.progress.setProgress(0);
-                                holder.progress.postInvalidate();
-                                holder.sync.setImageDrawable(getDrawable(R.drawable.ic_error));
+                                MyUtils.showSnackBarNotification(mTvEmpty, "Failed to upload video "+video.getTitle(), Snackbar.LENGTH_SHORT);
+                               mSyncAdapter.addFailedVideos(video);
                             }
                         });
 
     }
 
-    public void downloadVideo(Video video, SyncVideoAdapter.ViewHolder holder){
+    public void downloadVideo(Video video){
         String folderId = getMasterFolderId();
 
         if(TextUtils.isEmpty(folderId)){
             MyUtils.showSnackBarNotification(mTvEmpty, "Folder Id is empty/ try again", Snackbar.LENGTH_LONG);
             return;
         }
-        MyUtils.showSnackBarNotification(mTvEmpty, "Downloading "+video.getTitle()+"...", Snackbar.LENGTH_INDEFINITE);
-        holder.progress.setVisibility(View.VISIBLE);
-        File fileSave = new java.io.File(MyUtils.getBaseStorageDirectory(), video.getTitle());
+        MyUtils.showSnackBarNotification(mTvEmpty, "Downloading "+video.getTitle()+"...", Snackbar.LENGTH_SHORT);
+        File fileSave = new File(MyUtils.getBaseStorageDirectory(), video.getTitle());
 
         if(!startedNotification) {
             notifySyncStarted();
@@ -259,9 +253,6 @@ public class SyncActivity extends AppCompatActivity {
                         .addOnSuccessListener(new OnSuccessListener<Void>() {
                             @Override
                             public void onSuccess(Void aVoid) {
-
-                                holder.sync.setImageDrawable(getDrawable(R.drawable.ic_check));
-
                                 video.setLocalPath(fileSave.getAbsolutePath());
                                 saveVideoToDatabase(video);
                             }
@@ -278,7 +269,7 @@ public class SyncActivity extends AppCompatActivity {
                                             runOnUiThread(new Runnable() {
                                                 @Override
                                                 public void run() {
-                                                    MyUtils.showSnackBarNotification(mTvEmpty, "Downloaded video "+video.getTitle(), Snackbar.LENGTH_LONG);
+                                                    MyUtils.showSnackBarNotification(mTvEmpty, "Downloaded video "+video.getTitle(), Snackbar.LENGTH_SHORT);
                                                     //remove video in adapter when downloaded
                                                     mSyncAdapter.addSyncedVideos(mVideo);
                                                     //todo: update notification
@@ -294,10 +285,7 @@ public class SyncActivity extends AppCompatActivity {
                             @Override
                             public void onFailure(@NonNull Exception e) {
                                 MyUtils.showSnackBarNotification(mTvEmpty, "Failed to download video "+video.getTitle(), Snackbar.LENGTH_LONG);
-                                holder.progress.setIndeterminate(false);
-                                holder.progress.setProgress(0);
-                                holder.progress.postInvalidate();
-                                holder.sync.setImageDrawable(getDrawable(R.drawable.ic_error));
+                                mSyncAdapter.addFailedVideos(video);
                             }
                         });
         Log.d(TAG, "onClick: downloading: "+video.toString());
@@ -385,6 +373,7 @@ public class SyncActivity extends AppCompatActivity {
         srl.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
+                //todo: handle refresh
                 if(mSyncAdapter.isSyncCompleted()) {
                     mSyncAdapter.removedSyncedVideos();
                     updateUI();

@@ -69,7 +69,6 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".ui.activities.TestSyncActivity" />
     </application>
 
 </manifest>
