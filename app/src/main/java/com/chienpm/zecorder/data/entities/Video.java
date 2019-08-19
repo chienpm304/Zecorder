@@ -1,5 +1,7 @@
 package com.chienpm.zecorder.data.entities;
 
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.text.TextUtils;
 
 import androidx.room.ColumnInfo;
@@ -18,7 +20,7 @@ import java.util.Calendar;
 import java.util.List;
 
 @Entity(tableName = "videos")
-public class Video implements Cloneable {
+public class Video implements Parcelable {
     @NonNull
     @PrimaryKey( autoGenerate = true)
     @ColumnInfo(name = "id")
@@ -51,9 +53,6 @@ public class Video implements Cloneable {
     @ColumnInfo(name = "createdAt")
     private long mCreateAt;
 
-    @ColumnInfo(name = "synced")
-    private Boolean mSynced;
-
     @ColumnInfo(name = "cloud_path")
     private String mCloudPath;
 
@@ -62,7 +61,7 @@ public class Video implements Cloneable {
 
     public Video(){}
 
-    public Video(String title, long duration, int bitrate, int fps, int width, int height, long size, String localPath, long createAt, Boolean isSynced, String cloudPath, String thumbnailLink) {
+    public Video(String title, long duration, int bitrate, int fps, int width, int height, long size, String localPath, long createAt, String cloudPath, String thumbnailLink) {
         mTitle = title;
         mDuration = duration;
         mBitrate = bitrate;
@@ -72,7 +71,6 @@ public class Video implements Cloneable {
         mSize = size;
         mLocalPath = localPath;
         mCreateAt = getCurrentTime();
-        mSynced = isSynced;
         mCloudPath = cloudPath;
         mThumbnailLink = thumbnailLink;
     }
@@ -88,15 +86,41 @@ public class Video implements Cloneable {
         mSize = video.mSize;
         mLocalPath = video.mLocalPath;
         mCreateAt = video.mCreateAt;
-        mSynced = video.mSynced;
         mCloudPath = video.mCloudPath;
         mThumbnailLink = video.mThumbnailLink;
     }
 
+    protected Video(Parcel in) {
+        mId = in.readInt();
+        mTitle = in.readString();
+        mDuration = in.readLong();
+        mBitrate = in.readInt();
+        mFps = in.readInt();
+        mWidth = in.readInt();
+        mHeight = in.readInt();
+        mSize = in.readLong();
+        mLocalPath = in.readString();
+        mCreateAt = in.readLong();
+        mCloudPath = in.readString();
+        mThumbnailLink = in.readString();
+    }
+
+    public static final Creator<Video> CREATOR = new Creator<Video>() {
+        @Override
+        public Video createFromParcel(Parcel in) {
+            return new Video(in);
+        }
+
+        @Override
+        public Video[] newArray(int size) {
+            return new Video[size];
+        }
+    };
+
     public static ArrayList<Video> createTempVideoFromGoogleDriveData(List<GoogleDriveFileHolder> files) {
         ArrayList<Video> videos = new ArrayList<>();
         for(GoogleDriveFileHolder file: files){
-            videos.add(new Video(file.getName(), 0, 0, 0, 0,0, file.getSize(), "", file.getModifiedTime().getValue(), false, file.getId(), file.getThumbnailLink()));
+            videos.add(new Video(file.getName(), 0, 0, 0, 0,0, file.getSize(), "", file.getModifiedTime().getValue(), file.getId(), file.getThumbnailLink()));
         }
         return videos;
     }
@@ -198,14 +222,6 @@ public class Video implements Cloneable {
         mCreateAt = createAt;
     }
 
-    public Boolean getSynced() {
-        return mSynced;
-    }
-
-    public void setSynced(Boolean synced) {
-        mSynced = synced;
-    }
-
     public String getCloudPath() {
         return mCloudPath;
     }
@@ -226,7 +242,6 @@ public class Video implements Cloneable {
                 ", mSize=" + mSize +
                 ", mLocalPath='" + mLocalPath + '\'' +
                 ", mCreateAt='" + mCreateAt + '\'' +
-                ", mSynced=" + mSynced +
                 ", mCloudPath='" + mCloudPath + '\'' +
                 '}';
     }
@@ -254,5 +269,26 @@ public class Video implements Cloneable {
             return mLocalPath;
         else
             return mThumbnailLink;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeInt(mId);
+        dest.writeString(mTitle);
+        dest.writeLong(mDuration);
+        dest.writeInt(mBitrate);
+        dest.writeInt(mFps);
+        dest.writeInt(mWidth);
+        dest.writeInt(mHeight);
+        dest.writeLong(mSize);
+        dest.writeString(mLocalPath);
+        dest.writeLong(mCreateAt);
+        dest.writeString(mCloudPath);
+        dest.writeString(mThumbnailLink);
     }
 }

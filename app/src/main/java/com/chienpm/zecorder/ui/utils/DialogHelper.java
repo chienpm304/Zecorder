@@ -50,7 +50,7 @@ public class DialogHelper {
             ((TextView) dialog.findViewById(R.id.detail_duration)).setText(VideoSetting.getFormattedDuration(video.getDuration()));
             ((TextView) dialog.findViewById(R.id.detail_bitrate)).setText(VideoSetting.getFormattedBitrate(video.getBitrate()));
             ((TextView) dialog.findViewById(R.id.detail_fps)).setText(video.getFps() + "");
-            ((TextView) dialog.findViewById(R.id.detail_sync)).setText(video.getSynced() ? "Synced" : "Local only");
+//            ((TextView) dialog.findViewById(R.id.detail_sync)).setText(video.getSynced() ? "Synced" : "Local only");
 
             Button dialogButton = (Button) dialog.findViewById(R.id.detail_btn_ok);
             // if button is clicked, close the custom dialog

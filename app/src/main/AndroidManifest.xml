@@ -47,7 +47,10 @@
             android:enabled="true"
             android:exported="false" />
         <service android:name=".ui.services.streaming.StreamingControllerService" />
+
         <service android:name=".ui.services.streaming.StreamingService" />
+
+        <service android:name=".ui.services.sync.SyncService" />
 
         <activity
             android:name=".ui.activities.MainActivity"

@@ -3,10 +3,13 @@ package com.chienpm.zecorder.ui.activities;
 import android.app.Activity;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
@@ -30,6 +33,7 @@ import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.data.database.VideoDatabase;
 import com.chienpm.zecorder.data.entities.Video;
 import com.chienpm.zecorder.ui.adapters.SyncVideoAdapter;
+import com.chienpm.zecorder.ui.services.sync.SyncService;
 import com.chienpm.zecorder.ui.utils.DriveServiceHelper;
 import com.chienpm.zecorder.ui.utils.GoogleDriveFileHolder;
 import com.chienpm.zecorder.ui.utils.MyUtils;
@@ -66,7 +70,6 @@ public class SyncActivity extends AppCompatActivity {
     private ProgressBar mProgressBar;
     private ListView mListViewVideos;
     private SyncVideoAdapter mSyncAdapter;
-
     private Button mBtnTryAgain;
 
     NotificationCompat.Builder mNotiBuilder;
@@ -75,12 +78,28 @@ public class SyncActivity extends AppCompatActivity {
     private NotificationManager mNotifyManager;
     private int mId = 1;
     private boolean startedNotification = false;
+    private SyncServiceReceiver mSyncServiceReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_sync);
+
         initView();
+
+        registerSyncServiceReceiver();
+    }
+
+    private void registerSyncServiceReceiver() {
+        mSyncServiceReceiver = new SyncServiceReceiver();
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(SyncService.ACTION_DOWNLOAD_DONE);
+        intentFilter.addAction(SyncService.ACTION_UPLOAD_DONE);
+        intentFilter.addAction(SyncService.ACTION_DOWNLOAD_FAILED);
+        intentFilter.addAction(SyncService.ACTION_UPLOAD_FAILED);
+        registerReceiver(mSyncServiceReceiver, intentFilter);
+
     }
 
     @Override
@@ -95,11 +114,19 @@ public class SyncActivity extends AppCompatActivity {
         if (account != null && account.getGrantedScopes().containsAll(requiredScopes)) {
             MyUtils.showSnackBarNotification(mTvEmpty,"Signed in as " + account.getEmail(), Snackbar.LENGTH_LONG);
             mDriveServiceHelper = new DriveServiceHelper(getGoogleDriveService(getApplicationContext(), account, getResources().getString(R.string.app_name)));
+            shouldStartSyncService(account);
             requestData();
         }
         else{
             signIn();
         }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if(mSyncServiceReceiver!=null)
+            unregisterReceiver(mSyncServiceReceiver);
     }
 
     private void signIn() {
@@ -144,7 +171,9 @@ public class SyncActivity extends AppCompatActivity {
                     public void onSuccess(GoogleSignInAccount googleSignInAccount) {
                         MyUtils.showSnackBarNotification(mTvEmpty,"Signed in as " + googleSignInAccount.getEmail(), Snackbar.LENGTH_LONG);
 
-                        mDriveServiceHelper = new DriveServiceHelper(getGoogleDriveService(getApplicationContext(), googleSignInAccount, "appName"));
+                        mDriveServiceHelper = new DriveServiceHelper(getGoogleDriveService(getApplicationContext(), googleSignInAccount, getString(R.string.app_name)));
+
+                        shouldStartSyncService(googleSignInAccount);
 
                         requestData();
 
@@ -157,6 +186,25 @@ public class SyncActivity extends AppCompatActivity {
                         Log.e(TAG, "Unable to sign in.", e);
                     }
                 });
+    }
+
+    private void shouldStartSyncService(GoogleSignInAccount googleSignInAccount) {
+        if(!MyUtils.isRunningServices(getApplicationContext(), SyncService.class)){
+            startSynchronizeService(googleSignInAccount);
+        }else{
+            MyUtils.showSnackBarNotification(mTvEmpty, "Synchronize Serivces is running!", Snackbar.LENGTH_SHORT);
+        }
+    }
+
+    private void startSynchronizeService(GoogleSignInAccount googleSignInAccount){
+        Intent syncService = new Intent(SyncActivity.this, SyncService.class);
+
+        syncService.setAction(SyncService.ACTION_START_SERVICE);
+
+        syncService.putExtra(SyncService.PARAM_GOOGLE_SIGNIN_ACCOUNT, googleSignInAccount);
+
+        startService(syncService);
+
     }
 
     private void requestData() {
@@ -212,27 +260,12 @@ public class SyncActivity extends AppCompatActivity {
         }
         MyUtils.showSnackBarNotification(mTvEmpty, "Uploading "+video.getTitle()+"...", Snackbar.LENGTH_SHORT);
 
-        mDriveServiceHelper.uploadFile(new File(video.getLocalPath()), "video/mpeg", getMasterFolderId())
-                        .addOnSuccessListener(new OnSuccessListener<GoogleDriveFileHolder>() {
-                            @Override
-                            public void onSuccess(GoogleDriveFileHolder googleDriveFileHolder) {
-                                Gson gson = new Gson();
-                                Log.d(TAG, "onUpload: onSuccess: " + gson.toJson(googleDriveFileHolder));
-                                MyUtils.showSnackBarNotification(mTvEmpty, "Uploaded video "+video.getTitle(), Snackbar.LENGTH_SHORT);
-                                mSyncAdapter.addSyncedVideos(video);
-                                //todo: update notification
-                            }
-                        })
-                        .addOnFailureListener(new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                Log.d(TAG, "onUpload: onFailure: " + e.getMessage());
-                                e.printStackTrace();
-                                MyUtils.showSnackBarNotification(mTvEmpty, "Failed to upload video "+video.getTitle(), Snackbar.LENGTH_SHORT);
-                               mSyncAdapter.addFailedVideos(video);
-                            }
-                        });
-
+        //Start request upload video
+        Intent uploader = new Intent(SyncActivity.this, SyncService.class);
+        uploader.setAction(SyncService.ACTION_REQUEST_UPLOAD);
+        uploader.putExtra(SyncService.PARAM_UPLOAD_VIDEO, video);
+        startService(uploader);
+        //End request
     }
 
     public void downloadVideo(Video video){
@@ -243,51 +276,57 @@ public class SyncActivity extends AppCompatActivity {
             return;
         }
         MyUtils.showSnackBarNotification(mTvEmpty, "Downloading "+video.getTitle()+"...", Snackbar.LENGTH_SHORT);
-        File fileSave = new File(MyUtils.getBaseStorageDirectory(), video.getTitle());
 
         if(!startedNotification) {
             notifySyncStarted();
         }
 
-        mDriveServiceHelper.downloadFile(fileSave, video.getCloudPath())
-                        .addOnSuccessListener(new OnSuccessListener<Void>() {
-                            @Override
-                            public void onSuccess(Void aVoid) {
-                                video.setLocalPath(fileSave.getAbsolutePath());
-                                saveVideoToDatabase(video);
-                            }
+        //Start request download video
+        Intent download = new Intent(SyncActivity.this, SyncService.class);
+        download.setAction(SyncService.ACTION_REQUEST_DOWNLOAD);
+        download.putExtra(SyncService.PARAM_DOWNLOAD_VIDEO, video);
+        startService(download);
+        //End request
 
-                            private void saveVideoToDatabase(Video mVideo) {
-                                new Thread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        if(mVideo !=null){
-                                            Log.d(TAG, "onSaveVideo: "+mVideo.toString());
-                                            synchronized (mVideo) {
-                                                VideoDatabase.getInstance(getApplicationContext()).getVideoDao().insertVideo(mVideo);
-                                            }
-                                            runOnUiThread(new Runnable() {
-                                                @Override
-                                                public void run() {
-                                                    MyUtils.showSnackBarNotification(mTvEmpty, "Downloaded video "+video.getTitle(), Snackbar.LENGTH_SHORT);
-                                                    //remove video in adapter when downloaded
-                                                    mSyncAdapter.addSyncedVideos(mVideo);
-                                                    //todo: update notification
-
-                                                }
-                                            });
-                                        }
-                                    }
-                                }).start();
-                            }
-                        })
-                        .addOnFailureListener(new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                MyUtils.showSnackBarNotification(mTvEmpty, "Failed to download video "+video.getTitle(), Snackbar.LENGTH_LONG);
-                                mSyncAdapter.addFailedVideos(video);
-                            }
-                        });
+//        mDriveServiceHelper.downloadFile(fileSave, video.getCloudPath())
+//                        .addOnSuccessListener(new OnSuccessListener<Void>() {
+//                            @Override
+//                            public void onSuccess(Void aVoid) {
+//                                video.setLocalPath(fileSave.getAbsolutePath());
+//                                saveVideoToDatabase(video);
+//                            }
+//
+//                            private void saveVideoToDatabase(Video mVideo) {
+//                                new Thread(new Runnable() {
+//                                    @Override
+//                                    public void run() {
+//                                        if(mVideo !=null){
+//                                            Log.d(TAG, "onSaveVideo: "+mVideo.toString());
+//                                            synchronized (mVideo) {
+//                                                VideoDatabase.getInstance(getApplicationContext()).getVideoDao().insertVideo(mVideo);
+//                                            }
+//                                            runOnUiThread(new Runnable() {
+//                                                @Override
+//                                                public void run() {
+//                                                    MyUtils.showSnackBarNotification(mTvEmpty, "Downloaded video "+video.getTitle(), Snackbar.LENGTH_SHORT);
+//                                                    //remove video in adapter when downloaded
+//                                                    mSyncAdapter.addSyncedVideos(mVideo);
+//                                                    //todo: update notification
+//
+//                                                }
+//                                            });
+//                                        }
+//                                    }
+//                                }).start();
+//                            }
+//                        })
+//                        .addOnFailureListener(new OnFailureListener() {
+//                            @Override
+//                            public void onFailure(@NonNull Exception e) {
+//                                MyUtils.showSnackBarNotification(mTvEmpty, "Failed to download video "+video.getTitle(), Snackbar.LENGTH_LONG);
+//                                mSyncAdapter.addFailedVideos(video);
+//                            }
+//                        });
         Log.d(TAG, "onClick: downloading: "+video.toString());
     }
 
@@ -412,6 +451,50 @@ public class SyncActivity extends AppCompatActivity {
 
     }
 
+    //Receiver
+    private class SyncServiceReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            Video video;
+            if(!TextUtils.isEmpty(action)){
+                switch (action){
+                    case SyncService.ACTION_UPLOAD_DONE:
+                        video = intent.getParcelableExtra(SyncService.PARAM_RESULT_VIDEO);
+                        MyUtils.showSnackBarNotification(mTvEmpty, "Uploaded video "+video.getTitle(), Snackbar.LENGTH_LONG);
+                        mSyncAdapter.addSyncedVideos(video);
+                        break;
+                    case SyncService.ACTION_UPLOAD_FAILED:
+                        video = intent.getParcelableExtra(SyncService.PARAM_RESULT_VIDEO);
+                        MyUtils.showSnackBarNotification(mTvEmpty, "Failed to upload video "+video.getTitle(), Snackbar.LENGTH_LONG);
+                        mSyncAdapter.addFailedVideos(video);
+                        break;
+
+
+                    case SyncService.ACTION_DOWNLOAD_DONE:
+                        video = intent.getParcelableExtra(SyncService.PARAM_RESULT_VIDEO);
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                MyUtils.showSnackBarNotification(mTvEmpty, "Downloaded video "+video.getTitle(), Snackbar.LENGTH_LONG);
+                                //remove video in adapter when downloaded
+                                mSyncAdapter.addSyncedVideos(video);
+                            }
+                        });
+                        break;
+
+                    case SyncService.ACTION_DOWNLOAD_FAILED:
+                        video = intent.getParcelableExtra(SyncService.PARAM_RESULT_VIDEO);
+                        MyUtils.showSnackBarNotification(mTvEmpty, "Failed to download video "+video.getTitle(), Snackbar.LENGTH_LONG);
+                        mSyncAdapter.addFailedVideos(video);
+                        break;
+
+
+                }
+            }
+        }
+    }
+
     //    #Load data to list view
     private LoaderManager.LoaderCallbacks<ArrayList<Video>> mLoadVideosCallback = new LoaderManager.LoaderCallbacks<ArrayList<Video>>() {
         @NonNull
@@ -470,197 +553,3 @@ public class SyncActivity extends AppCompatActivity {
         }
     }
 }
-
-//searchFile.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                if (mDriveServiceHelper == null) {
-//                    return;
-//                }
-//                mDriveServiceHelper.searchFile("textfilename.txt", "text/plain")
-//                        .addOnSuccessListener(new OnSuccessListener<List<GoogleDriveFileHolder>>() {
-//                            @Override
-//                            public void onSuccess(List<GoogleDriveFileHolder> googleDriveFileHolders) {
-//
-//                                Gson gson = new Gson();
-//                                Log.d(TAG, "onSuccess: " + gson.toJson(googleDriveFileHolders));
-//                            }
-//                        })
-//                        .addOnFailureListener(new OnFailureListener() {
-//                            @Override
-//                            public void onFailure(@NonNull Exception e) {
-//                                Log.d(TAG, "onFailure: " + e.getMessage());
-//                            }
-//                        });
-//
-//            }
-//        });
-//
-//        searchFolder.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                if (mDriveServiceHelper == null) {
-//                    Log.d(TAG, "onSearchFolder: mDriveServiceHelper NULL");
-//                    return;
-//                }
-//
-//                mDriveServiceHelper.searchFolder("Zecorder")
-//                        .addOnSuccessListener(new OnSuccessListener<List<GoogleDriveFileHolder>>() {
-//                            @Override
-//                            public void onSuccess(List<GoogleDriveFileHolder> googleDriveFileHolders) {
-//                                Gson gson = new Gson();
-//                                Log.d(TAG, "SeachFolder: onSuccess: " + gson.toJson(googleDriveFileHolders));
-//                            }
-//                        })
-//                        .addOnFailureListener(new OnFailureListener() {
-//                            @Override
-//                            public void onFailure(@NonNull Exception e) {
-//                                Log.d(TAG, "SeachFolder: onFailure: " + e.getMessage());
-//                            }
-//                        });
-//            }
-//        });
-//
-//        createTextFile.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                if (mDriveServiceHelper == null) {
-//                    Log.d(TAG, "oncreateTextFile: mDriveServiceHelper NULL");
-//                    return;
-//                }
-//                // you can provide  folder id in case you want to save this file inside some folder.
-//                // if folder id is null, it will save file to the root
-//                mDriveServiceHelper.createTextFile("textfilename.txt", "some text", null)
-//                        .addOnSuccessListener(new OnSuccessListener<GoogleDriveFileHolder>() {
-//                            @Override
-//                            public void onSuccess(GoogleDriveFileHolder googleDriveFileHolder) {
-//                                Gson gson = new Gson();
-//                                Log.d(TAG, "onSuccess: " + gson.toJson(googleDriveFileHolder));
-//                            }
-//                        })
-//                        .addOnFailureListener(new OnFailureListener() {
-//                            @Override
-//                            public void onFailure(@NonNull Exception e) {
-//                                Log.d(TAG, "onFailure: " + e.getMessage());
-//                            }
-//                        });
-//            }
-//        });
-//
-//        createFolder.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                if (mDriveServiceHelper == null) {
-//                    Log.d(TAG, "onCreateFolder: mDriveServiceHelper NULL");
-//                    MyUtils.toast(getApplicationContext(), "mDriveServiceHelper NULL!", Toast.LENGTH_LONG);
-//                    return;
-//                }
-//                // you can provide  folder id in case you want to save this file inside some folder.
-//                // if folder id is null, it will save file to the root
-//                mDriveServiceHelper.createFolderIfNotExist(getString(R.string.app_name), null)
-//                        .addOnSuccessListener(new OnSuccessListener<GoogleDriveFileHolder>() {
-//                            @Override
-//                            public void onSuccess(GoogleDriveFileHolder googleDriveFileHolder) {
-//                                Gson gson = new Gson();
-//                                Log.d(TAG, "onCreateFolder: onSuccess: " + gson.toJson(googleDriveFileHolder));
-//                                MyUtils.toast(getApplicationContext(), "Created folder!", Toast.LENGTH_LONG);
-//                            }
-//                        })
-//                        .addOnFailureListener(new OnFailureListener() {
-//                            @Override
-//                            public void onFailure(@NonNull Exception e) {
-//                                Log.d(TAG, "onCreateFolder: onFailure: " + e.getMessage());
-//                                MyUtils.toast(getApplicationContext(), "Failed to Created folder!", Toast.LENGTH_LONG);
-//                            }
-//                        });
-//            }
-//        });
-//
-//        uploadFile.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                AsyncTask.execute(new Runnable() {
-//                    @Override
-//                    public void run() {
-//
-//
-//                        List<Video> videos = VideoDatabase.getInstance(getApplicationContext()).getVideoDao().getAllVideo();
-//
-//                        if (mDriveServiceHelper == null || videos.isEmpty()) {
-//                            Log.d(TAG, "onUpload: mDriveService NULL or videos is empty ");
-//                            return;
-//                        }
-//
-//                        Video video = videos.get(0);
-//
-//                        Log.d(TAG, "onUpload video: "+video.toString());
-//
-//                        mDriveServiceHelper.uploadFile(new File(video.getLocalPath()), "video/mpeg", "1P5rarGXLVDs2ITI8ain2h1pqtIKY1u7N")
-//                                .addOnSuccessListener(new OnSuccessListener<GoogleDriveFileHolder>() {
-//                                    @Override
-//                                    public void onSuccess(GoogleDriveFileHolder googleDriveFileHolder) {
-//                                        Gson gson = new Gson();
-//                                        Log.d(TAG, "onUpload: onSuccess: " + gson.toJson(googleDriveFileHolder));
-//                                    }
-//                                })
-//                                .addOnFailureListener(new OnFailureListener() {
-//                                    @Override
-//                                    public void onFailure(@NonNull Exception e) {
-//                                        Log.d(TAG, "onUpload: onFailure: " + e.getMessage());
-//                                        e.printStackTrace();
-//                                    }
-//                                });
-//                    }
-//                });
-//            }
-//        });
-//
-//        downloadFile.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                if (mDriveServiceHelper == null) {
-//                    return;
-//                }
-//                mDriveServiceHelper.downloadFile(new java.io.File(getApplicationContext().getFilesDir(), "filename.txt"), "google_drive_file_id_here")
-//                        .addOnSuccessListener(new OnSuccessListener<Void>() {
-//                            @Override
-//                            public void onSuccess(Void aVoid) {
-//
-//                            }
-//                        })
-//                        .addOnFailureListener(new OnFailureListener() {
-//                            @Override
-//                            public void onFailure(@NonNull Exception e) {
-//
-//                            }
-//                        });
-//            }
-//        });
-//
-//        viewFileFolder.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                if (mDriveServiceHelper == null) {
-//                    Log.d(TAG, "OnViewFolder: mDriveServiceHelper NULL");
-//                    return;
-//                }
-//
-//                mDriveServiceHelper.queryFiles("1P5rarGXLVDs2ITI8ain2h1pqtIKY1u7N")
-//                        .addOnSuccessListener(new OnSuccessListener<List<GoogleDriveFileHolder>>() {
-//                            @Override
-//                            public void onSuccess(List<GoogleDriveFileHolder> googleDriveFileHolders) {
-//                                Gson gson = new Gson();
-//                                Log.d(TAG, "OnViewFolder: onSuccess: " + gson.toJson(googleDriveFileHolders));
-//                            }
-//                        })
-//                        .addOnFailureListener(new OnFailureListener() {
-//                            @Override
-//                            public void onFailure(@NonNull Exception e) {
-//                                Log.d(TAG, "OnViewFolder: onFailure: "+e.getMessage());
-//                            }
-//                        });
-//
-//
-//            }
-//        });
-

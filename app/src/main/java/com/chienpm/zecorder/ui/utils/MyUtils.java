@@ -1,11 +1,13 @@
 package com.chienpm.zecorder.ui.utils;
 
+import android.app.ActivityManager;
 import android.content.Context;
+
+import com.chienpm.zecorder.ui.services.sync.SyncService;
 import com.google.android.material.snackbar.Snackbar;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.os.Build;
 import android.os.Environment;
 import android.util.Base64;
 import android.util.Log;
@@ -145,4 +147,13 @@ public class MyUtils {
         }
     }
 
+    public static boolean isRunningServices(Context context, Class<SyncService> serviceClass) {
+        ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

@@ -29,11 +29,12 @@ public class SyncVideoAdapter extends ArrayAdapter<Video> {
     private boolean mDriveLoaded = false;
     private static Drawable mIconChecked, mIconFailed, mIconUpload, mIconDownload, mIconWaiting;
 
-    public void addSyncedVideos(Video mVideo) {
+    public void addSyncedVideos(Video video) {
+        video = findVideoByTitle(video);
 
-        mSyncedVideos.add(mVideo);
+        mSyncedVideos.add(video);
 
-        mSyncingVideos.remove(mVideo);
+        mSyncingVideos.remove(video);
 
         handlePendingVideo();
 
@@ -60,10 +61,20 @@ public class SyncVideoAdapter extends ArrayAdapter<Video> {
     }
 
     public void addFailedVideos(Video video) {
+        video = findVideoByTitle(video);
+
         if(mSyncedVideos.contains(video))
             mSyncedVideos.remove(video);
         mFailedVideos.add(video);
         notifyDataSetChanged();
+    }
+
+    private Video findVideoByTitle(Video video) {
+        for(Video v: mVideos){
+            if(v.getTitle().equals(video.getTitle()))
+                return v;
+        }
+        return null;
     }
 
     public static class ViewHolder {
