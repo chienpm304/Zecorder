@@ -40,8 +40,8 @@ public class SyncVideoAdapter extends ArrayAdapter<Video> {
 
         notifyDataSetChanged();
 
-        if(isSyncCompleted())
-            mActivity.notifySyncCompleted();
+//        if(isSyncCompleted())
+//            mActivity.notifySyncCompleted();
     }
 
     public boolean isSyncCompleted(){
@@ -75,6 +75,14 @@ public class SyncVideoAdapter extends ArrayAdapter<Video> {
                 return v;
         }
         return null;
+    }
+
+    public void setSyncingVideos(ArrayList<Video> syncingvideos) {
+        mSyncingVideos.clear();
+        for(Video v: syncingvideos){
+            mSyncingVideos.add(findVideoByTitle(v));
+        }
+        notifyDataSetChanged();
     }
 
     public static class ViewHolder {
@@ -225,7 +233,6 @@ public class SyncVideoAdapter extends ArrayAdapter<Video> {
                 holder.sync.setImageDrawable(mIconChecked);
             }
             else if(mSyncingVideos.contains(video)){
-
                 holder.progress.setVisibility(View.VISIBLE);
                 holder.progress.setIndeterminate(true);
                 if(video.isLocalVideo()){

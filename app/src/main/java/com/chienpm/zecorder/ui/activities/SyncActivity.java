@@ -72,13 +72,8 @@ public class SyncActivity extends AppCompatActivity {
     private SyncVideoAdapter mSyncAdapter;
     private Button mBtnTryAgain;
 
-    NotificationCompat.Builder mNotiBuilder;
-
-    PendingIntent mPendingIntent;
-    private NotificationManager mNotifyManager;
-    private int mId = 1;
-    private boolean startedNotification = false;
     private SyncServiceReceiver mSyncServiceReceiver;
+    private ArrayList<Video> mSyncingVideos;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,6 +84,20 @@ public class SyncActivity extends AppCompatActivity {
         initView();
 
         registerSyncServiceReceiver();
+
+        handleIntentFromNotification(getIntent());
+    }
+
+    private void handleIntentFromNotification(Intent intent) {
+        if(intent!=null){
+            String action = intent.getAction();
+            if(!TextUtils.isEmpty(action)){
+                if(action.equals(SyncService.ACTION_FROM_NOTIFICATION)){
+                    ArrayList<Video> syncingVideo = intent.getParcelableArrayListExtra(SyncService.PARAM_SYNCING_VIDEOS);
+                    mSyncingVideos = syncingVideo;
+                }
+            }
+        }
     }
 
     private void registerSyncServiceReceiver() {
@@ -123,10 +132,28 @@ public class SyncActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        if(mSyncServiceReceiver == null)
+            registerSyncServiceReceiver();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if(mSyncServiceReceiver!=null) {
+            unregisterReceiver(mSyncServiceReceiver);
+            mSyncServiceReceiver = null;
+        }
+    }
+
+    @Override
     protected void onStop() {
         super.onStop();
-        if(mSyncServiceReceiver!=null)
+        if(mSyncServiceReceiver!=null) {
             unregisterReceiver(mSyncServiceReceiver);
+            mSyncServiceReceiver = null;
+        }
     }
 
     private void signIn() {
@@ -250,14 +277,13 @@ public class SyncActivity extends AppCompatActivity {
 //        mSyncAdapter.getView(0, null, null).findViewById(R.id.sync_progressBar).setVisibility(View.GONE);
 
         String folderId = getMasterFolderId();
+
         if(TextUtils.isEmpty(folderId)){
             MyUtils.showSnackBarNotification(mTvEmpty, "Folder Id is empty/ try again", Snackbar.LENGTH_LONG);
             return;
         }
 
-        if(!startedNotification) {
-            notifySyncStarted();
-        }
+
         MyUtils.showSnackBarNotification(mTvEmpty, "Uploading "+video.getTitle()+"...", Snackbar.LENGTH_SHORT);
 
         //Start request upload video
@@ -276,10 +302,6 @@ public class SyncActivity extends AppCompatActivity {
             return;
         }
         MyUtils.showSnackBarNotification(mTvEmpty, "Downloading "+video.getTitle()+"...", Snackbar.LENGTH_SHORT);
-
-        if(!startedNotification) {
-            notifySyncStarted();
-        }
 
         //Start request download video
         Intent download = new Intent(SyncActivity.this, SyncService.class);
@@ -330,27 +352,6 @@ public class SyncActivity extends AppCompatActivity {
         Log.d(TAG, "onClick: downloading: "+video.toString());
     }
 
-    private void notifySyncStarted() {
-        mNotiBuilder
-                .setContentText("Synchronizing in progress...")
-                .setProgress(100, 0, true)
-                .setOngoing(true);
-
-        mNotifyManager.notify(mId, mNotiBuilder.build());
-        startedNotification = true;
-    }
-
-    public void notifySyncCompleted(){
-        mNotiBuilder
-                .setContentText("Synchronizing Completed")
-                .setProgress(0, 0, false)
-                .setOngoing(false);
-
-        mNotifyManager.notify(mId, mNotiBuilder.build());
-        startedNotification = false;
-
-    }
-
     public void updateUI(){
         mProgressBar.setVisibility(View.GONE);
         if(mSyncAdapter.getCount()==0){
@@ -373,25 +374,6 @@ public class SyncActivity extends AppCompatActivity {
 
 
     private void initView() {
-        //setup notification action
-        // Create an explicit intent for an Activity in your app
-        Intent intent = new Intent(this, SyncActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        mPendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
-
-        //create notification channel
-        NotificationHelper.getInstance().createNotificationChannel(this);
-        mNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        //create notification builder
-        mNotiBuilder = new NotificationCompat.Builder(this, NotificationHelper.CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_download)
-                .setContentTitle("Synchronize Videos")
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .setContentIntent(mPendingIntent)
-                .setAutoCancel(false);
-
-        //create notification list Ids
-
 
         //Views
         mTvEmpty = findViewById(R.id.sync_tvEmpty);
@@ -440,6 +422,11 @@ public class SyncActivity extends AppCompatActivity {
                         ArrayList<Video> driveVideos = Video.createTempVideoFromGoogleDriveData(files);
 
                         mSyncAdapter.setDriveVideos(driveVideos);
+
+                        if(mSyncingVideos!=null && !mSyncingVideos.isEmpty()) {
+                            mSyncAdapter.setSyncingVideos(mSyncingVideos);
+                            mSyncingVideos.clear();
+                        }
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
