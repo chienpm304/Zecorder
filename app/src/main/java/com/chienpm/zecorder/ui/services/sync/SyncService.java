@@ -19,6 +19,7 @@ import androidx.preference.PreferenceManager;
 import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.data.database.VideoDatabase;
 import com.chienpm.zecorder.data.entities.Video;
+import com.chienpm.zecorder.ui.activities.MainActivity;
 import com.chienpm.zecorder.ui.activities.SyncActivity;
 import com.chienpm.zecorder.ui.utils.DriveServiceHelper;
 import com.chienpm.zecorder.ui.utils.GoogleDriveFileHolder;
@@ -190,10 +191,23 @@ public class SyncService extends Service {
     }
 
     public void notifySyncCompleted(){
+
+        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.setAction(MyUtils.ACTION_OPEN_VIDEO_MANAGER_ACTIVITY);
+
+        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+        stackBuilder.addNextIntentWithParentStack(intent);
+
+        mPendingIntent =
+                stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+
+
         mNotiBuilder
                 .setContentText("Synchronizing Completed")
                 .setProgress(0, 0, false)
-                .setOngoing(false);
+                .setOngoing(false)
+                .setContentIntent(mPendingIntent);
 
         mNotifyManager.notify(mId, mNotiBuilder.build());
         startedNotification = false;
@@ -212,10 +226,6 @@ public class SyncService extends Service {
         mPendingIntent =
                 stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
 
-//        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-//
-//
-//        mPendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
     }
 
     public void uploadVideo(Video video){
