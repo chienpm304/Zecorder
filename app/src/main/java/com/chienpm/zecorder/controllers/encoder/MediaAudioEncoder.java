@@ -139,13 +139,13 @@ public class MediaAudioEncoder extends MediaEncoder {
 				}
 				if (audioRecord != null) {
 		            try {
-						if (mIsCapturing) {
+						if (mIsEncoding) {
 		    				if (DEBUG) Log.v(TAG, "AudioThread:start audio recording");
 							final ByteBuffer buf = ByteBuffer.allocateDirect(SAMPLES_PER_FRAME);
 			                int readBytes;
 			                audioRecord.startRecording();
 			                try {
-					    		for (; mIsCapturing && !mRequestStop && !mIsEOS ;) {
+					    		for (; mIsEncoding && !mRequestStop && !mIsEOS ;) {
 					    			// read audio data from internal mic
 									buf.clear();
 					    			readBytes = audioRecord.read(buf, SAMPLES_PER_FRAME);

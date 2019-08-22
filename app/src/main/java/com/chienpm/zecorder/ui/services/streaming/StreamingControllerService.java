@@ -406,7 +406,7 @@ public class StreamingControllerService extends Service {
                     //Todo: stop and save recording
                     mRecordingStarted = false;
 
-                    mStreamingService.stopRecording();
+                    mStreamingService.stopStreaming();
 
                 }
                 else{

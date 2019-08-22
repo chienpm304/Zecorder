@@ -46,7 +46,7 @@ public abstract class MediaEncoder implements Runnable {
 	/**
 	 * Flag that indicate this encoder is capturing now.
 	 */
-    protected volatile boolean mIsCapturing;
+    protected volatile boolean mIsEncoding;
 	/**
 	 * Flag that indicate the frame data will be available soon.
 	 */
@@ -115,7 +115,7 @@ public abstract class MediaEncoder implements Runnable {
     public boolean frameAvailableSoon() {
 //    	if (DEBUG) Log.v(TAG, "frameAvailableSoon");
         synchronized (mSync) {
-            if (!mIsCapturing || mRequestStop) {
+            if (!mIsEncoding || mRequestStop) {
                 return false;
             }
             mRequestDrain++;
@@ -170,7 +170,7 @@ public abstract class MediaEncoder implements Runnable {
 		if (DEBUG) Log.d(TAG, "Encoder thread exiting");
         synchronized (mSync) {
         	mRequestStop = true;
-            mIsCapturing = false;
+            mIsEncoding = false;
         }
 	}
 
@@ -185,7 +185,7 @@ public abstract class MediaEncoder implements Runnable {
 	public void startRecording() {
    	if (DEBUG) Log.v(TAG, "startRecording");
 		synchronized (mSync) {
-			mIsCapturing = true;
+			mIsEncoding = true;
 			mRequestStop = false;
 			mRequestPause = false;
 			mSync.notifyAll();
@@ -199,7 +199,7 @@ public abstract class MediaEncoder implements Runnable {
    public void stopRecording() {
 		if (DEBUG) Log.v(TAG, "stopRecording");
 		synchronized (mSync) {
-			if (!mIsCapturing || mRequestStop) {
+			if (!mIsEncoding || mRequestStop) {
 				return;
 			}
 			mRequestStop = true;	// for rejecting newer frame
@@ -213,7 +213,7 @@ public abstract class MediaEncoder implements Runnable {
 	public void pauseRecording() {
 		if (DEBUG) Log.v(TAG, "pauseRecording");
 		synchronized (mSync) {
-			if (!mIsCapturing || mRequestStop) {
+			if (!mIsEncoding || mRequestStop) {
 				return;
 			}
 			mRequestPause = true;
@@ -226,7 +226,7 @@ public abstract class MediaEncoder implements Runnable {
 	public void resumeRecording() {
 		if (DEBUG) Log.v(TAG, "resumeRecording");
 		synchronized (mSync) {
-			if (!mIsCapturing || mRequestStop) {
+			if (!mIsEncoding || mRequestStop) {
 				return;
 			}
 			if (mLastPausedTimeUs != 0) {
@@ -250,7 +250,7 @@ public abstract class MediaEncoder implements Runnable {
 		} catch (final Exception e) {
 			Log.e(TAG, "failed onStopped", e);
 		}
-		mIsCapturing = false;
+		mIsEncoding = false;
         if (mMediaCodec != null) {
 			try {
 	            mMediaCodec.stop();
@@ -289,9 +289,9 @@ public abstract class MediaEncoder implements Runnable {
      */
     protected void encode(final ByteBuffer buffer, final int length, final long presentationTimeUs) {
 //        Log.i(TAG, "encode: "+this.getClass().getName());
-    	if (!mIsCapturing) return;
+    	if (!mIsEncoding) return;
         final ByteBuffer[] inputBuffers = mMediaCodec.getInputBuffers();
-        while (mIsCapturing) {
+        while (mIsEncoding) {
 	        final int inputBufferIndex = mMediaCodec.dequeueInputBuffer(TIMEOUT_USEC);
 	        if (inputBufferIndex >= 0) {
 	            final ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
@@ -333,7 +333,7 @@ public abstract class MediaEncoder implements Runnable {
         	Log.w(TAG, "muxer is unexpectedly null");
         	return;
         }
-LOOP:	while (mIsCapturing) {
+LOOP:	while (mIsEncoding) {
 			// get encoded data with maximum timeout duration of TIMEOUT_USEC(=10[msec])
             encoderStatus = mMediaCodec.dequeueOutputBuffer(mBufferInfo, TIMEOUT_USEC);
             if (encoderStatus == MediaCodec.INFO_TRY_AGAIN_LATER) {
@@ -410,7 +410,7 @@ LOOP:	while (mIsCapturing) {
                 mMediaCodec.releaseOutputBuffer(encoderStatus, false);
                 if ((mBufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
                 	// when EOS come.
-               		mIsCapturing = false;
+               		mIsEncoding = false;
                     break;      // out of while
                 }
             }

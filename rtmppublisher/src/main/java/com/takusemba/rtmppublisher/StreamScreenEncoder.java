@@ -1,7 +1,5 @@
-package com.chienpm.zecorder.controllers.streaming;
+package com.takusemba.rtmppublisher;
 
-
-import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.graphics.SurfaceTexture.OnFrameAvailableListener;
@@ -9,35 +7,23 @@ import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.media.MediaFormat;
 import android.media.projection.MediaProjection;
-import android.opengl.GLES20;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 
-import com.chienpm.zecorder.controllers.encoder.RenderUtil;
-import com.chienpm.zecorder.controllers.settings.VideoSetting;
-import com.chienpm.zecorder.ui.utils.MyUtils;
+import androidx.annotation.NonNull;
+
 import com.serenegiant.glutils.EGLBase;
 import com.serenegiant.glutils.EglTask;
 import com.serenegiant.glutils.GLDrawer2D;
+import com.takusemba.rtmppublisher.helper.RenderUtil;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.IntBuffer;
 import java.util.List;
 
-//import net.ossrs.yasea.SrsEncoder;
-
-
-public class StreamScreenEncoder extends StreamVideoEncoderBase {
+public class StreamScreenEncoder extends VideoEncoder {
 	private static final boolean DEBUG = false;	// TODO set false on release
 	private static final String TAG = "chienpm_record";
 
@@ -45,60 +31,57 @@ public class StreamScreenEncoder extends StreamVideoEncoderBase {
     private static final int FRAME_RATE = 25;
 
 	private MediaProjection mMediaProjection;
-    private final int mDensity;
-    private final int bitrate, fps;
     private Surface mSurface;
     private final Handler mHandler;
 	private List<RenderUtil.CustomDecorator> mDecors;
 
-	public StreamScreenEncoder(StreamMuxerWrapper muxer, StreamEncoderListener listener, MediaProjection projection, VideoSetting videoSetting, int density, List<RenderUtil.CustomDecorator> decorators) {
-		super(muxer, listener, videoSetting);
+	public StreamScreenEncoder(@NonNull MediaProjection projection) {
+//		super(muxer, listener, videoSetting.getWidth(), videoSetting.getHeight(), videoSetting.getOrientation());
 		mMediaProjection = projection;
-		mDensity = density;
-		int _fps = videoSetting.getFPS();
-		int _bitrate = videoSetting.getBirate();
-		fps = (_fps > 0 && _fps <= 30) ? _fps : FRAME_RATE;
-		bitrate = (_bitrate > 0) ? _bitrate : calcBitRate(_fps);
 
 		final HandlerThread thread = new HandlerThread(TAG);
 		thread.start();
 		mHandler = new Handler(thread.getLooper());
-		mDecors = decorators;
-	}
-
-	@Override
-	protected void release() {
-		mHandler.getLooper().quit();
-		super.release();
-	}
-
-	@Override
-	public void prepare() throws IOException {
-		if (DEBUG) Log.i(TAG, "prepare: ");
-		mSurface = prepare_surface_encoder(MIME_TYPE, fps, bitrate);
-        mMediaCodec.start();
-        mIsRecording = true;
-        new Thread(mScreenCaptureTask, "ScreenCaptureThread").start();
-        if (DEBUG) Log.i(TAG, "prepare finishing");
-        if (mListener != null) {
-        	try {
-        		mListener.onPrepared(this);
-        	} catch (final Exception e) {
-        		Log.e(TAG, "prepare:", e);
-        	}
-        }
+//		mDecors = decorators;
 	}
 
 
 	@Override
-	public void stopStreaming() {
-		if (DEBUG) Log.v(TAG,  "stopStreaming:");
-		synchronized (mSync) {
-			mIsRecording = false;
-			mSync.notifyAll();
-		}
-		super.stopStreaming();
+	void prepare(int width, int height, int bitRate, int frameRate, long startStreamingAt, int density) throws IOException {
+		super.prepare(width, height, bitRate, frameRate, startStreamingAt, density);
+		new Thread(mScreenCaptureTask, "ScreenCaptureThread").start();
 	}
+
+
+////	@Override
+//	void prepare(int width, int height, int bitRate, int frameRate, long startStreamingAt){
+////	public void prepare() throws IOException {
+//		super(width, height, bitRate, frameRate, startStreamingAt);
+//		if (DEBUG) Log.i(TAG, "prepare: ");
+//		mSurface = prepare_surface_encoder(MIME_TYPE, fps, bitrate);
+//        mMediaCodec.start();
+//        mIsRecording = true;
+//        new Thread(mScreenCaptureTask, "ScreenCaptureThread").start();
+//        if (DEBUG) Log.i(TAG, "prepare finishing");
+//        if (mListener != null) {
+//        	try {
+//        		mListener.onPrepared(this);
+//        	} catch (final Exception e) {
+//        		Log.e(TAG, "prepare:", e);
+//        	}
+//        }
+//	}
+
+
+//	@Override
+//	public void stopRecording() {
+//		if (DEBUG) Log.v(TAG,  "stopStreaming:");
+//		synchronized (mSync) {
+//			mIsRecording = false;
+//			mSync.notifyAll();
+//		}
+//		super.stopRecording();
+//	}
 
 
 	private final Object mSync = new Object();
@@ -141,9 +124,8 @@ public class StreamScreenEncoder extends StreamVideoEncoderBase {
 
 			mEncoderSurface = getEgl().createFromSurface(mSurface);
 
-	    	if (DEBUG)
-	    		Log.d(TAG,"setup VirtualDisplay");
-			intervals = (long)(1000f / fps);
+	    	if (DEBUG) Log.d(TAG,"setup VirtualDisplay");
+			intervals = (long)(1000f / mFps);
 		    display = mMediaProjection.createVirtualDisplay(
 		    	"Capturing Display",
 		    	mWidth, mHeight, mDensity,
@@ -206,7 +188,6 @@ public class StreamScreenEncoder extends StreamVideoEncoderBase {
 		private final OnFrameAvailableListener mOnFrameAvailableListener = new OnFrameAvailableListener() {
 			@Override
 			public void onFrameAvailable(final SurfaceTexture surfaceTexture) {
-
 				if (mIsRecording) {
 					synchronized (mSync) {
 						requestDraw = true;
@@ -246,135 +227,21 @@ public class StreamScreenEncoder extends StreamVideoEncoderBase {
 						decor.updateTexId();
 
 					RenderUtil.renderTextures(mDecors);
-
 					mEncoderSurface.swap();
-
+					Log.d(TAG, "run check mTexId: "+mTexId);
 					makeCurrent();
-
-
-					encodeIncomeFrame();
-
-					//shootPicture(buffer);
+//					GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+//					GLES20.glFlush();
 
 					frameAvailableSoon();
-
-
 					queueEvent(this);
-
+				} else {
 					releaseSelf();
 				}
 			}
 		};
 
-		private void encodeIncomeFrame() {
-			final long pts = getPresentTimeUS();
-//						IntBuffer intBuffer = getCurrentByteBuffer2();
-//						Buffer mBuffer =  ByteBuffer.allocateDirect(mWidth * mHeight * 4);
-//						((ByteBuffer) mBuffer).asIntBuffer().put(intBuffer);
-
-
-//						Buffer mBuffer = getCurrentByteBuffer();
-
-			Buffer mBuffer = getCurrentBufferData();
-			byte[] bytes = ((ByteBuffer) mBuffer).array();
-			MyUtils.logBytes("before decode", bytes);
-
-			useSoftEncoder = true;
-			if(useSoftEncoder) {
-
-				swRgbaFrame(bytes, mWidth, mHeight, pts);
-
-			}
-			else {
-				byte[] processedData = hwRgbaFrame(bytes, mWidth, mHeight);
-				if (processedData != null) {
-					onProcessedYuvFrame(processedData, pts);
-				} else {
-					Log.e(TAG, "on encode buffer", new IllegalArgumentException("libyuv failure"));
-				}
-			}
-		}
-
-		private Buffer getCurrentBufferData() {
-			ByteBuffer buf = null;
-
-			buf = ByteBuffer.allocateDirect(mWidth * mHeight * 4);
-
-			buf.order(ByteOrder.nativeOrder());
-
-			GLES20.glReadPixels(0, 0, mWidth, mHeight, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, buf);
-
-			buf.clear();
-
-			Log.i(TAG, "Get Current Buffer Data status: "+GLES20.glGetError());
-			return buf;
-		}
 
 	}
 
-
-
-	private void shootPicture(ByteBuffer buf) {
-
-		Bitmap.CompressFormat compressFormat = Bitmap.CompressFormat.PNG;
-
-		File captureFile = new File(MyUtils.getBaseStorageDirectory(), MyUtils.createFileName(".jpg"));
-
-		if (!captureFile.getParentFile().exists()) {
-			captureFile.getParentFile().mkdirs();
-		}
-
-		if (captureFile.toString().endsWith(".jpg")) {
-			compressFormat = Bitmap.CompressFormat.JPEG;
-		}
-		BufferedOutputStream os = null;
-		try {
-			try {
-				os = new BufferedOutputStream(new FileOutputStream(captureFile));
-				final Bitmap bmp = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
-				buf.clear();
-				bmp.copyPixelsFromBuffer(buf);
-				bmp.compress(compressFormat, 100, os);
-				bmp.recycle();
-				os.flush();
-			} finally {
-				if (os != null) os.close();
-			}
-		} catch (final FileNotFoundException e) {
-			Log.w(TAG, "failed to save file", e);
-		} catch (final IOException e) {
-			Log.w(TAG, "failed to save file", e);
-		}
-	}
-
-	private ByteBuffer getCurrentByteBuffer() {
-		ByteBuffer buf = null;
-		buf = ByteBuffer.allocateDirect(mWidth * mHeight * 4);
-		buf.order(ByteOrder.LITTLE_ENDIAN);
-		GLES20.glReadPixels(0, 0, mWidth, mHeight, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, buf);
-
-		return buf;
-	}
-
-	private IntBuffer getCurrentByteBuffer2(){
-		int w = mWidth, h = mHeight, y = 0, x = 0;
-		int b[] = new int[w * (y + h)];
-		int bt[] = new int[w * h];
-		IntBuffer ib = IntBuffer.wrap(b);
-		ib.position(0);
-		GLES20.glReadPixels(x, 0, w, y + h, GLES20.GL_RGBA4,
-				GLES20.GL_UNSIGNED_BYTE, ib);
-		for (int i = 0, k = 0; i < h; i++, k++) {
-			// remember, that OpenGL bitmap is incompatible with Android bitmap
-			// and so, some correction need.
-			for (int j = 0; j < w; j++) {
-				int pix = b[i * w + j];
-				int pb = (pix >> 16) & 0xff;
-				int pr = (pix << 16) & 0x00ff0000;
-				int pix1 = (pix & 0xff00ff00) | pr | pb;
-				bt[(h - k - 1) * w + j] = pix1;
-			}
-		}
-		return IntBuffer.wrap(bt);
-	}
 }

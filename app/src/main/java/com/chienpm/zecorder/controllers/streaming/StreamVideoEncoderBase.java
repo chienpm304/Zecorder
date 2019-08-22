@@ -35,12 +35,6 @@ import com.chienpm.zecorder.ui.utils.MyUtils;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import static net.ossrs.yasea.SrsEncoder.VCODEC;
-import static net.ossrs.yasea.SrsEncoder.VFPS;
-import static net.ossrs.yasea.SrsEncoder.VGOP;
-import static net.ossrs.yasea.SrsEncoder.vBitrate;
-import static net.ossrs.yasea.SrsEncoder.x264Preset;
-
 
 public abstract class StreamVideoEncoderBase extends StreamEncoder {
 
@@ -49,8 +43,9 @@ public abstract class StreamVideoEncoderBase extends StreamEncoder {
 
 	// parameters for recording
     private static final float BPP = 0.25f;
+	private static final String VCODEC = "video/avc";
 
-    protected final int mWidth;
+	protected final int mWidth;
     protected final int mHeight;
 	protected boolean useSoftEncoder = true;
 	private MediaCodecInfo vmci;
@@ -102,8 +97,8 @@ public abstract class StreamVideoEncoderBase extends StreamEncoder {
 		MediaFormat videoFormat = MediaFormat.createVideoFormat(VCODEC, mWidth, mHeight);
 		videoFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, mVideoColorFormat);
 		videoFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 0);
-		videoFormat.setInteger(MediaFormat.KEY_BIT_RATE, vBitrate);
-		videoFormat.setInteger(MediaFormat.KEY_FRAME_RATE, VFPS);
+		videoFormat.setInteger(MediaFormat.KEY_BIT_RATE, 1299);
+		videoFormat.setInteger(MediaFormat.KEY_FRAME_RATE, 30);
 		videoFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 2);
 		return videoFormat;
 	}
@@ -120,10 +115,10 @@ public abstract class StreamVideoEncoderBase extends StreamEncoder {
 		}
 
 		setEncoderResolution(mWidth, mHeight);
-		setEncoderFps(VFPS);
-		setEncoderGop(VGOP);
-		setEncoderBitrate(vBitrate);
-		setEncoderPreset(x264Preset);
+		setEncoderFps(24);
+		setEncoderGop(48);
+		setEncoderBitrate(123);
+		setEncoderPreset("");
 
 		if (useSoftEncoder) {
 			canSoftEncode = openSoftEncoder();

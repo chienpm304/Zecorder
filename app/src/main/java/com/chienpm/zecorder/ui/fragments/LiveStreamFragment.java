@@ -1,16 +1,9 @@
 package com.chienpm.zecorder.ui.fragments;
 
 import android.app.AlertDialog;
-import android.app.MediaRouteButton;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.view.ContextThemeWrapper;
-import androidx.fragment.app.Fragment;
-
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -22,10 +15,12 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.bumptech.glide.load.data.StreamAssetPathFetcher;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+
 import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.controllers.streaming.StreamProfile;
 import com.chienpm.zecorder.ui.activities.StreamingActivity;
@@ -210,7 +205,7 @@ public class LiveStreamFragment extends Fragment {
         });
     }
 
-    private void requestStreamURL(AccessToken token, String title, String description) {
+    private void requestStreamURL(AccessToken token, final String title, final String description) {
         GraphRequest request = null;
         try {
             request = GraphRequest.newPostRequest(

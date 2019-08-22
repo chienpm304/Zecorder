@@ -131,7 +131,7 @@ public class FileHelper {
         mVideoAdapter.showAllCheckboxes(false);
     }
 
-    public Task<Void> deleteFilesFromStorageCallable(Video[] videos) {
+    public Task<Void> deleteFilesFromStorageCallable(final Video[] videos) {
         return Tasks.call(mExecutor, new Callable<Void>() {
             @Override
             public Void call() throws Exception {

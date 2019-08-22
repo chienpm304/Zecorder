@@ -1,15 +1,12 @@
 package com.chienpm.zecorder.ui.activities;
 
 import android.app.Activity;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
@@ -22,7 +19,6 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.NotificationCompat;
 import androidx.loader.app.LoaderManager;
 import androidx.loader.content.AsyncTaskLoader;
 import androidx.loader.content.Loader;
@@ -37,7 +33,6 @@ import com.chienpm.zecorder.ui.services.sync.SyncService;
 import com.chienpm.zecorder.ui.utils.DriveServiceHelper;
 import com.chienpm.zecorder.ui.utils.GoogleDriveFileHolder;
 import com.chienpm.zecorder.ui.utils.MyUtils;
-import com.chienpm.zecorder.ui.utils.NotificationHelper;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -49,7 +44,6 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.api.services.drive.DriveScopes;
 import com.google.gson.Gson;
 
-import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -443,7 +437,7 @@ public class SyncActivity extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            Video video;
+            final Video video;
             if(!TextUtils.isEmpty(action)){
                 switch (action){
                     case SyncService.ACTION_UPLOAD_DONE:

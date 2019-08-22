@@ -228,7 +228,7 @@ public class SyncService extends Service {
 
     }
 
-    public void uploadVideo(Video video){
+    public void uploadVideo(final Video video){
         if(!startedNotification) {
             notifySyncStarted();
         }
@@ -256,12 +256,12 @@ public class SyncService extends Service {
 
 
 
-    public void downloadVideo(Video video){
+    public void downloadVideo(final Video video){
         if(!startedNotification) {
             notifySyncStarted();
         }
 
-        File fileSave = new File(MyUtils.getBaseStorageDirectory(), video.getTitle());
+        final File fileSave = new File(MyUtils.getBaseStorageDirectory(), video.getTitle());
 
         mDriveServiceHelper.downloadFile(fileSave, video.getCloudPath())
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
@@ -271,7 +271,7 @@ public class SyncService extends Service {
                         saveVideoToDatabase(video);
                     }
 
-                    private void saveVideoToDatabase(Video mVideo) {
+                    private void saveVideoToDatabase(final Video mVideo) {
                         new Thread(new Runnable() {
                             @Override
                             public void run() {

@@ -20,18 +20,15 @@ import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.controllers.encoder.RenderUtil.CustomDecorator;
 import com.chienpm.zecorder.controllers.settings.SettingManager;
 import com.chienpm.zecorder.controllers.settings.VideoSetting;
-import com.chienpm.zecorder.controllers.streaming.StreamAudioEncoder;
 import com.chienpm.zecorder.controllers.streaming.StreamEncoder;
-import com.chienpm.zecorder.controllers.streaming.StreamMuxerWrapper;
 import com.chienpm.zecorder.controllers.streaming.StreamProfile;
-import com.chienpm.zecorder.controllers.streaming.StreamScreenEncoder;
 import com.chienpm.zecorder.ui.utils.MyUtils;
+import com.takusemba.rtmppublisher.Publisher;
+import com.takusemba.rtmppublisher.PublisherListener;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 
-public class StreamingService extends Service {
+public class StreamingService extends Service implements PublisherListener {
     private static final boolean DEBUG = false;	// TODO set false on release
     private final IBinder mIBinder = new StreamingBinder();
 
@@ -41,10 +38,34 @@ public class StreamingService extends Service {
     private Intent mScreenCaptureIntent;
     private int mScreenCaptureResultCode;
     private int mScreenWidth, mScreenHeight, mScreenDensity;
-    private StreamMuxerWrapper mMuxer;
+//    private StreamMuxerWrapper mMuxer;
+    private Publisher mPublisher;
     private static final Object sSync = new Object();
     private VideoSetting mCurrentVideoSetting;
     private StreamProfile mStreamProfile;
+
+    private String url = "rtmp://10.199.220.239/live/key";
+
+    //Implement Publisher listener
+    @Override
+    public void onStarted() {
+
+    }
+
+    @Override
+    public void onStopped() {
+
+    }
+
+    @Override
+    public void onDisconnected() {
+
+    }
+
+    @Override
+    public void onFailedToConnect() {
+
+    }
 
     public class StreamingBinder extends Binder{
         public StreamingService getService(){
@@ -61,6 +82,20 @@ public class StreamingService extends Service {
         super.onCreate();
         mMediaProjectionManager = (MediaProjectionManager) getSystemService(
                 Context.MEDIA_PROJECTION_SERVICE);
+        getScreenSize();
+        mMediaProjection = mMediaProjectionManager.getMediaProjection(mScreenCaptureResultCode, mScreenCaptureIntent);
+        DisplayManager dm = (DisplayManager) getSystemService(Context.DISPLAY_SERVICE);
+        Display defaultDisplay;
+        if (dm != null) {
+            defaultDisplay = dm.getDisplay(Display.DEFAULT_DISPLAY);
+        } else {
+            throw new IllegalStateException("Cannot display manager?!?");
+        }
+        if (defaultDisplay == null) {
+            throw new RuntimeException("No display found.");
+        }
+
+        mCurrentVideoSetting = SettingManager.getVideoProfile(getApplicationContext());
 
     }
 
@@ -101,42 +136,23 @@ public class StreamingService extends Service {
 
     public void startStreaming() {
         synchronized (sSync) {
-            if(mMuxer==null) {
-                getScreenSize();
-                mMediaProjection = mMediaProjectionManager.getMediaProjection(mScreenCaptureResultCode, mScreenCaptureIntent);
-                DisplayManager dm = (DisplayManager) getSystemService(Context.DISPLAY_SERVICE);
-                Display defaultDisplay;
-                if (dm != null) {
-                    defaultDisplay = dm.getDisplay(Display.DEFAULT_DISPLAY);
-                } else {
-                    throw new IllegalStateException("Cannot display manager?!?");
-                }
-                if (defaultDisplay == null) {
-                    throw new RuntimeException("No display found.");
-                }
-
-                mCurrentVideoSetting = SettingManager.getVideoProfile(getApplicationContext());
+            if(mPublisher==null) {
 
                 if (DEBUG) Log.v(TAG, "startStreaming:");
                 try {
-                    mMuxer = new StreamMuxerWrapper(this,  mStreamProfile, mCurrentVideoSetting);    // if you record audio only, ".m4a" is also OK.
-                    if (true) {
-                        // for screen capturing
-                        //todo: setting video parameter here
 
-                        List<CustomDecorator> decors = createDecorators();
+                    mPublisher = new Publisher.Builder()
+                            .setUrl(url)
+                            .setSize(Publisher.Builder.DEFAULT_WIDTH, Publisher.Builder.DEFAULT_HEIGHT)
+                            .setAudioBitrate(Publisher.Builder.DEFAULT_AUDIO_BITRATE)
+                            .setVideoBitrate(Publisher.Builder.DEFAULT_VIDEO_BITRATE)
+                            .setListener(this)
+                            .build();
+                    mPublisher.startPublishing();
 
-                        new StreamScreenEncoder(mMuxer, mMediaEncoderListener, mMediaProjection, mCurrentVideoSetting, mScreenDensity, decors);
-                    }
-                    if (true) {
-                        // for audio capturing
-                        //todo: setting audio setting here
-                        new StreamAudioEncoder(mMuxer, mMediaEncoderListener);
-                    }
-                    mMuxer.prepare();
-                    mMuxer.startStreaming();
-                } catch (final IOException e) {
-                    Log.e(TAG, "startScreenRecord:", e);
+
+                 } catch (final Exception e) {
+                    Log.e(TAG, "startStreaming error:", e);
                 }
             }
         }
@@ -155,41 +171,9 @@ public class StreamingService extends Service {
     }
 
 
-
-
-    public void pauseScreenRecord() {
-        synchronized (sSync) {
-            if (mMuxer != null) {
-                mMuxer.pauseRecording();
-            }
-        }
-    }
-
-    public void resumeScreenRecord() {
-        synchronized (sSync) {
-            if (mMuxer != null) {
-                mMuxer.resumeRecording();
-            }
-        }
-    }
-
     //Return output file
-    public VideoSetting stopRecording() {
-        if (DEBUG) Log.v(TAG, "stopStreaming:mMuxerWrapper=" + mMuxer);
-
-        String outputFile = "";
-
-        synchronized (sSync) {
-            if (mMuxer != null) {
-
-//                outputFile = mMuxerWrapper.getOutputPath();
-                mCurrentVideoSetting.setOutputPath(outputFile);
-                mMuxer.stopStreaming();
-                mMuxer = null;
-                // you should not wait here
-            }
-        }
-        return mCurrentVideoSetting;
+    public void stopStreaming() {
+        mPublisher.stopPublishing();
     }
 
     private static final StreamEncoder.StreamEncoderListener mMediaEncoderListener = new StreamEncoder.StreamEncoderListener() {

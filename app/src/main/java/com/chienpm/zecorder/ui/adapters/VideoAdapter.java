@@ -1,7 +1,4 @@
 package com.chienpm.zecorder.ui.adapters;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.FragmentActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,6 +7,10 @@ import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.FragmentActivity;
 
 import com.bumptech.glide.Glide;
 import com.chienpm.zecorder.R;
@@ -54,7 +55,7 @@ public class VideoAdapter extends ArrayAdapter<Video> {
 
 
     public void deleteSelectedVideo() {
-        Video[] list = getSelectedVideo();
+        final Video[] list = getSelectedVideo();
 
         FileHelper.getInstance(this).
                 deleteVideoFromDatabaseCallable(list)

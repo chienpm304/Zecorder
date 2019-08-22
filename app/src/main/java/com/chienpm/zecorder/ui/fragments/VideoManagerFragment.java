@@ -6,20 +6,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-import com.chienpm.zecorder.ui.activities.SyncActivity;
-import com.chienpm.zecorder.ui.utils.FileHelper;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.material.snackbar.Snackbar;
-import androidx.fragment.app.Fragment;
-import androidx.loader.app.LoaderManager;
-import androidx.loader.content.AsyncTaskLoader;
-import androidx.loader.content.Loader;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
-import androidx.appcompat.app.AlertDialog;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -31,12 +17,26 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.fragment.app.Fragment;
+import androidx.loader.app.LoaderManager;
+import androidx.loader.content.AsyncTaskLoader;
+import androidx.loader.content.Loader;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
 import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.data.database.VideoDatabase;
 import com.chienpm.zecorder.data.entities.Video;
+import com.chienpm.zecorder.ui.activities.SyncActivity;
 import com.chienpm.zecorder.ui.adapters.VideoAdapter;
 import com.chienpm.zecorder.ui.utils.DialogHelper;
+import com.chienpm.zecorder.ui.utils.FileHelper;
 import com.chienpm.zecorder.ui.utils.MyUtils;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
@@ -179,7 +179,7 @@ public class VideoManagerFragment extends Fragment{
             .setMessage(message)
             .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int which) {
-                    Video[] videos = mAdapter.getSelectedVideo();
+                    final Video[] videos = mAdapter.getSelectedVideo();
 
                     FileHelper.getInstance(mAdapter)
                             .deleteVideoFromDatabaseCallable(videos)
