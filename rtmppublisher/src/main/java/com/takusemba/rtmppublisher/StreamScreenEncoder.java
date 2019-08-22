@@ -228,7 +228,7 @@ public class StreamScreenEncoder extends VideoEncoder {
 
 					RenderUtil.renderTextures(mDecors);
 					mEncoderSurface.swap();
-					Log.d(TAG, "run check mTexId: "+mTexId);
+//					Log.d(TAG, "run check mTexId: "+mTexId);
 					makeCurrent();
 //					GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 //					GLES20.glFlush();

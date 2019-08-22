@@ -126,7 +126,7 @@ public interface Publisher {
          * Set the MediaProject to record screen Api 21 above
          * this parameter is optional
          */
-        public Builder setMediaProjection(MediaProjection projection) {
+        public Builder setMediaProjection(@NonNull MediaProjection projection) {
             this.mediaProjection = projection;
             return this;
         }

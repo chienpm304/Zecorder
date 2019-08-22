@@ -82,20 +82,7 @@ public class StreamingService extends Service implements PublisherListener {
         super.onCreate();
         mMediaProjectionManager = (MediaProjectionManager) getSystemService(
                 Context.MEDIA_PROJECTION_SERVICE);
-        getScreenSize();
-        mMediaProjection = mMediaProjectionManager.getMediaProjection(mScreenCaptureResultCode, mScreenCaptureIntent);
-        DisplayManager dm = (DisplayManager) getSystemService(Context.DISPLAY_SERVICE);
-        Display defaultDisplay;
-        if (dm != null) {
-            defaultDisplay = dm.getDisplay(Display.DEFAULT_DISPLAY);
-        } else {
-            throw new IllegalStateException("Cannot display manager?!?");
-        }
-        if (defaultDisplay == null) {
-            throw new RuntimeException("No display found.");
-        }
 
-        mCurrentVideoSetting = SettingManager.getVideoProfile(getApplicationContext());
 
     }
 
@@ -137,7 +124,20 @@ public class StreamingService extends Service implements PublisherListener {
     public void startStreaming() {
         synchronized (sSync) {
             if(mPublisher==null) {
+                getScreenSize();
+                mMediaProjection = mMediaProjectionManager.getMediaProjection(mScreenCaptureResultCode, mScreenCaptureIntent);
+                DisplayManager dm = (DisplayManager) getSystemService(Context.DISPLAY_SERVICE);
+                Display defaultDisplay;
+                if (dm != null) {
+                    defaultDisplay = dm.getDisplay(Display.DEFAULT_DISPLAY);
+                } else {
+                    throw new IllegalStateException("Cannot display manager?!?");
+                }
+                if (defaultDisplay == null) {
+                    throw new RuntimeException("No display found.");
+                }
 
+                mCurrentVideoSetting = SettingManager.getVideoProfile(getApplicationContext());
                 if (DEBUG) Log.v(TAG, "startStreaming:");
                 try {
 
@@ -146,6 +146,8 @@ public class StreamingService extends Service implements PublisherListener {
                             .setSize(Publisher.Builder.DEFAULT_WIDTH, Publisher.Builder.DEFAULT_HEIGHT)
                             .setAudioBitrate(Publisher.Builder.DEFAULT_AUDIO_BITRATE)
                             .setVideoBitrate(Publisher.Builder.DEFAULT_VIDEO_BITRATE)
+                            .setDensity(mScreenDensity)
+                            .setMediaProjection(mMediaProjection)
                             .setListener(this)
                             .build();
                     mPublisher.startPublishing();
