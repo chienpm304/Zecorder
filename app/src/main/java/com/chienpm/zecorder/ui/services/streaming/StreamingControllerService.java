@@ -79,7 +79,7 @@ public class StreamingControllerService extends Service {
                 handleUpdateSetting(intent);
                 return START_NOT_STICKY;
             }
-            Log.d(TAG, "StreamingControllerService: onStartCommand()");
+            Log.i(TAG, "StreamingControllerService: onStartCommand()");
 
             if (TextUtils.equals(action, "Camera_Available")) {
                 initCameraView();
@@ -268,20 +268,20 @@ public class StreamingControllerService extends Service {
 //        super.onConfigurationChanged(newConfig);
         Log.d(TAG, "onConfigurationChanged: DETECTED" + newConfig.orientation);
 
-        int width = mCameraWidth, height = mCameraHeight;
+        if(cameraPreview!=null) {
+            int width = mCameraWidth, height = mCameraHeight;
 
-        ViewGroup.LayoutParams params = cameraPreview.getLayoutParams();
-        if(newConfig.orientation == Configuration.ORIENTATION_PORTRAIT){
-            params.height = width;
-            params.width = height;
+            ViewGroup.LayoutParams params = cameraPreview.getLayoutParams();
+            if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
+                params.height = width;
+                params.width = height;
 
+            } else {
+                params.height = height;
+                params.width = width;
+            }
+            cameraPreview.setLayoutParams(params);
         }
-        else{
-            params.height = height;
-            params.width = width;
-        }
-        cameraPreview.setLayoutParams(params);
-
     }
 
     private void initializeViews() {

@@ -124,7 +124,7 @@ public class StreamingService extends Service implements PublisherListener {
     public void startStreaming() {
         synchronized (sSync) {
             if(mPublisher==null) {
-                getScreenSize();
+//                getScreenSize();
                 mMediaProjection = mMediaProjectionManager.getMediaProjection(mScreenCaptureResultCode, mScreenCaptureIntent);
                 DisplayManager dm = (DisplayManager) getSystemService(Context.DISPLAY_SERVICE);
                 Display defaultDisplay;
@@ -143,10 +143,10 @@ public class StreamingService extends Service implements PublisherListener {
 
                     mPublisher = new Publisher.Builder()
                             .setUrl(url)
-                            .setSize(Publisher.Builder.DEFAULT_WIDTH, Publisher.Builder.DEFAULT_HEIGHT)
+                            .setSize(Publisher.Builder.DEFAULT_WIDTH_LAND, Publisher.Builder.DEFAULT_HEIGHT_LAND)
                             .setAudioBitrate(Publisher.Builder.DEFAULT_AUDIO_BITRATE)
                             .setVideoBitrate(Publisher.Builder.DEFAULT_VIDEO_BITRATE)
-                            .setDensity(mScreenDensity)
+                            .setDensity(Publisher.Builder.DEFAULT_DENSITY)
                             .setMediaProjection(mMediaProjection)
                             .setListener(this)
                             .build();

@@ -16,7 +16,7 @@ class VideoHandler {//implements CameraSurfaceRenderer.OnRendererStateChangedLis
      * note that to use {@link VideoEncoder} and {@link VideoRenderer} from handler.
      */
     private Handler handler;
-    private StreamScreenEncoder videoEncoder;
+    private TestVideoEncoder videoEncoder;
 //    private VideoRenderer videoRenderer;
 
     interface OnVideoEncoderStateListener {
@@ -29,7 +29,7 @@ class VideoHandler {//implements CameraSurfaceRenderer.OnRendererStateChangedLis
 
     VideoHandler(@NonNull MediaProjection mediaProjection) {
 //        this.videoRenderer = new VideoRenderer();
-        this.videoEncoder = new StreamScreenEncoder(mediaProjection);
+        this.videoEncoder = new TestVideoEncoder(mediaProjection);
         HandlerThread handlerThread = new HandlerThread("VideoHandler");
         handlerThread.start();
         handler = new Handler(handlerThread.getLooper());
