@@ -76,6 +76,7 @@ dependencies {
 
     implementation 'com.facebook.android:facebook-android-sdk:4.42.0'
     implementation 'com.facebook.android:facebook-login:5.2.0'
+
     implementation project(path: ':rtmppublisher')
 
 }

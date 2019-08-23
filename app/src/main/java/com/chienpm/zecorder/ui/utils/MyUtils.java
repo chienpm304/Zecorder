@@ -2,10 +2,6 @@ package com.chienpm.zecorder.ui.utils;
 
 import android.app.ActivityManager;
 import android.content.Context;
-
-import com.chienpm.zecorder.ui.services.sync.SyncService;
-import com.google.android.material.snackbar.Snackbar;
-
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.os.Environment;
@@ -15,6 +11,9 @@ import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+
+import com.chienpm.zecorder.ui.services.sync.SyncService;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -37,6 +36,7 @@ public class MyUtils {
     public static final int SELECTED_MODE_SINGLE = 3;
     public static final String DRIVE_MASTER_FOLDER = "Zecorder";
     public static final String STREAM_PROFILE = "Stream_Profile";
+    public static final String ACTION_NOTIFY_FROM_STREAM_SERVICE = "ACTION_NOTIFY_FROM_STREAM_SERVICE";
     private static final String TAG = "chienpm_utils";
 
     @NonNull

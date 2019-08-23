@@ -28,9 +28,17 @@ import java.util.ArrayList;
 
 public class StreamingService extends Service implements PublisherListener {
     private static final boolean DEBUG = false;	// TODO set false on release
+    public static final String KEY_NOTIFY_MSG = "stream service notify";
+
+    public static final String NOTIFY_MSG_CONNECTION_FAILED = "STREAM CONNECTION FAILED";
+    public static final String NOTIFY_MSG_CONNECTION_STARTED = "STREAM CONNECTION SUCCEED";
+    public static final String NOTIFY_MSG_ERROR = "STREAM CONNECTION ERROR";
+    public static final String NOTIFY_MSG_CONNECTION_DISCONNECTED = "NOTIFY_MSG_CONNECTION_DISCONNECTED";
+    public static final String NOTIFY_MSG_STREAM_STOPPED = "NOTIFY_MSG_STREAM_STOPPED";
+
     private final IBinder mIBinder = new StreamingBinder();
 
-    private static final String TAG = "chienpm";
+    private static final String TAG = "StreamService_chienpm";
     private MediaProjectionManager mMediaProjectionManager;
     private MediaProjection mMediaProjection;
     private Intent mScreenCaptureIntent;
@@ -41,29 +49,34 @@ public class StreamingService extends Service implements PublisherListener {
 
     private StreamProfile mStreamProfile;
 
-    private String url = "rtmp://live.restream.io/live/re_1565015_e4b94414a7288cfef172";//"rtmp://10.199.220.239/live/key";
+    private String url = "rtmp://localhost:1935/live/key";
+//    private String url = "rtmp://10.199.220.239/live/key";
+
 
     //Implement Publisher listener
     @Override
     public void onStarted() {
         Log.i(TAG, "onStarted");
-        MyUtils.toast(getApplicationContext(), "Streaming Started", Toast.LENGTH_SHORT);
+        notifyStreamControllerAction(NOTIFY_MSG_CONNECTION_STARTED);
     }
 
     @Override
     public void onStopped() {
         Log.i(TAG, "onStopped");
-        MyUtils.toast(getApplicationContext(), "Streaming Stopped", Toast.LENGTH_SHORT);
+        notifyStreamControllerAction(NOTIFY_MSG_STREAM_STOPPED);
     }
 
     @Override
     public void onDisconnected() {
         Log.i(TAG, "onDisconnected");
-        MyUtils.toast(getApplicationContext(), "Streaming Disconnected", Toast.LENGTH_SHORT);
+        notifyStreamControllerAction(NOTIFY_MSG_CONNECTION_DISCONNECTED);
     }
 
     @Override
     public void onFailedToConnect() {
+        if(mPublisher!=null && mPublisher.isPublishing())
+            mPublisher.stopPublishing();
+        notifyStreamControllerAction(NOTIFY_MSG_CONNECTION_FAILED);
         Log.i(TAG, "onFailedToConnect");
         MyUtils.toast(getApplicationContext(), "Streaming Connection Failed", Toast.LENGTH_SHORT);
     }
@@ -76,6 +89,13 @@ public class StreamingService extends Service implements PublisherListener {
 
     public StreamingService() {
 
+    }
+
+    void notifyStreamControllerAction(String notify_msg){
+        Intent intent = new Intent(getApplicationContext(), StreamingControllerService.class);
+        intent.setAction(MyUtils.ACTION_NOTIFY_FROM_STREAM_SERVICE);
+        intent.putExtra(KEY_NOTIFY_MSG, notify_msg);
+        startService(intent);
     }
 
     @Override
@@ -163,6 +183,7 @@ public class StreamingService extends Service implements PublisherListener {
 
                  } catch (final Exception e) {
                     Log.e(TAG, "startStreaming error:", e);
+                    notifyStreamControllerAction(NOTIFY_MSG_ERROR);
                 }
             }else{
                 mPublisher.startPublishing();
@@ -183,7 +204,8 @@ public class StreamingService extends Service implements PublisherListener {
     }
 
     public void stopStreaming() {
-        mPublisher.stopPublishing();
+        if(mPublisher!=null && mPublisher.isPublishing())
+            mPublisher.stopPublishing();
     }
 
 }

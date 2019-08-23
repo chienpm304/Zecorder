@@ -35,9 +35,11 @@ import com.chienpm.zecorder.ui.services.streaming.StreamingService.StreamingBind
 import com.chienpm.zecorder.ui.utils.CameraPreview;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 
+import static com.chienpm.zecorder.ui.services.streaming.StreamingService.*;
 
-public class StreamingControllerService extends Service {
-    private static final String TAG = "chienpm_controller";
+
+public class StreamingControllerService extends Service{
+    private static final String TAG = "STControllerSV_chienpm";
 
     private StreamingService mStreamingService;
     private Boolean mRecordingServiceBound = false;
@@ -75,15 +77,14 @@ public class StreamingControllerService extends Service {
 
         String action = intent.getAction();
         if(action!=null) {
-            if (action.equals(MyUtils.ACTION_UPDATE_SETTING)) {
-                handleUpdateSetting(intent);
-                return START_NOT_STICKY;
-            }
+            handleIncomeAction(intent);
+
             Log.i(TAG, "StreamingControllerService: onStartCommand()");
 
             if (TextUtils.equals(action, "Camera_Available")) {
                 initCameraView();
             }
+            return START_NOT_STICKY;
         }
 
         mScreenCaptureIntent = intent.getParcelableExtra(Intent.EXTRA_INTENT);
@@ -98,6 +99,50 @@ public class StreamingControllerService extends Service {
             bindStreamingService();
         }
         return super.onStartCommand(intent, flags, startId);
+    }
+
+    private void handleIncomeAction(Intent intent) {
+        String action = intent.getAction();
+        if(TextUtils.isEmpty(action))
+            return;
+        switch (action){
+            case MyUtils.ACTION_UPDATE_SETTING:
+                handleUpdateSetting(intent);
+                break;
+            case MyUtils.ACTION_NOTIFY_FROM_STREAM_SERVICE:
+                handleNotifyFromStreamService(intent);
+                break;
+        }
+
+
+    }
+
+    private void handleNotifyFromStreamService(Intent intent) {
+        String notify_msg = intent.getStringExtra(StreamingService.KEY_NOTIFY_MSG);
+        if(TextUtils.isEmpty(notify_msg))
+            return;
+        switch (notify_msg){
+            case NOTIFY_MSG_CONNECTION_STARTED:
+                MyUtils.toast(getApplicationContext(), "Stream started", Toast.LENGTH_SHORT);
+                break;
+
+            case NOTIFY_MSG_CONNECTION_FAILED:
+                MyUtils.toast(getApplicationContext(), "Connection to server failed. Please try later", Toast.LENGTH_LONG);
+                mImgStop.performClick();
+                break;
+
+            case NOTIFY_MSG_CONNECTION_DISCONNECTED:
+                MyUtils.toast(getApplicationContext(), "Connection disconnected", Toast.LENGTH_SHORT);
+                break;
+
+            case NOTIFY_MSG_STREAM_STOPPED:
+                MyUtils.toast(getApplicationContext(), "Stream Stopped", Toast.LENGTH_LONG);
+                break;
+
+            case NOTIFY_MSG_ERROR:
+                MyUtils.toast(getApplicationContext(), "Sorry, Error occurs!", Toast.LENGTH_LONG);
+                break;
+        }
     }
 
     private void handleUpdateSetting(Intent intent) {
