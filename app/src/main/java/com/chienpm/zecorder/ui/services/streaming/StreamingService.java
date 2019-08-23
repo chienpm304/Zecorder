@@ -18,9 +18,6 @@ import android.view.Display;
 
 import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.controllers.encoder.RenderUtil.CustomDecorator;
-import com.chienpm.zecorder.controllers.settings.SettingManager;
-import com.chienpm.zecorder.controllers.settings.VideoSetting;
-import com.chienpm.zecorder.controllers.streaming.StreamEncoder;
 import com.chienpm.zecorder.controllers.streaming.StreamProfile;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 import com.takusemba.rtmppublisher.Publisher;
@@ -38,10 +35,9 @@ public class StreamingService extends Service implements PublisherListener {
     private Intent mScreenCaptureIntent;
     private int mScreenCaptureResultCode;
     private int mScreenWidth, mScreenHeight, mScreenDensity;
-//    private StreamMuxerWrapper mMuxer;
     private Publisher mPublisher;
     private static final Object sSync = new Object();
-    private VideoSetting mCurrentVideoSetting;
+
     private StreamProfile mStreamProfile;
 
     private String url = "rtmp://10.199.220.239/live/key";
@@ -124,6 +120,19 @@ public class StreamingService extends Service implements PublisherListener {
 
         mStreamProfile = (StreamProfile) intent.getSerializableExtra(MyUtils.STREAM_PROFILE);
 
+        getScreenSize();
+        mMediaProjection = mMediaProjectionManager.getMediaProjection(mScreenCaptureResultCode, mScreenCaptureIntent);
+        DisplayManager dm = (DisplayManager) getSystemService(Context.DISPLAY_SERVICE);
+        Display defaultDisplay;
+        if (dm != null) {
+            defaultDisplay = dm.getDisplay(Display.DEFAULT_DISPLAY);
+        } else {
+            throw new IllegalStateException("Cannot display manager?!?");
+        }
+        if (defaultDisplay == null) {
+            throw new RuntimeException("No display found.");
+        }
+
         Log.d(TAG, "onBindStream: "+ mScreenCaptureIntent);
         Log.d(TAG, "onBindStream: "+ mStreamProfile.toString());
         return mIBinder;
@@ -132,20 +141,6 @@ public class StreamingService extends Service implements PublisherListener {
     public void startStreaming() {
         synchronized (sSync) {
             if(mPublisher==null) {
-                getScreenSize();
-                mMediaProjection = mMediaProjectionManager.getMediaProjection(mScreenCaptureResultCode, mScreenCaptureIntent);
-                DisplayManager dm = (DisplayManager) getSystemService(Context.DISPLAY_SERVICE);
-                Display defaultDisplay;
-                if (dm != null) {
-                    defaultDisplay = dm.getDisplay(Display.DEFAULT_DISPLAY);
-                } else {
-                    throw new IllegalStateException("Cannot display manager?!?");
-                }
-                if (defaultDisplay == null) {
-                    throw new RuntimeException("No display found.");
-                }
-
-                mCurrentVideoSetting = SettingManager.getVideoProfile(getApplicationContext());
                 if (DEBUG) Log.v(TAG, "startStreaming:");
                 try {
 
@@ -164,6 +159,8 @@ public class StreamingService extends Service implements PublisherListener {
                  } catch (final Exception e) {
                     Log.e(TAG, "startStreaming error:", e);
                 }
+            }else{
+                mPublisher.startPublishing();
             }
         }
 
@@ -180,22 +177,8 @@ public class StreamingService extends Service implements PublisherListener {
         return list;
     }
 
-
-    //Return output file
     public void stopStreaming() {
         mPublisher.stopPublishing();
     }
 
-    private static final StreamEncoder.StreamEncoderListener mMediaEncoderListener = new StreamEncoder.StreamEncoderListener() {
-        @Override
-        public void onPrepared(StreamEncoder encoder) {
-            if (DEBUG) Log.v(TAG, "onPrepared:encoder=" + encoder);
-        }
-
-        @Override
-        public void onStopped(StreamEncoder encoder) {
-            if (DEBUG) Log.v(TAG, "onStopped:encoder=" + encoder);
-        }
-
-    };
 }
