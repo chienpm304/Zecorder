@@ -38,8 +38,8 @@ public interface Publisher {
         public static final int DEFAULT_WIDTH_LAND = 1280;
         public static final int DEFAULT_HEIGHT_LAND = 720;
 
-        public static final int DEFAULT_AUDIO_BITRATE = 6400;
-        public static final int DEFAULT_VIDEO_BITRATE = 100000;
+        public static final int DEFAULT_AUDIO_BITRATE = 64000;
+        public static final int DEFAULT_VIDEO_BITRATE = 4000*1024;
         public static final int DEFAULT_DENSITY = 300;
 //        public static final CameraMode DEFAULT_MODE = CameraMode.BACK;
 
@@ -169,10 +169,10 @@ public interface Publisher {
                 throw new IllegalStateException("url should not be empty or null");
             }
             if (url == null || height <= 0) {
-                height = DEFAULT_HEIGHT;
+                height = DEFAULT_HEIGHT_LAND;
             }
             if (url == null || width <= 0) {
-                width = DEFAULT_WIDTH;
+                width = DEFAULT_WIDTH_LAND;
             }
             if (url == null || audioBitrate <= 0) {
                 audioBitrate = DEFAULT_AUDIO_BITRATE;

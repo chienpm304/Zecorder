@@ -31,7 +31,9 @@ class AudioEncoder implements Encoder {
     }
 
     /**
-     * prepare the Encoder. call this before start the encoder.
+     * prepare the Encoder. call this befor
+     *
+     * e start the encoder.
      */
     void prepare(int bitrate, int sampleRate, long startStreamingAt) {
         int bufferSize = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO,
