@@ -8,16 +8,12 @@ import androidx.annotation.NonNull;
 
 import java.io.IOException;
 
-class VideoHandler {//implements CameraSurfaceRenderer.OnRendererStateChangedListener {
+class VideoHandler {
 
     private static final int FRAME_RATE = 30;
 
-    /**
-     * note that to use {@link VideoEncoder} and {@link VideoRenderer} from handler.
-     */
     private Handler handler;
-    private TestVideoEncoder videoEncoder;
-//    private VideoRenderer videoRenderer;
+    private VideoEncoder videoEncoder;
 
     interface OnVideoEncoderStateListener {
         void onVideoDataEncoded(byte[] data, int size, int timestamp);
@@ -28,8 +24,7 @@ class VideoHandler {//implements CameraSurfaceRenderer.OnRendererStateChangedLis
     }
 
     VideoHandler(@NonNull MediaProjection mediaProjection) {
-//        this.videoRenderer = new VideoRenderer();
-        this.videoEncoder = new TestVideoEncoder(mediaProjection);
+        this.videoEncoder = new VideoEncoder(mediaProjection);
         HandlerThread handlerThread = new HandlerThread("VideoHandler");
         handlerThread.start();
         handler = new Handler(handlerThread.getLooper());
@@ -42,7 +37,6 @@ class VideoHandler {//implements CameraSurfaceRenderer.OnRendererStateChangedLis
                 try {
                     videoEncoder.prepare(width, height, bitRate, FRAME_RATE, startStreamingAt, density);
                     videoEncoder.start();
-//                    videoRenderer.initialize(sharedEglContext, videoEncoder.getInputSurface());
                 } catch (IOException ioe) {
                     throw new RuntimeException(ioe);
                 }
@@ -57,32 +51,9 @@ class VideoHandler {//implements CameraSurfaceRenderer.OnRendererStateChangedLis
                 if (videoEncoder.isEncoding()) {
                     videoEncoder.stop();
                 }
-//                if (videoRenderer.isInitialized()) {
-//                    videoRenderer.release();
-//                }
             }
         });
     }
-
-//    @Override
-//    public void onSurfaceCreated(SurfaceTexture surfaceTexture) {
-//        // no-op
-//    }
-//
-//    @Override
-//    public void onFrameDrawn(final int textureId, final float[] transform, final long timestamp) {
-//        handler.post(new Runnable() {
-//            @Override
-//            public void run() {
-//                long elapsedTime = System.currentTimeMillis() - videoEncoder.getLastFrameEncodedAt();
-//                if (!videoEncoder.isEncoding()
-//                        || elapsedTime < getFrameInterval()) {
-//                    return;
-//                }
-////                videoRenderer.draw(textureId, transform, timestamp);
-//            }
-//        });
-//    }
 
     private long getFrameInterval() {
         return 1000 / FRAME_RATE;

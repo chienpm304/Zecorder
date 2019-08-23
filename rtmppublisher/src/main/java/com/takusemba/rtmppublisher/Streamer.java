@@ -70,10 +70,6 @@ class Streamer
         muxer.sendAudio(data, size, timestamp);
     }
 
-//    CameraSurfaceRenderer.OnRendererStateChangedListener getVideoHandlerListener() {
-//        return videoHandler;
-//    }
-
     void setMuxerListener(PublisherListener listener) {
         muxer.setOnMuxerStateListener(listener);
     }

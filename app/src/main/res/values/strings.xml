@@ -4,9 +4,6 @@
     <string name="facebook_app_id">636414803521202</string>
     <string name="fb_login_protocol_scheme">fb636414803521202</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
-
     <!--Video settings-->
     <string name="setting_video_bitrate">setting_video_bitrate</string>
     <string name="setting_video_resolution">setting_video_resolution</string>

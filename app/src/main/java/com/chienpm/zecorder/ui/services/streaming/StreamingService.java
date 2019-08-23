@@ -15,6 +15,7 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Size;
 import android.view.Display;
+import android.widget.Toast;
 
 import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.controllers.encoder.RenderUtil.CustomDecorator;
@@ -40,27 +41,31 @@ public class StreamingService extends Service implements PublisherListener {
 
     private StreamProfile mStreamProfile;
 
-    private String url = "rtmp://10.199.220.239/live/key";
+    private String url = "rtmp://live.restream.io/live/re_1565015_e4b94414a7288cfef172";//"rtmp://10.199.220.239/live/key";
 
     //Implement Publisher listener
     @Override
     public void onStarted() {
-
+        Log.i(TAG, "onStarted");
+        MyUtils.toast(getApplicationContext(), "Streaming Started", Toast.LENGTH_SHORT);
     }
 
     @Override
     public void onStopped() {
-
+        Log.i(TAG, "onStopped");
+        MyUtils.toast(getApplicationContext(), "Streaming Stopped", Toast.LENGTH_SHORT);
     }
 
     @Override
     public void onDisconnected() {
-
+        Log.i(TAG, "onDisconnected");
+        MyUtils.toast(getApplicationContext(), "Streaming Disconnected", Toast.LENGTH_SHORT);
     }
 
     @Override
     public void onFailedToConnect() {
-
+        Log.i(TAG, "onFailedToConnect");
+        MyUtils.toast(getApplicationContext(), "Streaming Connection Failed", Toast.LENGTH_SHORT);
     }
 
     public class StreamingBinder extends Binder{

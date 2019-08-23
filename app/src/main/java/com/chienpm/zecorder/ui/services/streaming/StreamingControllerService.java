@@ -430,6 +430,10 @@ public class StreamingControllerService extends Service {
             public void onClick(View v) {
                 mImgStop.performClick();
                 stopSelf();
+                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                intent.setAction(MyUtils.ACTION_OPEN_LIVE_ACTIVITY);
+                startActivity(intent);
             }
         });
 
