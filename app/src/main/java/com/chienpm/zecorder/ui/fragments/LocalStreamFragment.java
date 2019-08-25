@@ -20,6 +20,7 @@ import android.widget.Button;
 import android.widget.EditText;
 
 import com.chienpm.zecorder.R;
+import com.chienpm.zecorder.controllers.streaming.StreamProfile;
 import com.chienpm.zecorder.ui.activities.MainActivity;
 import com.chienpm.zecorder.ui.activities.StreamingActivity;
 import com.chienpm.zecorder.ui.services.ControllerService;
@@ -174,6 +175,8 @@ public class LocalStreamFragment extends Fragment {
                     return;
                 }
                 mActivity.mMode = MyUtils.MODE_RECORDING;
+                StreamProfile mStreamProfile = new StreamProfile("", mEdUrl.getText().toString(), "");
+                mActivity.setStreamProfile(mStreamProfile);
                 mActivity.shouldStartControllerService();
                 //check connection
             }

@@ -13,7 +13,6 @@ import android.util.Log;
 
 import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.ui.services.ControllerService;
-import com.chienpm.zecorder.ui.services.recording.RecordingControllerService;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 
 import java.util.Objects;
@@ -91,7 +90,7 @@ public class SettingFragment extends PreferenceFragmentCompat implements SharedP
             }
         }
 
-        if(isMyServiceRunning(RecordingControllerService.class)) {
+        if(isMyServiceRunning(ControllerService.class)) {
             int settingKey = getResources().getIdentifier(key, "string", getActivity().getPackageName());
             if (isCanUpdateSettingImmediately(settingKey)) {
                 Log.d(TAG, "onSharedPreferenceChanged: "+key);

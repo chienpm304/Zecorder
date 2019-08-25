@@ -48,8 +48,8 @@ public class MyUtils {
     public static final String KEY_CONTROLlER_MODE = "KEY_CONTROLLER_MODE";
     public static final String ACTION_INIT_CONTROLLER = "ACTION INIT CONTROLLER";
     private static final String TAG = "chienpm_utils";
-    public static final String MODE_STREAMING = "MODE STREAMING";
-    public static final String MODE_RECORDING = "MODE RECORDING";
+    public static final int MODE_STREAMING = 101;
+    public static final int MODE_RECORDING = 102;
 
     @NonNull
     public static String createFileName(@NonNull String ext) {

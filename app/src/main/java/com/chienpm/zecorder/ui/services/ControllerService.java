@@ -8,7 +8,6 @@ import android.content.ServiceConnection;
 import android.content.res.Configuration;
 import android.graphics.PixelFormat;
 import android.hardware.Camera;
-import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -30,7 +29,6 @@ import android.widget.Toast;
 import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.controllers.settings.CameraSetting;
 import com.chienpm.zecorder.controllers.settings.SettingManager;
-import com.chienpm.zecorder.controllers.settings.VideoSetting;
 import com.chienpm.zecorder.controllers.streaming.StreamProfile;
 import com.chienpm.zecorder.ui.activities.MainActivity;
 import com.chienpm.zecorder.ui.services.recording.RecordingService;
@@ -66,13 +64,12 @@ public class ControllerService extends Service{
     private Boolean mRecordingPaused = false;
     private Camera mCamera;
     private LinearLayout cameraPreview;
-    private CameraPreview mPreview;
     private int mScreenWidth, mScreenHeight;
     private TextView mTvCountdown;
     private View mCountdownLayout;
     private int mCameraWidth = 160, mCameraHeight = 90;
     private StreamProfile mStreamProfile;
-    private String mMode;
+    private int mMode;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -98,9 +95,10 @@ public class ControllerService extends Service{
 
         switch (action){
             case MyUtils.ACTION_INIT_CONTROLLER:
-                mMode = intent.getStringExtra(MyUtils.KEY_CONTROLlER_MODE);
+                mMode = intent.getIntExtra(MyUtils.KEY_CONTROLlER_MODE, MyUtils.MODE_RECORDING);
                 mScreenCaptureIntent = intent.getParcelableExtra(Intent.EXTRA_INTENT);
-                mStreamProfile = (StreamProfile) intent.getSerializableExtra(MyUtils.STREAM_PROFILE);
+                if(mMode == MyUtils.MODE_STREAMING)
+                    mStreamProfile = (StreamProfile) intent.getSerializableExtra(MyUtils.STREAM_PROFILE);
                 boolean isCamera = intent.getBooleanExtra(MyUtils.KEY_CAMERA_AVAILABLE, false);
 
                 if(isCamera)
@@ -205,9 +203,7 @@ public class ControllerService extends Service{
 
     @Override
     public IBinder onBind(Intent intent) {
-        // TODO: Return the communication channel to the service.
         return null;
-//        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
@@ -268,7 +264,7 @@ public class ControllerService extends Service{
         else
             mCamera = Camera.open(Camera.CameraInfo.CAMERA_FACING_FRONT);
 
-        cameraPreview = (LinearLayout) mCameraLayout.findViewById(R.id.camera_preview);
+        cameraPreview = mCameraLayout.findViewById(R.id.camera_preview);
 
         calculateCameraSize(cameraProfile);
 
@@ -278,7 +274,7 @@ public class ControllerService extends Service{
         paramCam.x = 0;
         paramCam.y = 0;
 
-        mPreview = new CameraPreview(this, mCamera);
+        CameraPreview mPreview = new CameraPreview(this, mCamera);
 
         cameraPreview.addView(mPreview);
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
@@ -464,7 +460,7 @@ public class ControllerService extends Service{
 
                     mService.stopPerformService();
 
-                    if(mMode.equals(MyUtils.MODE_RECORDING)){
+                    if(mMode==MyUtils.MODE_RECORDING){
                         ((RecordingService)mService).saveVideoToDatabase();
                         MyUtils.toast(getApplicationContext(), "Recording Service Closed", Toast.LENGTH_LONG);
                         return;
@@ -490,7 +486,10 @@ public class ControllerService extends Service{
         mImgClose.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mImgStop.performClick();
+                if(mRecordingStarted){
+                    mImgStop.performClick();
+                }
+
                 stopSelf();
                 Intent intent = new Intent(getApplicationContext(), MainActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -580,7 +579,10 @@ public class ControllerService extends Service{
 
         Intent service;
 
-        if(mMode.equals(MyUtils.MODE_STREAMING)) {
+        if(mMode == MyUtils.MODE_STREAMING) {
+            if(mStreamProfile == null)
+                throw new RuntimeException("Streaming proflie is null");
+
             service = new Intent(getApplicationContext(), StreamingService.class);
             Bundle bundle = new Bundle();
 
@@ -602,7 +604,7 @@ public class ControllerService extends Service{
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             IBinder binder;
-            if(mMode.equals(MyUtils.MODE_STREAMING)) {
+            if(mMode == MyUtils.MODE_STREAMING) {
                 binder = (StreamingBinder) service;
                 mService = ((StreamingBinder) binder).getService();
             }
@@ -675,13 +677,14 @@ public class ControllerService extends Service{
             mWindowManager.removeViewImmediate(mViewRoot);
         }
         if(mCameraLayout!=null){
-            mWindowManager.removeViewImmediate(mCameraLayout);
+            mWindowManager.removeView(mCameraLayout);
             releaseCamera();
         }
+
         if(mService !=null && mRecordingServiceBound) {
             unbindService(mStreamingServiceConnection);
+            mService.stopSelf();
             mRecordingServiceBound = false;
-
         }
     }
 }

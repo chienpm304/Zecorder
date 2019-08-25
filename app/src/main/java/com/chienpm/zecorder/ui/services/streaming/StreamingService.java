@@ -147,6 +147,11 @@ public class StreamingService extends BaseService implements PublisherListener {
 
         mStreamProfile = (StreamProfile) intent.getSerializableExtra(MyUtils.STREAM_PROFILE);
 
+        if(mStreamProfile == null)
+            throw new RuntimeException("Stream Profile is null");
+        else
+            url = mStreamProfile.getStreamUrl();
+
         getScreenSize();
         mMediaProjection = mMediaProjectionManager.getMediaProjection(mScreenCaptureResultCode, mScreenCaptureIntent);
         DisplayManager dm = (DisplayManager) getSystemService(Context.DISPLAY_SERVICE);

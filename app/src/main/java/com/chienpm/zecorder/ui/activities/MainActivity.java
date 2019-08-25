@@ -13,6 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
+import com.chienpm.zecorder.controllers.streaming.StreamProfile;
 import com.chienpm.zecorder.ui.fragments.LocalStreamFragment;
 import com.chienpm.zecorder.ui.services.ControllerService;
 import com.chienpm.zecorder.ui.services.streaming.StreamingService;
@@ -45,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
             Manifest.permission.RECORD_AUDIO,
             Manifest.permission.WRITE_EXTERNAL_STORAGE
     };
-    public String mMode = MyUtils.MODE_RECORDING;
+    public int mMode = MyUtils.MODE_RECORDING;
 
     private Intent mScreenCaptureIntent = null;
 
@@ -60,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
     };
 
     private int mScreenCaptureResultCode = MyUtils.RESULT_CODE_FAILED;
+    private StreamProfile mStreamProfile;
 
 
     @Override
@@ -126,17 +128,17 @@ public class MainActivity extends AppCompatActivity {
                 }
                 mMode = MyUtils.MODE_RECORDING;
 
-//                shouldStartControllerService();
-                if(mScreenCaptureIntent == null || mScreenCaptureResultCode == MyUtils.RESULT_CODE_FAILED)
-                    requestScreenCaptureIntent();
-
-                if(hasPermission()) {
-                    startControllerService();
-                }
-                else{
-                    requestPermissions();
-                    requestScreenCaptureIntent();
-                }
+                shouldStartControllerService();
+//                if(hasCaptureIntent())
+//                    requestScreenCaptureIntent();
+//
+//                if(hasPermission()) {
+//                    startControllerService();
+//                }
+//                else{
+//                    requestPermissions();
+//                    requestScreenCaptureIntent();
+//                }
             }
         });
 
@@ -215,14 +217,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void shouldStartControllerService() {
-        if (hasPermission()){
-            if(!hasCaptureIntent())
-                requestScreenCaptureIntent();
-            else
-                startControllerService();
+        if(hasCaptureIntent())
+            requestScreenCaptureIntent();
+
+        if(hasPermission()) {
+            startControllerService();
         }
         else{
             requestPermissions();
+            if(hasCaptureIntent())
+                requestScreenCaptureIntent();
 
         }
     }
@@ -269,6 +273,11 @@ public class MainActivity extends AppCompatActivity {
 
         controller.putExtra(Intent.EXTRA_INTENT, mScreenCaptureIntent);
 
+        if(mMode == MyUtils.MODE_STREAMING) {
+            Bundle bundle = new Bundle();
+            bundle.putSerializable(MyUtils.STREAM_PROFILE, mStreamProfile);
+            controller.putExtras(bundle);
+        }
         startService(controller);
 
         finish();
@@ -305,6 +314,11 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         return false;
+    }
+
+    public void setStreamProfile(StreamProfile streamProfile) {
+        this.mStreamProfile = streamProfile;
+
     }
 }
 

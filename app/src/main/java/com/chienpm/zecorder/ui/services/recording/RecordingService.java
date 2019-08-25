@@ -242,6 +242,7 @@ public class RecordingService extends BaseService {
                     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     intent.setAction(MyUtils.ACTION_OPEN_VIDEO_MANAGER_ACTIVITY);
                     startActivity(intent);
+
                 }
             }
         }).start();
