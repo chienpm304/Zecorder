@@ -12,6 +12,7 @@ import androidx.preference.PreferenceScreen;
 import android.util.Log;
 
 import com.chienpm.zecorder.R;
+import com.chienpm.zecorder.ui.services.ControllerService;
 import com.chienpm.zecorder.ui.services.recording.RecordingControllerService;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 
@@ -100,7 +101,7 @@ public class SettingFragment extends PreferenceFragmentCompat implements SharedP
     }
 
     private void requestUpdateSetting(int key) {
-        Intent intent = new Intent(getActivity(), RecordingControllerService.class);
+        Intent intent = new Intent(getActivity(), ControllerService.class);
         intent.setAction(MyUtils.ACTION_UPDATE_SETTING);
         intent.putExtra(MyUtils.ACTION_UPDATE_SETTING, key);
         getActivity().startService(intent);

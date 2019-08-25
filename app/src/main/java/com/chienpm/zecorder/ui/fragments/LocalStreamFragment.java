@@ -22,7 +22,11 @@ import android.widget.EditText;
 import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.ui.activities.MainActivity;
 import com.chienpm.zecorder.ui.activities.StreamingActivity;
+import com.chienpm.zecorder.ui.services.ControllerService;
+import com.chienpm.zecorder.ui.services.recording.RecordingControllerService;
+import com.chienpm.zecorder.ui.services.recording.RecordingService;
 import com.chienpm.zecorder.ui.services.streaming.StreamingControllerService;
+import com.chienpm.zecorder.ui.services.streaming.StreamingService;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputLayout;
@@ -160,17 +164,18 @@ public class LocalStreamFragment extends Fragment {
                 mEdUrl.requestFocus();
             }
             else{
-//                if(MyUtils.isRunningStreamServiceServices(getContext(), StreamingControllerService.class)){
-//                   //donothing
-//                   //update ..
-//                }
-//                else{
-//                    if(mActivity.hasPermission()){
-//                        startStreamingControllerService();
-//                    }
-//                    else
-//                        mActivity.requestPermissions();
-//                }
+                if(mActivity.isMyServiceRunning(RecordingService.class))
+                {
+                    MyUtils.showSnackBarNotification(mViewRoot, "You are in RECORDING Mode. Please close Recording controoller", Snackbar.LENGTH_INDEFINITE);
+                    return;
+                }
+                if(mActivity.isMyServiceRunning(ControllerService.class)){
+                    MyUtils.showSnackBarNotification(mViewRoot,"Streaming service is running!", Snackbar.LENGTH_LONG);
+                    return;
+                }
+                mActivity.mMode = MyUtils.MODE_RECORDING;
+                mActivity.shouldStartControllerService();
+                //check connection
             }
         }
     };

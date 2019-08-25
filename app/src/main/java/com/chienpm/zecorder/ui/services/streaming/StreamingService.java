@@ -20,13 +20,15 @@ import android.widget.Toast;
 import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.controllers.encoder.RenderUtil.CustomDecorator;
 import com.chienpm.zecorder.controllers.streaming.StreamProfile;
+import com.chienpm.zecorder.ui.services.BaseService;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 import com.takusemba.rtmppublisher.Publisher;
 import com.takusemba.rtmppublisher.PublisherListener;
 
 import java.util.ArrayList;
+import java.util.Base64;
 
-public class StreamingService extends Service implements PublisherListener {
+public class StreamingService extends BaseService implements PublisherListener {
     private static final boolean DEBUG = false;	// TODO set false on release
     public static final String KEY_NOTIFY_MSG = "stream service notify";
 
@@ -161,6 +163,16 @@ public class StreamingService extends Service implements PublisherListener {
         Log.d(TAG, "onBindStream: "+ mScreenCaptureIntent);
         Log.d(TAG, "onBindStream: "+ mStreamProfile.toString());
         return mIBinder;
+    }
+
+    @Override
+    public void startPerformService() {
+        startStreaming();
+    }
+
+    @Override
+    public void stopPerformService() {
+        stopStreaming();
     }
 
     public void startStreaming() {

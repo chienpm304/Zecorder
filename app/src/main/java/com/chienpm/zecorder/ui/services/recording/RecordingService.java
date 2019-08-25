@@ -7,29 +7,38 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.hardware.display.DisplayManager;
+import android.media.MediaMetadataRetriever;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
+import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
+import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Size;
 import android.view.Display;
+import android.widget.Toast;
 
 import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.controllers.encoder.MediaAudioEncoder;
 import com.chienpm.zecorder.controllers.encoder.MediaEncoder;
 import com.chienpm.zecorder.controllers.encoder.MediaMuxerWrapper;
 import com.chienpm.zecorder.controllers.encoder.MediaScreenEncoder;
+import com.chienpm.zecorder.data.database.VideoDatabase;
+import com.chienpm.zecorder.data.entities.Video;
+import com.chienpm.zecorder.ui.activities.MainActivity;
+import com.chienpm.zecorder.ui.services.BaseService;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 import com.chienpm.zecorder.controllers.settings.SettingManager;
 import com.chienpm.zecorder.controllers.settings.VideoSetting;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import com.chienpm.zecorder.controllers.encoder.RenderUtil.*;
-public class RecordingService extends Service {
+public class RecordingService extends BaseService {
     private static final boolean DEBUG = false;	// TODO set false on release
     private final IBinder mIBinder = new RecordingBinder();
 
@@ -42,6 +51,7 @@ public class RecordingService extends Service {
     private MediaMuxerWrapper mMuxer;
     private static final Object sSync = new Object();
     private VideoSetting mCurrentVideoSetting;
+    private VideoSetting mResultVideo;
 
     public class RecordingBinder extends Binder{
         public RecordingService getService(){
@@ -91,6 +101,19 @@ public class RecordingService extends Service {
         Log.d(TAG, "onBind: "+ mScreenCaptureIntent);
         return mIBinder;
     }
+
+    @Override
+    public void startPerformService() {
+        startRecording();
+    }
+
+    @Override
+    public void stopPerformService() {
+        VideoSetting v = stopRecording();
+        mResultVideo = v;
+    }
+
+    public VideoSetting getResultVideo(){return mResultVideo;}
 
     public void startRecording() {
         synchronized (sSync) {
@@ -198,6 +221,35 @@ public class RecordingService extends Service {
         }
         return mCurrentVideoSetting;
     }
+
+    public void saveVideoToDatabase() {
+        String outputFile = mResultVideo.getOutputPath();
+        if(TextUtils.isEmpty(outputFile))
+            return;
+        MyUtils.toast(getApplicationContext(), "Recording Stopped"+outputFile, Toast.LENGTH_LONG);
+
+        final Video mVideo = MyUtils.tryToExtractVideoFile(mResultVideo);
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if(mVideo !=null){
+                    Log.d(TAG, "onSaveVideo: "+mVideo.toString());
+                    synchronized (mVideo) {
+                        VideoDatabase.getInstance(getApplicationContext()).getVideoDao().insertVideo(mVideo);
+                    }
+                    Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    intent.setAction(MyUtils.ACTION_OPEN_VIDEO_MANAGER_ACTIVITY);
+                    startActivity(intent);
+                }
+            }
+        }).start();
+    }
+
+
+
+
 
     private static final MediaEncoder.MediaEncoderListener mMediaEncoderListener = new MediaEncoder.MediaEncoderListener() {
         @Override

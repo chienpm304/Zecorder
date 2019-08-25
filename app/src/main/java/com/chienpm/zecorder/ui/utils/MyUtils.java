@@ -4,6 +4,8 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.media.MediaMetadataRetriever;
+import android.net.Uri;
 import android.os.Environment;
 import android.text.Editable;
 import android.util.Base64;
@@ -13,6 +15,8 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
+import com.chienpm.zecorder.controllers.settings.VideoSetting;
+import com.chienpm.zecorder.data.entities.Video;
 import com.chienpm.zecorder.ui.services.sync.SyncService;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -40,6 +44,9 @@ public class MyUtils {
     public static final String DRIVE_MASTER_FOLDER = "Zecorder";
     public static final String STREAM_PROFILE = "Stream_Profile";
     public static final String ACTION_NOTIFY_FROM_STREAM_SERVICE = "ACTION_NOTIFY_FROM_STREAM_SERVICE";
+    public static final String KEY_CAMERA_AVAILABLE = "KEY_CAMERA_AVAILABLE";
+    public static final String KEY_CONTROLlER_MODE = "KEY_CONTROLLER_MODE";
+    public static final String ACTION_INIT_CONTROLLER = "ACTION INIT CONTROLLER";
     private static final String TAG = "chienpm_utils";
     public static final String MODE_STREAMING = "MODE STREAMING";
     public static final String MODE_RECORDING = "MODE RECORDING";
@@ -187,5 +194,34 @@ public class MyUtils {
     public static boolean isValidStreamUrlFormat(String url) {
         Matcher matcher = domainPattern.matcher(url);
         return matcher.find();
+    }
+
+    public static Video tryToExtractVideoFile(VideoSetting videoSetting) {
+        Video mVideo = null;
+        try {
+            File file = new File(Uri.parse(videoSetting.getOutputPath()).getPath());
+            long size = file.length();
+            String title = file.getName();
+
+            int bitrate = videoSetting.getBirate();
+            int fps = videoSetting.getFPS();
+            int width = videoSetting.getWidth();
+            int height = videoSetting.getHeight();
+            String localPath = videoSetting.getOutputPath();
+
+            MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+            mmr.setDataSource(file.getAbsolutePath());
+
+            long duration = Long.parseLong(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
+            mmr.release();
+
+            mVideo = new Video(title, duration, bitrate, fps, width, height, size, localPath, 0, "", "");
+            Log.d(TAG, "tryToExtractVideoFile: size: "+mVideo.toString());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.d(TAG, "tryToExtractVideoFile: error-"+ e.getMessage());
+        }
+        return mVideo;
     }
 }

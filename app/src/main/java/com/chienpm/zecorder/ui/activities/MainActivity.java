@@ -14,6 +14,8 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
 import com.chienpm.zecorder.ui.fragments.LocalStreamFragment;
+import com.chienpm.zecorder.ui.services.ControllerService;
+import com.chienpm.zecorder.ui.services.streaming.StreamingService;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 import androidx.core.app.ActivityCompat;
@@ -26,7 +28,6 @@ import android.widget.ImageView;
 
 import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.ui.adapters.ViewPaperAdapter;
-import com.chienpm.zecorder.ui.fragments.LiveStreamFragment;
 import com.chienpm.zecorder.ui.fragments.SettingFragment;
 import com.chienpm.zecorder.ui.fragments.VideoManagerFragment;
 import com.chienpm.zecorder.ui.services.recording.RecordingControllerService;
@@ -114,14 +115,23 @@ public class MainActivity extends AppCompatActivity {
         mImgRec.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(isMyServiceRunning(RecordingControllerService.class)){
+                if(isMyServiceRunning(StreamingService.class))
+                {
+                    MyUtils.showSnackBarNotification(mImgRec, "You are in Streaming Mode. Please close stream controoller", Snackbar.LENGTH_INDEFINITE);
+                    return;
+                }
+                if(isMyServiceRunning(ControllerService.class)){
                     MyUtils.showSnackBarNotification(mImgRec,"Recording service is running!", Snackbar.LENGTH_LONG);
                     return;
                 }
+                mMode = MyUtils.MODE_RECORDING;
+
+//                shouldStartControllerService();
                 if(mScreenCaptureIntent == null || mScreenCaptureResultCode == MyUtils.RESULT_CODE_FAILED)
                     requestScreenCaptureIntent();
+
                 if(hasPermission()) {
-                    startRecordingControllerService();
+                    startControllerService();
                 }
                 else{
                     requestPermissions();
@@ -195,8 +205,7 @@ public class MainActivity extends AppCompatActivity {
                             return;
                         }
                     }
-
-                    shouldStartRecordingControllerSerivce();
+                    shouldStartControllerService();
                 }
                 break;
             }
@@ -205,11 +214,21 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void shouldStartRecordingControllerSerivce() {
-        if (hasPermission() && !isMyServiceRunning(RecordingControllerService.class)) {
-            MyUtils.showSnackBarNotification(mImgRec, "Permissions Granted!", Snackbar.LENGTH_SHORT);
-            startRecordingControllerService();
+    public void shouldStartControllerService() {
+        if (hasPermission()){
+            if(!hasCaptureIntent())
+                requestScreenCaptureIntent();
+            else
+                startControllerService();
         }
+        else{
+            requestPermissions();
+
+        }
+    }
+
+    private boolean hasCaptureIntent() {
+        return mScreenCaptureIntent == null || mScreenCaptureResultCode == MyUtils.RESULT_CODE_FAILED;
     }
 
     @Override
@@ -231,7 +250,7 @@ public class MainActivity extends AppCompatActivity {
                 mScreenCaptureIntent.putExtra(MyUtils.SCREEN_CAPTURE_INTENT_RESULT_CODE, resultCode);
                 mScreenCaptureResultCode = resultCode;
 
-                shouldStartRecordingControllerSerivce();
+                shouldStartControllerService();
             }
         }
         else{
@@ -239,17 +258,18 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void startRecordingControllerService() {
+    private void startControllerService() {
+        Intent controller = new Intent(MainActivity.this, ControllerService.class);
 
-        Intent recordingControllerService = new Intent(MainActivity.this, RecordingControllerService.class);
+        controller.setAction(MyUtils.ACTION_INIT_CONTROLLER);
 
-        if(checkCameraHardware(this)){
-            recordingControllerService.setAction("Camera_Available");
-        }
+        controller.putExtra(MyUtils.KEY_CAMERA_AVAILABLE, checkCameraHardware(this));
 
-        recordingControllerService.putExtra(Intent.EXTRA_INTENT, mScreenCaptureIntent);
+        controller.putExtra(MyUtils.KEY_CONTROLlER_MODE, mMode);
 
-        startService(recordingControllerService);
+        controller.putExtra(Intent.EXTRA_INTENT, mScreenCaptureIntent);
+
+        startService(controller);
 
         finish();
     }
@@ -277,7 +297,7 @@ public class MainActivity extends AppCompatActivity {
                                 && mScreenCaptureResultCode != MyUtils.RESULT_CODE_FAILED;
     }
 
-    private boolean isMyServiceRunning(Class<?> serviceClass) {
+    public boolean isMyServiceRunning(Class<?> serviceClass) {
         ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
         for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
             if (serviceClass.getName().equals(service.service.getClassName())) {
