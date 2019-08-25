@@ -8,7 +8,7 @@ import android.util.Log;
 
 import net.butterflytv.rtmp_client.RTMPMuxer;
 
-class Muxer {
+public class Muxer {
 
     private static final int MSG_OPEN = 0;
     private static final int MSG_CLOSE = 1;
@@ -28,7 +28,7 @@ class Muxer {
         this.listener = listener;
     }
 
-    Muxer() {
+    public Muxer() {
         final Handler uiHandler = new Handler(Looper.getMainLooper());
         HandlerThread handlerThread = new HandlerThread("Muxer");
         handlerThread.start();
@@ -112,7 +112,7 @@ class Muxer {
         });
     }
 
-    void open(String url, int width, int height) {
+    public void open(String url, int width, int height) {
         Log.i(TAG, "open (obtain Msg): "+url);
         Message message = handler.obtainMessage(MSG_OPEN, url);
         message.arg1 = width;
@@ -135,11 +135,11 @@ class Muxer {
         handler.sendMessage(message);
     }
 
-    void close() {
+    public void close() {
         handler.sendEmptyMessage(MSG_CLOSE);
     }
 
-    boolean isConnected() {
+    public boolean isConnected() {
         return rtmpMuxer.isConnected();
     }
 }

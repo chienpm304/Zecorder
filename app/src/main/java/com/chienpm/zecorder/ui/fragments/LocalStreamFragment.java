@@ -13,6 +13,7 @@ import androidx.fragment.app.Fragment;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,6 +32,7 @@ import com.chienpm.zecorder.ui.services.streaming.StreamingService;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputLayout;
+import com.takusemba.rtmppublisher.Muxer;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -47,11 +49,13 @@ import com.google.android.material.textfield.TextInputLayout;
     */
 
 public class LocalStreamFragment extends Fragment {
+    private static final String TAG = "LocalStreamFragment";
     private final MainActivity mActivity;
     private OnFragmentInteractionListener mListener;
     private View mViewRoot;
     private EditText mEdUrl, mEdLog;
     private Button mBtnConnect;
+    private boolean isTested = false;
 
 
     public LocalStreamFragment(MainActivity mainActivity) {
@@ -174,12 +178,58 @@ public class LocalStreamFragment extends Fragment {
                     MyUtils.showSnackBarNotification(mViewRoot,"Streaming service is running!", Snackbar.LENGTH_LONG);
                     return;
                 }
-                mActivity.mMode = MyUtils.MODE_RECORDING;
-                StreamProfile mStreamProfile = new StreamProfile("", mEdUrl.getText().toString(), "");
-                mActivity.setStreamProfile(mStreamProfile);
-                mActivity.shouldStartControllerService();
-                //check connection
+                if(isTested){
+                    mActivity.mMode = MyUtils.MODE_RECORDING;
+                    StreamProfile mStreamProfile = new StreamProfile("", mEdUrl.getText().toString(), "");
+                    mActivity.setStreamProfile(mStreamProfile);
+                    mActivity.shouldStartControllerService();
+                    mBtnConnect.setText("Connected");
+                    mBtnConnect.setEnabled(false);
+                    mEdUrl.setEnabled(false);
+                }
+                else{
+                    mBtnConnect.setText("Testing");
+                    if(testStreamUrlConnection(url)){
+                        isTested = true;
+                        mBtnConnect.setText("Connect");
+                        MyUtils.showSnackBarNotification(mViewRoot, "Tested: URL SUCCEED", Snackbar.LENGTH_LONG);
+
+                    }
+                    else{
+                        isTested = false;
+                        mBtnConnect.setText("Test");
+                        MyUtils.showSnackBarNotification(mViewRoot, "Tested: URL FAILED", Snackbar.LENGTH_LONG);
+                    }
+                }
             }
         }
     };
+
+    private boolean testStreamUrlConnection(String url) {
+        int t = 0;
+        Muxer muxer = new Muxer();
+        muxer.open(url, 1280, 720);
+        while (!muxer.isConnected()){
+            try {
+                t+=100;
+                Thread.sleep(100);
+                if(t>5000)
+                    break;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        if(muxer.isConnected()) {
+            Log.i(TAG, "test Streaming: connected");
+            muxer.close();
+            return true;
+        }
+        else{
+            Log.i(TAG, "test Streaming: failed coz muxer is not connected");
+            muxer.close();
+            return false;
+        }
+    }
+
 }
