@@ -49,7 +49,7 @@ public class SyncService extends Service {
     public static final String PARAM_UPLOAD_VIDEO = "param_upload_video";
     public static final String PARAM_DOWNLOAD_VIDEO = "param_download_video";
     public static final String PARAM_RESULT_VIDEO = "param_result_video";
-    public static final String PARAM_GOOGLE_SIGNIN_ACCOUNT = "parame_google_signin_account";
+    public static final String PARAM_GOOGLE_SIGNIN_ACCOUNT = "param_google_signin_account";
     public static final String PARAM_SYNCING_VIDEOS = "param_syncing_videos";
     public static final String ACTION_FROM_NOTIFICATION = "sync_action_from_notification";
 

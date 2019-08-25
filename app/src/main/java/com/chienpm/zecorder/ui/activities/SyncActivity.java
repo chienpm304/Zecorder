@@ -6,9 +6,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.PixelCopy;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
@@ -33,6 +36,7 @@ import com.chienpm.zecorder.ui.services.sync.SyncService;
 import com.chienpm.zecorder.ui.utils.DriveServiceHelper;
 import com.chienpm.zecorder.ui.utils.GoogleDriveFileHolder;
 import com.chienpm.zecorder.ui.utils.MyUtils;
+import com.chienpm.zecorder.ui.utils.NetworkUtils;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -68,6 +72,7 @@ public class SyncActivity extends AppCompatActivity {
 
     private SyncServiceReceiver mSyncServiceReceiver;
     private ArrayList<Video> mSyncingVideos;
+    private NetworkChangeReceiver mNetworkChangeReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,8 +82,6 @@ public class SyncActivity extends AppCompatActivity {
 
         initView();
 
-        registerSyncServiceReceiver();
-
         handleIntentFromNotification(getIntent());
     }
 
@@ -87,11 +90,17 @@ public class SyncActivity extends AppCompatActivity {
             String action = intent.getAction();
             if(!TextUtils.isEmpty(action)){
                 if(action.equals(SyncService.ACTION_FROM_NOTIFICATION)){
-                    ArrayList<Video> syncingVideo = intent.getParcelableArrayListExtra(SyncService.PARAM_SYNCING_VIDEOS);
-                    mSyncingVideos = syncingVideo;
+                    mSyncingVideos = intent.getParcelableArrayListExtra(SyncService.PARAM_SYNCING_VIDEOS);
                 }
             }
         }
+    }
+
+    private void registerNetworkChangeReceiver() {
+        mNetworkChangeReceiver = new NetworkChangeReceiver();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+        registerReceiver(mNetworkChangeReceiver, filter);
     }
 
     private void registerSyncServiceReceiver() {
@@ -108,6 +117,16 @@ public class SyncActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
+        if(!NetworkUtils.isConnected(this)){
+            mProgressBar.setVisibility(View.GONE);
+            mTvEmpty.setText("Found Network problem. Please check!");
+            return;
+        }
+
+        checkAuthentication();
+    }
+
+    private void checkAuthentication() {
         Set<Scope> requiredScopes = new HashSet<>(2);
         requiredScopes.add(new Scope(DriveScopes.DRIVE_FILE));
         requiredScopes.add(new Scope(DriveScopes.DRIVE_APPDATA));
@@ -130,6 +149,8 @@ public class SyncActivity extends AppCompatActivity {
         super.onResume();
         if(mSyncServiceReceiver == null)
             registerSyncServiceReceiver();
+        if(mNetworkChangeReceiver == null)
+            registerNetworkChangeReceiver();
     }
 
     @Override
@@ -139,6 +160,10 @@ public class SyncActivity extends AppCompatActivity {
             unregisterReceiver(mSyncServiceReceiver);
             mSyncServiceReceiver = null;
         }
+        if(mNetworkChangeReceiver != null){
+            unregisterReceiver(mNetworkChangeReceiver);
+            mNetworkChangeReceiver = null;
+        }
     }
 
     @Override
@@ -147,6 +172,9 @@ public class SyncActivity extends AppCompatActivity {
         if(mSyncServiceReceiver!=null) {
             unregisterReceiver(mSyncServiceReceiver);
             mSyncServiceReceiver = null;
+        }
+        if(mNetworkChangeReceiver != null){
+            unregisterReceiver(mNetworkChangeReceiver);
         }
     }
 
@@ -175,6 +203,7 @@ public class SyncActivity extends AppCompatActivity {
                 }
                 else{
                     MyUtils.showSnackBarNotification(mTvEmpty, "You must grant all permission to sync data. Please try again!", Snackbar.LENGTH_LONG);
+                    mProgressBar.setVisibility(View.GONE);
                     mBtnTryAgain.setVisibility(View.VISIBLE);
                 }
                 break;
@@ -204,16 +233,17 @@ public class SyncActivity extends AppCompatActivity {
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        Log.e(TAG, "Unable to sign in.", e);
+                        Log.e(TAG, "Unable to sign in. Try again", e);
+
                     }
                 });
     }
 
     private void shouldStartSyncService(GoogleSignInAccount googleSignInAccount) {
-        if(!MyUtils.isRunningServices(getApplicationContext(), SyncService.class)){
+        if(!MyUtils.isRunningSyncServices(getApplicationContext(), SyncService.class)){
             startSynchronizeService(googleSignInAccount);
         }else{
-            MyUtils.showSnackBarNotification(mTvEmpty, "Synchronize Serivces is running!", Snackbar.LENGTH_SHORT);
+            MyUtils.showSnackBarNotification(mTvEmpty, "Synchronize Services is running!", Snackbar.LENGTH_SHORT);
         }
     }
 
@@ -402,16 +432,16 @@ public class SyncActivity extends AppCompatActivity {
     private void fetchVideosFromDrive() {
         String folderId = getMasterFolderId();
         if(TextUtils.isEmpty(folderId)){
-            MyUtils.showSnackBarNotification(mTvEmpty, "Folder Id is empty/ try again", Snackbar.LENGTH_LONG);
+            MyUtils.showSnackBarNotification(mTvEmpty, "Folder Id is empty, try again", Snackbar.LENGTH_INDEFINITE);
             return;
         }
 
-          mDriveServiceHelper.queryFiles(folderId)
+        mDriveServiceHelper.queryFiles(folderId)
                 .addOnSuccessListener(new OnSuccessListener<List<GoogleDriveFileHolder>>() {
                     @Override
                     public void onSuccess(List<GoogleDriveFileHolder> files) {
                         Gson gson = new Gson();
-                        Log.d(TAG, "OnViewFolder: onSuccess: " + gson.toJson(files));
+                        Log.d(TAG, "OnQueryFileFromDrive: onSuccess: " + gson.toJson(files));
 
                         ArrayList<Video> driveVideos = Video.createTempVideoFromGoogleDriveData(files);
 
@@ -421,12 +451,15 @@ public class SyncActivity extends AppCompatActivity {
                             mSyncAdapter.setSyncingVideos(mSyncingVideos);
                             mSyncingVideos.clear();
                         }
+                        updateUI();
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        Log.d(TAG, "OnViewFolder: onFailure: "+e.getMessage());
+                        Log.i(TAG, "OnQueryFileFromDrive: onFailure: "+e.getMessage());
+                        updateUI();
+                        MyUtils.showSnackBarNotification(mTvEmpty, "Cannot sync video to drive. Please try later!", Snackbar.LENGTH_INDEFINITE);
                     }
                 });
 
@@ -471,6 +504,28 @@ public class SyncActivity extends AppCompatActivity {
                         break;
 
 
+                }
+            }
+        }
+    }
+
+    public class NetworkChangeReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(final Context context, final Intent intent) {
+
+            int status = NetworkUtils.getConnectivityStatusString(context);
+
+            Log.e("NetworkReceiver", "Sulod sa network reciever");
+
+            if ("android.net.conn.CONNECTIVITY_CHANGE".equals(intent.getAction())) {
+                if (status == NetworkUtils.NETWORK_STATUS_NOT_CONNECTED) {
+                    MyUtils.showSnackBarNotification(mTvEmpty, "Disconnected from Network. Please check and try again!", Snackbar.LENGTH_INDEFINITE);
+
+                } else{
+                    if(mSyncAdapter.isEmpty())
+                        checkAuthentication();
+//                    new ResumeForceExitPause(context).execute();
                 }
             }
         }

@@ -49,7 +49,7 @@ public class StreamingService extends Service implements PublisherListener {
 
     private StreamProfile mStreamProfile;
 
-    private String url = "rtmp://localhost:1935/live/key";
+    private String url = "rtmp://127.0.0.1/live/key";
 //    private String url = "rtmp://10.199.220.239/live/key";
 
 

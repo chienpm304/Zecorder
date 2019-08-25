@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.os.Environment;
+import android.text.Editable;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
@@ -22,6 +23,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class MyUtils {
     public static final int RESULT_CODE_FAILED = -999999;
@@ -38,6 +41,8 @@ public class MyUtils {
     public static final String STREAM_PROFILE = "Stream_Profile";
     public static final String ACTION_NOTIFY_FROM_STREAM_SERVICE = "ACTION_NOTIFY_FROM_STREAM_SERVICE";
     private static final String TAG = "chienpm_utils";
+    public static final String MODE_STREAMING = "MODE STREAMING";
+    public static final String MODE_RECORDING = "MODE RECORDING";
 
     @NonNull
     public static String createFileName(@NonNull String ext) {
@@ -147,7 +152,7 @@ public class MyUtils {
         }
     }
 
-    public static boolean isRunningServices(Context context, Class<SyncService> serviceClass) {
+    public static boolean isRunningSyncServices(Context context, Class<SyncService> serviceClass) {
         ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
             if (serviceClass.getName().equals(service.service.getClassName())) {
@@ -155,5 +160,32 @@ public class MyUtils {
             }
         }
         return false;
+    }
+    public static boolean isRunningStreamServiceServices(Context context, Class<SyncService> serviceClass) {
+        ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static final String IP_ADDRESS_PATTERN =
+            "^rtmp://"+
+            "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+            "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+            "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+            "([01]?\\d\\d?|2[0-4]\\d|25[0-5])" +
+            "/\\S" +
+            "/\\S$";
+    static String DOMAIN_PATTERN = "^rtmp://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]/[a-zA-Z0-9_.]*[a-zA-Z0-9_.]/[a-zA-Z0-9_.]*[a-zA-Z0-9_.]";
+
+    public static final Pattern ipPattern = Pattern.compile(IP_ADDRESS_PATTERN);
+    public static final Pattern domainPattern = Pattern.compile(DOMAIN_PATTERN);
+
+    public static boolean isValidStreamUrlFormat(String url) {
+        Matcher matcher = domainPattern.matcher(url);
+        return matcher.find();
     }
 }

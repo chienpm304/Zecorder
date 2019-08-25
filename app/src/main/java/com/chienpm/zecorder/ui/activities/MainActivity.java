@@ -12,6 +12,8 @@ import android.provider.Settings;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import com.chienpm.zecorder.ui.fragments.LocalStreamFragment;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 import androidx.core.app.ActivityCompat;
@@ -42,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
             Manifest.permission.RECORD_AUDIO,
             Manifest.permission.WRITE_EXTERNAL_STORAGE
     };
+    public String mMode = MyUtils.MODE_RECORDING;
 
     private Intent mScreenCaptureIntent = null;
 
@@ -159,7 +162,8 @@ public class MainActivity extends AppCompatActivity {
     private void setupViewPaper() {
         mAdapter = new ViewPaperAdapter(getSupportFragmentManager());
         mAdapter.addFragment(new VideoManagerFragment(), "Video");
-        mAdapter.addFragment(new LiveStreamFragment(), "Live");
+//        mAdapter.addFragment(new LiveStreamFragment(), "Live");
+        mAdapter.addFragment(new LocalStreamFragment(this), "Stream");
         mAdapter.addFragment(new SettingFragment(), "Setting");
         mViewPager.setAdapter(mAdapter);
     }
@@ -262,7 +266,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
-    private boolean hasPermission(){
+    public boolean hasPermission(){
         int granted = PackageManager.PERMISSION_GRANTED;
 
         return ContextCompat.checkSelfPermission(this, mPermission[0]) == granted

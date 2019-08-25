@@ -36,5 +36,8 @@
     <string name="file_create_error">File create error</string>
     <string name="pref_drive_folderId">pref_drive_folderId</string>
 
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
 
 </resources>

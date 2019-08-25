@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context=".ui.fragments.LocalStreamFragment">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="16dp"
+        >
+
+        <TextView
+            android:id="@+id/tv_url"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Stream URL"
+            android:textColor="@color/BLACK"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/til_url"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
+            android:layout_width="0dp"
+            android:layout_height="56dp"
+            android:hint="Stream URL"
+            android:layout_marginTop="16dp"
+            android:layout_marginRight="8dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_url"
+            app:layout_constraintEnd_toStartOf="@id/btn_connect"
+            >
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/ed_url"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:lines="1"
+                android:maxLines="1" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_connect"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="56dp"
+            android:backgroundTint="@color/color_facebook"
+            android:text="Connect"
+            android:layout_marginTop="16dp"
+            android:textColor="@color/WHITE"
+            app:layout_constraintTop_toBottomOf="@id/tv_url"
+            app:layout_constraintEnd_toEndOf="parent"
+            />
+
+        <TextView
+            android:id="@+id/tv_log"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Status"
+            android:textColor="@color/BLACK"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/til_url" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/til_log"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="16dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_log"
+            app:layout_constraintBottom_toBottomOf="parent"
+            >
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/ed_log"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="top"
+                android:inputType="textCapSentences|textNoSuggestions|textMultiLine"
+                android:maxLines="1000"
+                android:minLines="4"
+                android:scrollbars="vertical"
+                android:enabled="true"
+                android:isScrollContainer="true"
+                android:editable="false"
+                android:text="chien\n
+                awf\n
+                asdf\n
+                fasf\n
+                asdf\n
+                asdfas\n
+                flk\n
+                jelk\n
+                ajwk\n
+                jfl\n
+                kjl\n
+                wjeflk\n
+                wjkef\n
+                jawef\n
+                as\n
+                df\n
+                ka\n
+                js\n
+                fa\n
+                sl\n
+                kf\n
+                jw\n
+                fa\n
+                we\n
+                f\n
+                3a\n
+                sd\n
+                fa\n
+                sdf\n
+                fa\n
+                sf\n
+                as\n
+                df\n
+                as\n
+                df\n
+                asf\n
+                asf\n
+                asdf\n
+                asf\n
+                as\n
+                df\n
+                as\n
+                a\n
+                sf\n
+                as\n
+                df\n
+                as\n
+                a\n
+                sf\n
+                as\n
+                df\n
+                as\n
+                a\n
+                sf\n
+                as\n
+                df\n
+                as\n
+                a\n
+                sf\n
+                as\n
+                df\n
+                as\n
+                a\n
+                sf\nas\n
+                df\n
+                as\n
+                a\n
+                sf\n
+                as\n
+                df\n
+                as\n
+                a\n
+                sf\nas\n
+                df\n
+                as\n
+                a\n
+                sf\nas\n
+                df\n
+                as\n
+                a\n
+                sf\nas\n
+                df\n
+                as\n
+                a\n
+                sf\nas\n
+                df\n
+                as\n
+                a\n
+                sf\n
+                asfdasfdasdf\n
+                asdf\n
+                asdf\n
+                asdfasdfasf\n
+                asfasklfj\nfasdflkasf
+                fasdflkjea\n
+                weoiurweruo\n
+                \n"
+                />
+
+        </com.google.android.material.textfield.TextInputLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+</FrameLayout>
