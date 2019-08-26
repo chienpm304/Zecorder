@@ -1,11 +1,5 @@
 package com.chienpm.zecorder.ui.activities;
 
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-
 import android.Manifest;
 import android.app.ActivityManager;
 import android.content.Context;
@@ -21,8 +15,13 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
 import com.chienpm.zecorder.R;
-import com.chienpm.zecorder.controllers.streaming.StreamProfile;
 import com.chienpm.zecorder.ui.services.recording.RecordingControllerService;
 import com.chienpm.zecorder.ui.services.streaming.StreamingControllerService;
 import com.chienpm.zecorder.ui.utils.FacebookUtils;
@@ -31,17 +30,19 @@ import com.facebook.AccessToken;
 import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
 import com.google.android.material.snackbar.Snackbar;
+import com.takusemba.rtmppublisher.helper.StreamProfile;
 
 import org.json.JSONException;
 
+import static com.chienpm.zecorder.ui.utils.MyUtils.DEBUG;
+
 public class StreamingActivity extends AppCompatActivity {
 
-    private static final String TAG = "chienpm_log_stream";
+    private static final String TAG = StreamingActivity.class.getSimpleName();
     private StreamProfile mStreamProfile;
     private View mViewRoot;
     private Button mBtnStartStream, mBtnEndStream;
 
-    final boolean DEBUG = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

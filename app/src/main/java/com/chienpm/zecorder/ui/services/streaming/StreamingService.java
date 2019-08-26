@@ -18,17 +18,17 @@ import android.widget.Toast;
 
 import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.controllers.encoder.RenderUtil.CustomDecorator;
-import com.chienpm.zecorder.controllers.streaming.StreamProfile;
 import com.chienpm.zecorder.ui.services.BaseService;
 import com.chienpm.zecorder.ui.services.ControllerService;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 import com.takusemba.rtmppublisher.Publisher;
 import com.takusemba.rtmppublisher.PublisherListener;
+import com.takusemba.rtmppublisher.helper.StreamProfile;
 
 import java.util.ArrayList;
 
 public class StreamingService extends BaseService implements PublisherListener {
-    private static final boolean DEBUG = false;	// TODO set false on release
+    private static final boolean DEBUG = MyUtils.DEBUG;	// TODO set false on release
     public static final String KEY_NOTIFY_MSG = "stream service notify";
 
     public static final String NOTIFY_MSG_CONNECTION_FAILED = "STREAM CONNECTION FAILED";
@@ -55,19 +55,19 @@ public class StreamingService extends BaseService implements PublisherListener {
     //Implement Publisher listener
     @Override
     public void onStarted() {
-        Log.i(TAG, "onStarted");
+        if(DEBUG) Log.i(TAG, "onStarted");
         notifyStreamControllerAction(NOTIFY_MSG_CONNECTION_STARTED);
     }
 
     @Override
     public void onStopped() {
-        Log.i(TAG, "onStopped");
+        if(DEBUG) Log.i(TAG, "onStopped");
         notifyStreamControllerAction(NOTIFY_MSG_STREAM_STOPPED);
     }
 
     @Override
     public void onDisconnected() {
-        Log.i(TAG, "onDisconnected");
+        if(DEBUG) Log.i(TAG, "onDisconnected");
         notifyStreamControllerAction(NOTIFY_MSG_CONNECTION_DISCONNECTED);
     }
 
@@ -76,7 +76,7 @@ public class StreamingService extends BaseService implements PublisherListener {
         if(mPublisher!=null && mPublisher.isPublishing())
             mPublisher.stopPublishing();
         notifyStreamControllerAction(NOTIFY_MSG_CONNECTION_FAILED);
-        Log.i(TAG, "onFailedToConnect");
+        if(DEBUG) Log.i(TAG, "onFailedToConnect");
         MyUtils.toast(getApplicationContext(), "Streaming Connection Failed", Toast.LENGTH_SHORT);
     }
 
@@ -138,7 +138,7 @@ public class StreamingService extends BaseService implements PublisherListener {
 
     @Override
     public IBinder onBind(Intent intent) {
-        Log.d(TAG, "RecordingService: onBind()");
+        if(DEBUG) Log.i(TAG, "RecordingService: onBind()");
         mScreenCaptureIntent = intent.getParcelableExtra(Intent.EXTRA_INTENT);
         mScreenCaptureResultCode = mScreenCaptureIntent.getIntExtra(MyUtils.SCREEN_CAPTURE_INTENT_RESULT_CODE, MyUtils.RESULT_CODE_FAILED);
 
@@ -162,8 +162,8 @@ public class StreamingService extends BaseService implements PublisherListener {
             throw new RuntimeException("No display found.");
         }
 
-        Log.d(TAG, "onBindStream: "+ mScreenCaptureIntent);
-        Log.d(TAG, "onBindStream: "+ mStreamProfile.toString());
+        if(DEBUG) Log.d(TAG, "onBindStream: "+ mScreenCaptureIntent);
+        if(DEBUG) Log.d(TAG, "onBindStream: "+ mStreamProfile.toString());
         return mIBinder;
     }
 
@@ -174,14 +174,14 @@ public class StreamingService extends BaseService implements PublisherListener {
 
     @Override
     public void stopPerformService() {
-        Log.i(TAG, "stopPerformService: from StreamingService");
+        if(DEBUG) Log.i(TAG, "stopPerformService: from StreamingService");
         stopStreaming();
     }
 
     public void startStreaming() {
         synchronized (sSync) {
             if(mPublisher==null) {
-                if (DEBUG) Log.v(TAG, "startStreaming:");
+                if (DEBUG) Log.i(TAG, "startStreaming:");
                 try {
 
                     mPublisher = new Publisher.Builder()

@@ -25,13 +25,15 @@ package com.chienpm.zecorder.controllers.encoder;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.util.Log;
+
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 
+import static com.chienpm.zecorder.ui.utils.MyUtils.DEBUG;
+
 public abstract class MediaEncoder implements Runnable {
-	private static final boolean DEBUG = false;	// TODO set false on release
-	private static final String TAG = com.serenegiant.media.MediaEncoder.class.getSimpleName();
+	private static final String TAG = MediaEncoder.class.getSimpleName();
 
 	protected static final int TIMEOUT_USEC = 10000;	// 10[msec]
 	protected static final int MSG_FRAME_AVAILABLE = 1;
@@ -167,7 +169,7 @@ public abstract class MediaEncoder implements Runnable {
 	        	}
         	}
         } // end of while
-		if (DEBUG) Log.d(TAG, "Encoder thread exiting");
+		if (DEBUG) Log.i(TAG, "Encoder thread exiting");
         synchronized (mSync) {
         	mRequestStop = true;
             mIsEncoding = false;
@@ -183,7 +185,7 @@ public abstract class MediaEncoder implements Runnable {
 
 	/*package*/
 	public void startRecording() {
-   	if (DEBUG) Log.v(TAG, "startRecording");
+   	if (DEBUG) Log.i(TAG, "startRecording");
 		synchronized (mSync) {
 			mIsEncoding = true;
 			mRequestStop = false;
@@ -211,7 +213,7 @@ public abstract class MediaEncoder implements Runnable {
 
 	/*package*/
 	public void pauseRecording() {
-		if (DEBUG) Log.v(TAG, "pauseRecording");
+		if (DEBUG) Log.i(TAG, "pauseRecording");
 		synchronized (mSync) {
 			if (!mIsEncoding || mRequestStop) {
 				return;
@@ -224,7 +226,7 @@ public abstract class MediaEncoder implements Runnable {
 
 	/*package*/
 	public void resumeRecording() {
-		if (DEBUG) Log.v(TAG, "resumeRecording");
+		if (DEBUG) Log.i(TAG, "resumeRecording");
 		synchronized (mSync) {
 			if (!mIsEncoding || mRequestStop) {
 				return;
@@ -244,7 +246,7 @@ public abstract class MediaEncoder implements Runnable {
      * Release all released objects
      */
     protected void release() {
-		if (DEBUG) Log.d(TAG, "release:");
+		if (DEBUG) Log.i(TAG, "release:");
 		try {
 			mListener.onStopped(this);
 		} catch (final Exception e) {
@@ -274,7 +276,7 @@ public abstract class MediaEncoder implements Runnable {
     }
 
     protected void signalEndOfInputStream() {
-		if (DEBUG) Log.d(TAG, "sending EOS to encoder");
+		if (DEBUG) Log.i(TAG, "sending EOS to encoder");
         // signalEndOfInputStream is only avairable for video encoding with surface
         // and equivalent sending a empty buffer with BUFFER_FLAG_END_OF_STREAM flag.
 //		mMediaCodec.signalEndOfInputStream();	// API >= 18
@@ -343,12 +345,12 @@ LOOP:	while (mIsEncoding) {
                 		break LOOP;		// out of while
                 }
             } else if (encoderStatus == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
-            	if (DEBUG) Log.v(TAG, "INFO_OUTPUT_BUFFERS_CHANGED");
+            	if (DEBUG) Log.i(TAG, "INFO_OUTPUT_BUFFERS_CHANGED");
                 // this should not come when encoding
                 encoderOutputBuffers = mMediaCodec.getOutputBuffers();
 
             } else if (encoderStatus == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-            	if (DEBUG) Log.v(TAG, "INFO_OUTPUT_FORMAT_CHANGED");
+            	if (DEBUG) Log.i(TAG, "INFO_OUTPUT_FORMAT_CHANGED");
             	// this status indicate the output format of codec is changed
                 // this should come only once before actual encoded data
             	// but this status never come on Android4.3 or less
@@ -386,7 +388,7 @@ LOOP:	while (mIsEncoding) {
                 	// but MediaCodec#getOutputFormat can not call here(because INFO_OUTPUT_FORMAT_CHANGED don't come yet)
                 	// therefor we should expand and prepare output format from buffer data.
                 	// This sample is for API>=18(>=Android 4.3), just ignore this flag here
-					if (DEBUG) Log.d(TAG, "drain:BUFFER_FLAG_CODEC_CONFIG");
+					if (DEBUG) Log.i(TAG, "drain:BUFFER_FLAG_CODEC_CONFIG");
 					mBufferInfo.size = 0;
                 }
 

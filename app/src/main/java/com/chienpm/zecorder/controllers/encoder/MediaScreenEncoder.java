@@ -14,6 +14,7 @@ import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 
+import com.chienpm.zecorder.controllers.encoder.RenderUtil.CustomDecorator;
 import com.chienpm.zecorder.controllers.settings.VideoSetting;
 import com.serenegiant.glutils.EGLBase;
 import com.serenegiant.glutils.EglTask;
@@ -21,10 +22,11 @@ import com.serenegiant.glutils.GLDrawer2D;
 
 import java.io.IOException;
 import java.util.List;
-import com.chienpm.zecorder.controllers.encoder.RenderUtil.CustomDecorator;
+
+import static com.chienpm.zecorder.ui.utils.MyUtils.DEBUG;
+
 public class MediaScreenEncoder extends MediaVideoEncoderBase {
-	private static final boolean DEBUG = false;	// TODO set false on release
-	private static final String TAG = "chienpm_record";
+	private static final String TAG = MediaScreenEncoder.class.getSimpleName();
 
 	private static final String MIME_TYPE = MediaFormat.MIMETYPE_VIDEO_AVC;
     private static final int FRAME_RATE = 25;
@@ -108,7 +110,7 @@ public class MediaScreenEncoder extends MediaVideoEncoderBase {
 
 		@Override
 		protected void onStart() {
-		    if (DEBUG) Log.d(TAG,"mScreenCaptureTask#onStart:");
+		    if (DEBUG) Log.i(TAG,"mScreenCaptureTask#onStart:");
 
 		    mDrawer = new GLDrawer2D(true);
 
@@ -126,14 +128,14 @@ public class MediaScreenEncoder extends MediaVideoEncoderBase {
 
 			mEncoderSurface = getEgl().createFromSurface(mSurface);
 
-	    	if (DEBUG) Log.d(TAG,"setup VirtualDisplay");
+	    	if (DEBUG) Log.i(TAG,"setup VirtualDisplay");
 			intervals = (long)(1000f / fps);
 		    display = mMediaProjection.createVirtualDisplay(
 		    	"Capturing Display",
 		    	mWidth, mHeight, mDensity,
 		    	DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
 		    	mSourceSurface, null, mHandler);
-			if (DEBUG) Log.v(TAG,  "screen capture loop:display=" + display);
+			if (DEBUG) Log.i(TAG,  "screen capture loop:display=" + display);
 
 			queueEvent(mDrawTask);
 		}
@@ -164,12 +166,12 @@ public class MediaScreenEncoder extends MediaVideoEncoderBase {
 				mEncoderSurface = null;
 			}
 			makeCurrent();
-			if (DEBUG) Log.v(TAG, "mScreenCaptureTask#onStop:");
+			if (DEBUG) Log.i(TAG, "mScreenCaptureTask#onStop:");
 			if (display != null) {
-				if (DEBUG) Log.v(TAG,  "release VirtualDisplay");
+				if (DEBUG) Log.i(TAG,  "release VirtualDisplay");
 				display.release();
 			}
-			if (DEBUG) Log.v(TAG,  "tear down MediaProjection");
+			if (DEBUG) Log.i(TAG,  "tear down MediaProjection");
 		    if (mMediaProjection != null) {
 	            mMediaProjection.stop();
 	            mMediaProjection = null;
@@ -230,7 +232,7 @@ public class MediaScreenEncoder extends MediaVideoEncoderBase {
 
 					RenderUtil.renderTextures(mDecors);
 					mEncoderSurface.swap();
-					Log.d(TAG, "run check mTexId: "+mTexId);
+					if(DEBUG) Log.d(TAG, "run check mTexId: "+mTexId);
 					makeCurrent();
 //					GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 //					GLES20.glFlush();

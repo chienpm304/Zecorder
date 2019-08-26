@@ -22,7 +22,6 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.chienpm.zecorder.R;
-import com.chienpm.zecorder.controllers.streaming.StreamProfile;
 import com.chienpm.zecorder.ui.activities.StreamingActivity;
 import com.chienpm.zecorder.ui.utils.FacebookUtils;
 import com.chienpm.zecorder.ui.utils.MyUtils;
@@ -41,11 +40,14 @@ import com.facebook.login.widget.LoginButton;
 import com.facebook.login.widget.ProfilePictureView;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputLayout;
+import com.takusemba.rtmppublisher.helper.StreamProfile;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Arrays;
+
+import static com.chienpm.zecorder.ui.utils.MyUtils.DEBUG;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -60,7 +62,7 @@ public class LiveStreamFragment extends Fragment {
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
-    private static final String TAG = "chienpm_log";
+    private static final String TAG = LiveStreamFragment.class.getSimpleName();
 
     // TODO: Rename and change types of parameters
     private String mParam1;
@@ -225,12 +227,12 @@ public class LiveStreamFragment extends Fragment {
 
                             } catch (JSONException e) {
                                 e.printStackTrace();
-                                Log.d(TAG, "PARSE JSON Response FAILED");
+                                Log.e(TAG, "PARSE JSON Response FAILED");
                             }
 
-                            Log.d(TAG, "PARSE JSON Stream_Id:"+ mStreamId);
-                            Log.d(TAG, "PARSE JSON Stream_Url:"+ mStreamURL);
-                            Log.d(TAG, "PARSE JSON Secure_Stream_Id:"+ mSecureStreamUrl);
+                            if(DEBUG) Log.i(TAG, "PARSE JSON Stream_Id:"+ mStreamId);
+                            if(DEBUG) Log.i(TAG, "PARSE JSON Stream_Url:"+ mStreamURL);
+                            if(DEBUG) Log.i(TAG, "PARSE JSON Secure_Stream_Id:"+ mSecureStreamUrl);
 
                             if(TextUtils.isEmpty(mStreamId) || TextUtils.isEmpty(mStreamURL) || TextUtils.isEmpty(mSecureStreamUrl)){
                                 MyUtils.showSnackBarNotification(mViewRoot, "Request stream failed. Please try again!", Snackbar.LENGTH_INDEFINITE);

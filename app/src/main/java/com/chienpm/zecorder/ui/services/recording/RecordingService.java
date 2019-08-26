@@ -34,11 +34,13 @@ import com.chienpm.zecorder.ui.utils.MyUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.chienpm.zecorder.ui.utils.MyUtils.DEBUG;
+
 public class RecordingService extends BaseService {
-    private static final boolean DEBUG = false;	// TODO set false on release
     private final IBinder mIBinder = new RecordingBinder();
 
-    private static final String TAG = "chienpm";
+    private static final String TAG = RecordingService.class.getSimpleName();
     private MediaProjectionManager mMediaProjectionManager;
     private MediaProjection mMediaProjection;
     private Intent mScreenCaptureIntent;
@@ -91,10 +93,10 @@ public class RecordingService extends BaseService {
 
     @Override
     public IBinder onBind(Intent intent) {
-        Log.d(TAG, "RecordingService: onBind()");
+        Log.i(TAG, "RecordingService: onBind()");
         mScreenCaptureIntent = intent.getParcelableExtra(Intent.EXTRA_INTENT);
         mScreenCaptureResultCode = mScreenCaptureIntent.getIntExtra(MyUtils.SCREEN_CAPTURE_INTENT_RESULT_CODE, MyUtils.RESULT_CODE_FAILED);
-        Log.d(TAG, "onBind: "+ mScreenCaptureIntent);
+        Log.i(TAG, "onBind: "+ mScreenCaptureIntent);
         return mIBinder;
     }
 
@@ -129,7 +131,7 @@ public class RecordingService extends BaseService {
                 }
 
 
-                if (DEBUG) Log.v(TAG, "startStreaming:");
+                if (DEBUG) Log.i(TAG, "startStreaming:");
                 try {
                     mMuxer = new MediaMuxerWrapper(this, ".mp4");    // if you record audio only, ".m4a" is also OK.
                     if (true) {
@@ -231,7 +233,7 @@ public class RecordingService extends BaseService {
             @Override
             public void run() {
                 if(mVideo !=null){
-                    Log.d(TAG, "onSaveVideo: "+mVideo.toString());
+                    if(DEBUG) Log.i(TAG, "onSaveVideo: "+mVideo.toString());
                     synchronized (mVideo) {
                         VideoDatabase.getInstance(getApplicationContext()).getVideoDao().insertVideo(mVideo);
                     }
@@ -252,12 +254,12 @@ public class RecordingService extends BaseService {
     private static final MediaEncoder.MediaEncoderListener mMediaEncoderListener = new MediaEncoder.MediaEncoderListener() {
         @Override
         public void onPrepared(final MediaEncoder encoder) {
-            if (DEBUG) Log.v(TAG, "onPrepared:encoder=" + encoder);
+            if (DEBUG) Log.i(TAG, "onPrepared:encoder=" + encoder);
         }
 
         @Override
         public void onStopped(final MediaEncoder encoder) {
-            if (DEBUG) Log.v(TAG, "onStopped:encoder=" + encoder);
+            if (DEBUG) Log.i(TAG, "onStopped:encoder=" + encoder);
         }
     };
 }

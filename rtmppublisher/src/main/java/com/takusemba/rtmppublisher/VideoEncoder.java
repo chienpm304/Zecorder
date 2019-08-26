@@ -13,6 +13,8 @@ import android.view.Surface;
 
 import androidx.annotation.NonNull;
 
+import com.takusemba.rtmppublisher.helper.MyUtils;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
@@ -24,6 +26,7 @@ class VideoEncoder implements Encoder {
     private static final int IFRAME_INTERVAL = 5;
     private static final String TAG = "VideoEnoder_chienpm";
 
+    private static final boolean DEBUG = MyUtils.DEBUG;
 
     private boolean isEncoding = false;
     private static final int TIMEOUT_USEC = 10000;
@@ -82,12 +85,12 @@ class VideoEncoder implements Encoder {
                 inputSurface, null, null
     );
 
-        Log.i(TAG, "prepare: video encoder");
-}
+        if(DEBUG) Log.i(TAG, "prepare: video encoder");
+    }
 
     @Override
     public void start() {
-        Log.i(TAG, "start: video encoder");
+        if(DEBUG) Log.i(TAG, "start: video encoder");
         encoder.start();
         isEncoding = true;
         drain();
@@ -96,7 +99,7 @@ class VideoEncoder implements Encoder {
     @Override
     public void stop() {
         if (isEncoding()) {
-            Log.i(TAG, "stop: video encoder");
+            if(DEBUG) Log.i(TAG, "stop: video encoder");
             encoder.signalEndOfInputStream();
         }
     }
@@ -149,7 +152,7 @@ class VideoEncoder implements Encoder {
                                 encodedData.get(data, 0, bufferInfo.size);
                                 encodedData.position(bufferInfo.offset);
 
-                                Log.i(TAG, "prepare to invoke to onVideoDataEncoded: "+bufferInfo.size+" bytes");
+                                if(DEBUG) Log.i(TAG, "prepare to invoke to onVideoDataEncoded: "+bufferInfo.size+" bytes");
                                 listener.onVideoDataEncoded(data, bufferInfo.size, timestamp);
                                 lastFrameEncodedAt = currentTime;
                             }

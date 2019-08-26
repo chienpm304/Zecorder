@@ -5,10 +5,11 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import static com.takusemba.rtmppublisher.helper.MyUtils.DEBUG;
+
 public class RtmpPublisher implements Publisher {
 
-
-    private static final String TAG = "RtmpPublisher_chienpm";
+    private static final String TAG = RtmpPublisher.class.getSimpleName();
 
     private Streamer streamer;
 
@@ -41,7 +42,7 @@ public class RtmpPublisher implements Publisher {
 
     @Override
     public void startPublishing() {
-        Log.i(TAG, "startPublishing: called (clicked)");
+        if(DEBUG) Log.i(TAG, "startPublishing: called (clicked)");
         streamer.open(url, width, height);
         streamer.startStreaming(width, height, audioBitrate, videoBitrate, density);
     }

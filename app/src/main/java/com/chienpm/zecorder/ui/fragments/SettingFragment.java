@@ -5,11 +5,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
+
 import androidx.preference.ListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceScreen;
-import android.util.Log;
 
 import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.ui.services.ControllerService;
@@ -18,7 +19,7 @@ import com.chienpm.zecorder.ui.utils.MyUtils;
 import java.util.Objects;
 
 public class SettingFragment extends PreferenceFragmentCompat implements SharedPreferences.OnSharedPreferenceChangeListener{
-    static final String TAG = "chienpm_log";
+    static final String TAG = SettingFragment.class.getSimpleName();
     private SharedPreferences mSharedPreferences;
     private PreferenceScreen mPreferenceScreen;
 

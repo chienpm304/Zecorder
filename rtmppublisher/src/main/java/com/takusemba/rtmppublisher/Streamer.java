@@ -9,6 +9,9 @@ class Streamer
         implements VideoHandler.OnVideoEncoderStateListener, AudioHandler.OnAudioEncoderStateListener {
 
     private static final String TAG = "Streamer_chienpm_log";
+
+    private static final boolean DEBUG = false;
+
     private VideoHandler videoHandler;
     private AudioHandler audioHandler;
     private Muxer muxer = new Muxer();
@@ -19,7 +22,7 @@ class Streamer
     }
 
     void open(String url, int width, int height) {
-        Log.i(TAG, "open: "+url);
+        if(DEBUG) Log.i(TAG, "open: "+url);
         muxer.open(url, width, height);
     }
 
@@ -37,7 +40,7 @@ class Streamer
             }
         }
         if(muxer.isConnected()) {
-            Log.i(TAG, "start Streaming: connected");
+            if(DEBUG) Log.i(TAG, "start Streaming: connected");
             long startStreamingAt = System.currentTimeMillis();
             videoHandler.setOnVideoEncoderStateListener(this);
             audioHandler.setOnAudioEncoderStateListener(this);
@@ -45,7 +48,7 @@ class Streamer
             audioHandler.start(audioBitrate, startStreamingAt);
         }
         else{
-            Log.i(TAG, "startStreaming: failed coz muxer is not connected");
+           Log.e(TAG, "startStreaming: failed coz muxer is not connected");
         }
     }
 
@@ -61,12 +64,13 @@ class Streamer
 
     @Override
     public void onVideoDataEncoded(byte[] data, int size, int timestamp) {
-        Log.i(TAG, "onVideoDataEncoded: "+size+"byte, tsp: "+timestamp);
+        if(DEBUG) Log.i(TAG, "onVideoDataEncoded: "+size+"byte, tsp: "+timestamp);
         muxer.sendVideo(data, size, timestamp);
     }
 
     @Override
     public void onAudioDataEncoded(byte[] data, int size, int timestamp) {
+        if(DEBUG) Log.i(TAG, "onAudioDataEncoded: "+size+"byte, tsp: "+timestamp);
         muxer.sendAudio(data, size, timestamp);
     }
 

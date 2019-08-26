@@ -2,11 +2,13 @@ package com.chienpm.zecorder.controllers.settings;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import androidx.annotation.NonNull;
-import androidx.preference.PreferenceManager;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+import androidx.preference.PreferenceManager;
+
 import com.chienpm.zecorder.R;
+import com.chienpm.zecorder.ui.utils.MyUtils;
 
 public class SettingManager {
 
@@ -104,7 +106,7 @@ public class SettingManager {
         }
 
         videoSetting.setFPS(fps);
-        Log.d("chienpm", "getVideoProfile: "+ videoSetting.toString());
+        if( MyUtils.DEBUG) Log.i("chienpm", "getVideoProfile: "+ videoSetting.toString());
         return videoSetting;
     }
 

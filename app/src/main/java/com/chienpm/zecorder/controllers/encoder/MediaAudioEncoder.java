@@ -30,12 +30,14 @@ import android.media.MediaCodecList;
 import android.media.MediaFormat;
 import android.media.MediaRecorder;
 import android.util.Log;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import static com.chienpm.zecorder.ui.utils.MyUtils.DEBUG;
+
 public class MediaAudioEncoder extends MediaEncoder {
-	private static final boolean DEBUG = false;	// TODO set false on release
-	private static final String TAG = com.serenegiant.media.MediaAudioEncoder.class.getSimpleName();
+	private static final String TAG = MediaAudioEncoder.class.getSimpleName();
 
 	private static final String MIME_TYPE = "audio/mp4a-latm";
     private static final int SAMPLE_RATE = 44100;	// 44.1[KHz] is only setting guaranteed to be available on all devices.
@@ -51,7 +53,7 @@ public class MediaAudioEncoder extends MediaEncoder {
 
 	@Override
 	public void prepare() throws IOException {
-		if (DEBUG) Log.v(TAG, "prepare:");
+		if (DEBUG) Log.i(TAG, "prepare:");
         mTrackIndex = -1;
         mMuxerStarted = mIsEOS = false;
         // prepare MediaCodec for AAC encoding of audio data from inernal mic.
@@ -140,7 +142,7 @@ public class MediaAudioEncoder extends MediaEncoder {
 				if (audioRecord != null) {
 		            try {
 						if (mIsEncoding) {
-		    				if (DEBUG) Log.v(TAG, "AudioThread:start audio recording");
+		    				if (DEBUG) Log.i(TAG, "AudioThread:start audio recording");
 							final ByteBuffer buf = ByteBuffer.allocateDirect(SAMPLES_PER_FRAME);
 			                int readBytes;
 			                audioRecord.startRecording();
@@ -171,7 +173,7 @@ public class MediaAudioEncoder extends MediaEncoder {
     		} catch (final Exception e) {
     			Log.e(TAG, "AudioThread#run", e);
     		}
-			if (DEBUG) Log.v(TAG, "AudioThread:finished");
+			if (DEBUG) Log.i(TAG, "AudioThread:finished");
     	}
     }
 
@@ -181,7 +183,7 @@ public class MediaAudioEncoder extends MediaEncoder {
      * @return
      */
     private static final MediaCodecInfo selectAudioCodec(final String mimeType) {
-    	if (DEBUG) Log.v(TAG, "selectAudioCodec:");
+    	if (DEBUG) Log.i(TAG, "selectAudioCodec:");
 
     	MediaCodecInfo result = null;
     	// get the list of available codecs

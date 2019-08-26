@@ -22,7 +22,6 @@ import androidx.core.content.ContextCompat;
 import androidx.viewpager.widget.ViewPager;
 
 import com.chienpm.zecorder.R;
-import com.chienpm.zecorder.controllers.streaming.StreamProfile;
 import com.chienpm.zecorder.ui.adapters.ViewPaperAdapter;
 import com.chienpm.zecorder.ui.fragments.LocalStreamFragment;
 import com.chienpm.zecorder.ui.fragments.SettingFragment;
@@ -32,11 +31,13 @@ import com.chienpm.zecorder.ui.services.streaming.StreamingService;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
+import com.takusemba.rtmppublisher.helper.StreamProfile;
 
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String TAG = "chienpm";
+    private static final String TAG = MainActivity.class.getSimpleName()+"_chienpm";
+    private static final boolean DEBUG = MyUtils.DEBUG;
     private static final int PERMISSION_REQUEST_CODE = 3004;
     private static final int PERMISSION_DRAW_OVER_WINDOW = 3005;
     private static final int PERMISSION_RECORD_DISPLAY = 3006;
@@ -146,16 +147,7 @@ public class MainActivity extends AppCompatActivity {
                 mMode = MyUtils.MODE_RECORDING;
 
                 shouldStartControllerService();
-//                if(hasCaptureIntent())
-//                    requestScreenCaptureIntent();
-//
-//                if(hasPermission()) {
-//                    startControllerService();
-//                }
-//                else{
-//                    requestPermissions();
-//                    requestScreenCaptureIntent();
-//                }
+
             }
         });
 

@@ -24,7 +24,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 public class SyncVideoAdapter extends ArrayAdapter<Video> {
-    private static final String TAG = "chienpm_log";
+    private static final String TAG = SyncVideoAdapter.class.getSimpleName();
     private boolean mLocalLoaded = false;
     private boolean mDriveLoaded = false;
     private static Drawable mIconChecked, mIconFailed, mIconUpload, mIconDownload, mIconWaiting;

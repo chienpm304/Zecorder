@@ -35,9 +35,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import static com.chienpm.zecorder.ui.utils.MyUtils.DEBUG;
+
 public class MediaMuxerWrapper {
-	private static final boolean DEBUG = false;	// TODO set false on release
-	private static final String TAG = com.serenegiant.media.MediaMuxerWrapper.class.getSimpleName();
+	private static final String TAG = MediaMuxerWrapper.class.getSimpleName();
 
 	private String mOutputPath = "";
 	private final MediaMuxer mMediaMuxer;	// API >= 18
@@ -147,13 +148,13 @@ public class MediaMuxerWrapper {
 	 * @return true when muxer is ready to write
 	 */
 	/*package*/ synchronized boolean start() {
-		if (DEBUG) Log.v(TAG,  "start:");
+		if (DEBUG) Log.i(TAG,  "start:");
 		mStatredCount++;
 		if ((mEncoderCount > 0) && (mStatredCount == mEncoderCount)) {
 			mMediaMuxer.start();
 			mIsStarted = true;
 			notifyAll();
-			if (DEBUG) Log.v(TAG,  "MediaMuxer started:");
+			if (DEBUG) Log.i(TAG,  "MediaMuxer started:");
 		}
 		return mIsStarted;
 	}
@@ -162,13 +163,13 @@ public class MediaMuxerWrapper {
 	 * request stop recording from encoder when encoder received EOS
 	*/
 	/*package*/ synchronized void stop() {
-		if (DEBUG) Log.v(TAG,  "stop:mStatredCount=" + mStatredCount);
+		if (DEBUG) Log.i(TAG,  "stop:mStatredCount=" + mStatredCount);
 		mStatredCount--;
 		if ((mEncoderCount > 0) && (mStatredCount <= 0)) {
 			mMediaMuxer.stop();
 			mMediaMuxer.release();
 			mIsStarted = false;
-			if (DEBUG) Log.v(TAG,  "MediaMuxer stopped:");
+			if (DEBUG) Log.i(TAG,  "MediaMuxer stopped:");
 		}
 	}
 

@@ -33,9 +33,10 @@ import com.chienpm.zecorder.controllers.settings.VideoSetting;
 
 import java.io.IOException;
 
+import static com.chienpm.zecorder.ui.utils.MyUtils.DEBUG;
+
 
 public abstract class MediaVideoEncoderBase extends MediaEncoder {
-	private static final boolean DEBUG = false;	// TODO set false on release
 	private static final String TAG = MediaVideoEncoderBase.class.getSimpleName();
 
 	// parameters for recording
@@ -76,7 +77,7 @@ public abstract class MediaVideoEncoderBase extends MediaEncoder {
 	protected Surface prepare_surface_encoder(final String mime, final int frame_rate, final int bitrate)
 		throws IOException, IllegalArgumentException {
 
-		if (DEBUG) Log.v(TAG, String.format("prepare_surface_encoder:(%d,%d),mime=%s,frame_rate=%d,bitrate=%d", mWidth, mHeight, mime, frame_rate, bitrate));
+		if (DEBUG) Log.i(TAG, String.format("prepare_surface_encoder:(%d,%d),mime=%s,frame_rate=%d,bitrate=%d", mWidth, mHeight, mime, frame_rate, bitrate));
 
 		mTrackIndex = -1;
         mMuxerStarted = mIsEOS = false;
@@ -189,7 +190,7 @@ public abstract class MediaVideoEncoderBase extends MediaEncoder {
 
     @Override
     protected void signalEndOfInputStream() {
-		if (DEBUG) Log.d(TAG, "sending EOS to encoder");
+		if (DEBUG) Log.i(TAG, "sending EOS to encoder");
 		mMediaCodec.signalEndOfInputStream();	// API >= 18
 		mIsEOS = true;
 	}

@@ -40,9 +40,11 @@ import com.chienpm.zecorder.controllers.settings.SettingManager;
 
 import java.io.File;
 
+import static com.chienpm.zecorder.ui.utils.MyUtils.DEBUG;
+
 
 public class RecordingControllerService extends Service {
-    private static final String TAG = "chienpm_controller";
+    private static final String TAG = RecordingControllerService.class.getSimpleName();
 
     private RecordingService mRecordingService;
     private Boolean mRecordingServiceBound = false;
@@ -83,7 +85,7 @@ public class RecordingControllerService extends Service {
             handleUpdateSetting(intent);
             return START_NOT_STICKY;
         }
-        Log.d(TAG, "RecordingControllerService: onStartCommand()");
+        if(DEBUG) Log.i(TAG, "RecordingControllerService: onStartCommand()");
 
         if(action != null){
             if(TextUtils.equals(action, "Camera_Available")){
@@ -95,11 +97,11 @@ public class RecordingControllerService extends Service {
         mScreenCaptureIntent = intent.getParcelableExtra(Intent.EXTRA_INTENT);
 
         if(mScreenCaptureIntent == null){
-            Log.d(TAG, "mScreenCaptureIntent is NULL");
+            if(DEBUG) Log.i(TAG, "mScreenCaptureIntent is NULL");
             stopSelf();
         }
         else{
-            Log.d(TAG, "RecordingControllerService: before run bindRecordingService()");
+            if(DEBUG) Log.i(TAG, "RecordingControllerService: before run bindRecordingService()");
             bindRecordingService();
         }
         return super.onStartCommand(intent, flags, startId);
@@ -134,7 +136,7 @@ public class RecordingControllerService extends Service {
     }
 
     private void updateCameraPosition() {
-        Log.d(TAG, "updateCameraPosition: ");
+        if(DEBUG) Log.i(TAG, "updateCameraPosition: ");
         CameraSetting profile = SettingManager.getCameraProfile(getApplicationContext());
         paramCam.gravity = profile.getParamGravity();
         paramCam.x = 0;
@@ -162,7 +164,7 @@ public class RecordingControllerService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d(TAG, "RecordingControllerService: onCreate");
+        if(DEBUG) Log.i(TAG, "RecordingControllerService: onCreate");
         updateScreenSize();
         initParam();
         initializeViews();
@@ -207,7 +209,7 @@ public class RecordingControllerService extends Service {
     }
 
     private void initCameraView() {
-        Log.d(TAG, "RecordingControllerService: initializeCamera()");
+        if(DEBUG) Log.i(TAG, "RecordingControllerService: initializeCamera()");
         CameraSetting cameraProfile = SettingManager.getCameraProfile(getApplication());
 
         mCameraLayout = LayoutInflater.from(this).inflate(R.layout.layout_camera_view, null);
@@ -264,7 +266,7 @@ public class RecordingControllerService extends Service {
             mCameraWidth = mScreenHeight/factor;
             mCameraHeight = mScreenWidth/factor;
         }
-        Log.d(TAG, "calculateCameraSize: "+mScreenWidth+"x"+mScreenHeight);
+        if(DEBUG) Log.i(TAG, "calculateCameraSize: "+mScreenWidth+"x"+mScreenHeight);
     }
 
 
@@ -290,7 +292,7 @@ public class RecordingControllerService extends Service {
     }
 
     private void initializeViews() {
-        Log.d(TAG, "RecordingControllerService: initializeViews()");
+        if(DEBUG) Log.i(TAG, "RecordingControllerService: initializeViews()");
         mViewRoot = LayoutInflater.from(this).inflate(R.layout.layout_recording, null);
         mViewCountdown = LayoutInflater.from(this).inflate(R.layout.layout_countdown, null);
 
@@ -528,7 +530,7 @@ public class RecordingControllerService extends Service {
             @Override
             public void run() {
                 if(mVideo !=null){
-                    Log.d(TAG, "onSaveVideo: "+mVideo.toString());
+                    if(DEBUG) Log.i(TAG, "onSaveVideo: "+mVideo.toString());
                     synchronized (mVideo) {
                         VideoDatabase.getInstance(getApplicationContext()).getVideoDao().insertVideo(mVideo);
                     }
@@ -563,11 +565,11 @@ public class RecordingControllerService extends Service {
             mmr.release();
 
             mVideo = new Video(title, duration, bitrate, fps, width, height, size, localPath, 0, "", "");
-            Log.d(TAG, "tryToExtractVideoFile: size: "+mVideo.toString());
+            if(DEBUG) Log.d(TAG, "tryToExtractVideoFile: size: "+mVideo.toString());
 
         } catch (Exception e) {
             e.printStackTrace();
-            Log.d(TAG, "tryToExtractVideoFile: error-"+ e.getMessage());
+            Log.e(TAG, "tryToExtractVideoFile: error-"+ e.getMessage());
         }
         return mVideo;
     }
@@ -577,7 +579,7 @@ public class RecordingControllerService extends Service {
     }
 
     private void bindRecordingService() {
-        Log.d(TAG, "RecordingControllerService: bindRecordingService()");
+        if(DEBUG) Log.i(TAG, "RecordingControllerService: bindRecordingService()");
         Intent mRecordingServiceIntent = new Intent(getApplicationContext(), RecordingService.class);
         mRecordingServiceIntent.putExtra(Intent.EXTRA_INTENT, mScreenCaptureIntent);
         bindService(mRecordingServiceIntent, mRecordingServiceConnection, Context.BIND_AUTO_CREATE);

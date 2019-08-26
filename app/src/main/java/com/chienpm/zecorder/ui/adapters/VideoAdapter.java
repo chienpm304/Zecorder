@@ -24,8 +24,10 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import java.io.File;
 import java.util.ArrayList;
 
+import static com.chienpm.zecorder.ui.utils.MyUtils.DEBUG;
+
 public class VideoAdapter extends ArrayAdapter<Video> {
-    static final String TAG = "chienpm_log";
+    static final String TAG = VideoAdapter.class.getSimpleName()+"_";
     private final FragmentActivity mFragment;
 
     ArrayList<Video> mVideos;
@@ -176,7 +178,7 @@ public class VideoAdapter extends ArrayAdapter<Video> {
                         mSelectedPositions.remove((Integer)position);
                     }
                     notifyDataSetChanged();
-                    Log.d("chienpm_log", "selected: " + logSelection());
+                    if(DEBUG) Log.i("chienpm_log", "selected: " + logSelection());
                 }
             });
         }

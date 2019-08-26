@@ -29,17 +29,21 @@ import android.widget.Toast;
 import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.controllers.settings.CameraSetting;
 import com.chienpm.zecorder.controllers.settings.SettingManager;
-import com.chienpm.zecorder.controllers.streaming.StreamProfile;
 import com.chienpm.zecorder.ui.activities.MainActivity;
 import com.chienpm.zecorder.ui.services.streaming.StreamingService.StreamingBinder;
 import com.chienpm.zecorder.ui.utils.CameraPreview;
 import com.chienpm.zecorder.ui.utils.MyUtils;
+import com.takusemba.rtmppublisher.helper.StreamProfile;
 
-import static com.chienpm.zecorder.ui.services.streaming.StreamingService.*;
+import static com.chienpm.zecorder.ui.services.streaming.StreamingService.NOTIFY_MSG_CONNECTION_DISCONNECTED;
+import static com.chienpm.zecorder.ui.services.streaming.StreamingService.NOTIFY_MSG_CONNECTION_FAILED;
+import static com.chienpm.zecorder.ui.services.streaming.StreamingService.NOTIFY_MSG_CONNECTION_STARTED;
+import static com.chienpm.zecorder.ui.services.streaming.StreamingService.NOTIFY_MSG_ERROR;
+import static com.chienpm.zecorder.ui.services.streaming.StreamingService.NOTIFY_MSG_STREAM_STOPPED;
 
 
 public class StreamingControllerService extends Service{
-    private static final String TAG = "STControllerSV_chienpm";
+    private static final String TAG = StreamingControllerService.class.getSimpleName();
 
     private StreamingService mStreamingService;
     private Boolean mRecordingServiceBound = false;

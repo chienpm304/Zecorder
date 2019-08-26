@@ -42,6 +42,8 @@ import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
+import static com.chienpm.zecorder.ui.utils.MyUtils.DEBUG;
+
 
 /**
  * A simple {@link Fragment} subclass.
@@ -53,7 +55,7 @@ public class VideoManagerFragment extends Fragment{
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
-    private static final String TAG = "chienpm_log";
+    private static final String TAG = VideoManagerFragment.class.getSimpleName();
     private View mViewRoot;
     private Menu mMenu;
     ListView mListviewVideos;
@@ -103,7 +105,7 @@ public class VideoManagerFragment extends Fragment{
                 item.setChecked(!isChecked);
                 mAdapter.selectAll(!isChecked);
                 mAdapter.showAllCheckboxes(true);
-                Log.d(TAG, "onOptionsItemSelected: "+mAdapter.logSelection());
+                if(DEBUG) Log.i(TAG, "onOptionsItemSelected: "+mAdapter.logSelection());
             }
         });
     }
@@ -274,7 +276,7 @@ public class VideoManagerFragment extends Fragment{
 
         handleListviewItemClickEvents();
 
-        Log.d(TAG, "initLoader (activity create) called");
+        if(DEBUG) Log.i(TAG, "initLoader (activity create) called");
         getLoaderManager().initLoader(0, null, mLoadVideosCallback);
 
     }
@@ -312,7 +314,7 @@ public class VideoManagerFragment extends Fragment{
                 else {
                     mAdapter.toggleSelectionAtPosition(position);
                 }
-                Log.d("chienpm_log", "selected: "+mAdapter.logSelection());
+                if(DEBUG) Log.i("chienpm_log", "selected: "+mAdapter.logSelection());
             }
         });
 
@@ -384,7 +386,7 @@ public class VideoManagerFragment extends Fragment{
 
         @Override
         public void onLoadFinished(@NonNull Loader<ArrayList<Video>> loader, ArrayList<Video> videos) {
-            Log.d(TAG, "onLoadFinished: called");
+            if(DEBUG) Log.i(TAG, "onLoadFinished: called");
             //clear the adapter of previous earthquake data
             mAdapter.clear();
 
@@ -395,13 +397,13 @@ public class VideoManagerFragment extends Fragment{
             }
             else{
                 mTvEmpty.setText("No Video Recored");
-                Log.d(TAG, "onLoadFinished: setted textempty ");
+                Log.i(TAG, "onLoadFinished: setted textempty ");
             }
         }
 
         @Override
         public void onLoaderReset(@NonNull Loader<ArrayList<Video>> loader) {
-            Log.d(TAG, "onLoaderReset: called");
+            if(DEBUG) Log.d(TAG, "onLoaderReset: called");
             mAdapter.clear();
         }
     };
@@ -425,7 +427,7 @@ public class VideoManagerFragment extends Fragment{
                 return (ArrayList<Video>) VideoDatabase.getInstance(mWeakReference.get()).getVideoDao().getAllVideo();
             }catch (Exception e){
                 e.printStackTrace();
-                Log.d(TAG, "loadInBackground: "+e.getMessage());
+                if(DEBUG) Log.i(TAG, "loadInBackground: "+e.getMessage());
                 return null;
             }
         }

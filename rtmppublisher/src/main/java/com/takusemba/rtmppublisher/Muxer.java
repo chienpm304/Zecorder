@@ -6,10 +6,12 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
+import com.takusemba.rtmppublisher.helper.MyUtils;
+
 import net.butterflytv.rtmp_client.RTMPMuxer;
 
 public class Muxer {
-
+    private static final boolean DEBUG = MyUtils.DEBUG;
     private static final int MSG_OPEN = 0;
     private static final int MSG_CLOSE = 1;
     private static final int MSG_SEND_VIDEO = 2;
@@ -37,7 +39,7 @@ public class Muxer {
             public boolean handleMessage(Message msg) {
                 switch (msg.what) {
                     case MSG_OPEN:
-                        Log.i(TAG, "handleMessage: open");
+                        if(DEBUG) Log.i(TAG, "handleMessage: open");
                         rtmpMuxer.open((String) msg.obj, msg.arg1, msg.arg2);
                         if (listener != null) {
                             uiHandler.post(new Runnable() {
@@ -47,9 +49,9 @@ public class Muxer {
                                         listener.onStarted();
                                         disconnected = false;
                                         closed = false;
-                                        Log.i(TAG, "opened url: connected");
+                                        if(DEBUG) Log.i(TAG, "opened url: connected");
                                     } else {
-                                        Log.i(TAG, "opened url: not connected");
+                                        if(DEBUG) Log.i(TAG, "opened url: not connected");
                                         listener.onFailedToConnect();
                                     }
                                 }
@@ -72,10 +74,10 @@ public class Muxer {
                         if (isConnected()) {
                             byte[]data = (byte[]) msg.obj;
                             int res = rtmpMuxer.writeVideo(data, 0, msg.arg1, msg.arg2);
-                            Log.i(TAG, "write video (handle MSG): "+data.length+", at: "+msg.arg2);
-                            Log.i(TAG, "write video res: "+res);
+                            if(DEBUG) Log.i(TAG, "write video (handle MSG): "+data.length+", at: "+msg.arg2);
+                            if(DEBUG) Log.i(TAG, "write video res: "+res);
                         } else {
-                            Log.i(TAG, "handle writeVideo: muxer is not connected");
+                            if(DEBUG) Log.i(TAG, "handle writeVideo: muxer is not connected");
                             if (listener != null) {
                                 uiHandler.post(new Runnable() {
                                     @Override
@@ -113,7 +115,7 @@ public class Muxer {
     }
 
     public void open(String url, int width, int height) {
-        Log.i(TAG, "open (obtain Msg): "+url);
+//        if(DEBUG) Log.i(TAG, "open (obtain Msg): "+url);
         Message message = handler.obtainMessage(MSG_OPEN, url);
         message.arg1 = width;
         message.arg2 = height;
@@ -121,7 +123,7 @@ public class Muxer {
     }
 
     void sendVideo(byte[] data, int length, int timestamp) {
-        Log.i(TAG, "sendVideo (obtain Msg): "+length+"byte, tsp: "+timestamp);
+//        if(DEBUG) Log.i(TAG, "sendVideo (obtain Msg): "+length+"byte, tsp: "+timestamp);
         Message message = handler.obtainMessage(MSG_SEND_VIDEO, data);
         message.arg1 = length;
         message.arg2 = timestamp;

@@ -18,7 +18,6 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.chienpm.zecorder.R;
-import com.chienpm.zecorder.controllers.streaming.StreamProfile;
 import com.chienpm.zecorder.ui.activities.MainActivity;
 import com.chienpm.zecorder.ui.services.ControllerService;
 import com.chienpm.zecorder.ui.services.recording.RecordingService;
@@ -26,6 +25,9 @@ import com.chienpm.zecorder.ui.utils.MyUtils;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputLayout;
 import com.takusemba.rtmppublisher.Muxer;
+import com.takusemba.rtmppublisher.helper.StreamProfile;
+
+import static com.chienpm.zecorder.ui.utils.MyUtils.DEBUG;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -42,7 +44,8 @@ import com.takusemba.rtmppublisher.Muxer;
     */
 
 public class LocalStreamFragment extends Fragment {
-    private static final String TAG = "LocalStreamFragment";
+    private static final String TAG = LocalStreamFragment.class.getSimpleName();
+
     private MainActivity mActivity=null;
     String mUrl;
     private OnFragmentInteractionListener mListener;
@@ -181,12 +184,7 @@ public class LocalStreamFragment extends Fragment {
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-//        if (context instanceof OnFragmentInteractionListener) {
-//            mListener = (OnFragmentInteractionListener) context;
-//        } else {
-//            throw new RuntimeException(context.toString()
-//                    + " must implement OnFragmentInteractionListener");
-//        }
+
     }
 
     @Override
@@ -285,12 +283,12 @@ public class LocalStreamFragment extends Fragment {
         }
 
         if(muxer.isConnected()) {
-            Log.i(TAG, "test Streaming: connected");
+            if(DEBUG) Log.i(TAG, "test Streaming: connected");
             muxer.close();
             return true;
         }
         else{
-            Log.i(TAG, "test Streaming: failed coz muxer is not connected");
+            if(DEBUG) Log.i(TAG, "test Streaming: failed coz muxer is not connected");
             muxer.close();
             return false;
         }
