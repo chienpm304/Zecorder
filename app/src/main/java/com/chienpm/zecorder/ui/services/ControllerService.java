@@ -213,11 +213,14 @@ public class ControllerService extends Service{
         super.onCreate();
         Log.i(TAG, "StreamingControllerService: onCreate");
         updateScreenSize();
-        initParam();
-        initializeViews();
+        if(paramViewRoot==null)
+            initParam();
+        if(mViewRoot == null)
+            initializeViews();
     }
 
     private void initParam() {
+        Log.i(TAG, "initParam: ");
         int LAYOUT_FLAG;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             LAYOUT_FLAG = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
@@ -322,10 +325,12 @@ public class ControllerService extends Service{
 //        super.onConfigurationChanged(newConfig);
         Log.i(TAG, "onConfigurationChanged: DETECTED" + newConfig.orientation);
         updateScreenSize();
+
         if(paramViewRoot!=null){
             paramViewRoot.x = 0;
             paramViewRoot.y = 0;
         }
+
         if(cameraPreview!=null) {
             int width = mCameraWidth, height = mCameraHeight;
 

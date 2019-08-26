@@ -20,6 +20,7 @@ import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.controllers.encoder.RenderUtil.CustomDecorator;
 import com.chienpm.zecorder.controllers.streaming.StreamProfile;
 import com.chienpm.zecorder.ui.services.BaseService;
+import com.chienpm.zecorder.ui.services.ControllerService;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 import com.takusemba.rtmppublisher.Publisher;
 import com.takusemba.rtmppublisher.PublisherListener;
@@ -90,7 +91,7 @@ public class StreamingService extends BaseService implements PublisherListener {
     }
 
     void notifyStreamControllerAction(String notify_msg){
-        Intent intent = new Intent(getApplicationContext(), StreamingControllerService.class);
+        Intent intent = new Intent(getApplicationContext(), ControllerService.class);
         intent.setAction(MyUtils.ACTION_NOTIFY_FROM_STREAM_SERVICE);
         intent.putExtra(KEY_NOTIFY_MSG, notify_msg);
         startService(intent);
@@ -173,6 +174,7 @@ public class StreamingService extends BaseService implements PublisherListener {
 
     @Override
     public void stopPerformService() {
+        Log.i(TAG, "stopPerformService: from StreamingService");
         stopStreaming();
     }
 

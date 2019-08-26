@@ -1,16 +1,13 @@
 package com.chienpm.zecorder.ui.services.recording;
 
-import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.hardware.display.DisplayManager;
-import android.media.MediaMetadataRetriever;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
-import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
 import android.text.TextUtils;
@@ -25,19 +22,18 @@ import com.chienpm.zecorder.controllers.encoder.MediaAudioEncoder;
 import com.chienpm.zecorder.controllers.encoder.MediaEncoder;
 import com.chienpm.zecorder.controllers.encoder.MediaMuxerWrapper;
 import com.chienpm.zecorder.controllers.encoder.MediaScreenEncoder;
+import com.chienpm.zecorder.controllers.encoder.RenderUtil.CustomDecorator;
+import com.chienpm.zecorder.controllers.settings.SettingManager;
+import com.chienpm.zecorder.controllers.settings.VideoSetting;
 import com.chienpm.zecorder.data.database.VideoDatabase;
 import com.chienpm.zecorder.data.entities.Video;
 import com.chienpm.zecorder.ui.activities.MainActivity;
 import com.chienpm.zecorder.ui.services.BaseService;
 import com.chienpm.zecorder.ui.utils.MyUtils;
-import com.chienpm.zecorder.controllers.settings.SettingManager;
-import com.chienpm.zecorder.controllers.settings.VideoSetting;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import com.chienpm.zecorder.controllers.encoder.RenderUtil.*;
 public class RecordingService extends BaseService {
     private static final boolean DEBUG = false;	// TODO set false on release
     private final IBinder mIBinder = new RecordingBinder();
@@ -104,6 +100,7 @@ public class RecordingService extends BaseService {
 
     @Override
     public void startPerformService() {
+        Log.i(TAG, "startPerformService: from RecordingService");
         startRecording();
     }
 
