@@ -321,11 +321,13 @@ public class ControllerService extends Service{
     public void onConfigurationChanged(Configuration newConfig) {
 //        super.onConfigurationChanged(newConfig);
         Log.i(TAG, "onConfigurationChanged: DETECTED" + newConfig.orientation);
-
+        updateScreenSize();
+        if()
         if(cameraPreview!=null) {
             int width = mCameraWidth, height = mCameraHeight;
 
             ViewGroup.LayoutParams params = cameraPreview.getLayoutParams();
+
             if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
                 params.height = width;
                 params.width = height;
@@ -334,6 +336,7 @@ public class ControllerService extends Service{
                 params.height = height;
                 params.width = width;
             }
+
             cameraPreview.setLayoutParams(params);
         }
     }
@@ -495,7 +498,10 @@ public class ControllerService extends Service{
                 stopSelf();
                 Intent intent = new Intent(getApplicationContext(), MainActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                intent.setAction(MyUtils.ACTION_OPEN_VIDEO_MANAGER_ACTIVITY);
+                if(mMode == MyUtils.MODE_RECORDING)
+                    intent.setAction(MyUtils.ACTION_OPEN_VIDEO_MANAGER_ACTIVITY);
+                else
+                    intent.setAction(MyUtils.ACTION_OPEN_LIVE_ACTIVITY);
                 startActivity(intent);
             }
         });

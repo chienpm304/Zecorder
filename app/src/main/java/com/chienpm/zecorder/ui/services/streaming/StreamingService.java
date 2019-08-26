@@ -1,6 +1,5 @@
 package com.chienpm.zecorder.ui.services.streaming;
 
-import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -26,7 +25,6 @@ import com.takusemba.rtmppublisher.Publisher;
 import com.takusemba.rtmppublisher.PublisherListener;
 
 import java.util.ArrayList;
-import java.util.Base64;
 
 public class StreamingService extends BaseService implements PublisherListener {
     private static final boolean DEBUG = false;	// TODO set false on release
@@ -51,9 +49,7 @@ public class StreamingService extends BaseService implements PublisherListener {
 
     private StreamProfile mStreamProfile;
 
-    private String url = "rtmp://127.0.0.1/live/key";
-//    private String url = "rtmp://10.199.220.239/live/key";
-
+    private String url = MyUtils.SAMPLE_RMPT_URL;
 
     //Implement Publisher listener
     @Override

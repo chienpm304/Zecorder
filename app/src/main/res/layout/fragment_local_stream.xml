@@ -29,13 +29,11 @@
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
             android:layout_width="0dp"
             android:layout_height="56dp"
-            android:hint="Stream URL"
             android:layout_marginTop="16dp"
-            android:layout_marginRight="8dp"
+            android:hint="Stream URL"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_url"
-            app:layout_constraintEnd_toStartOf="@id/btn_connect"
-            >
+            app:layout_constraintTop_toBottomOf="@id/tv_url">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/ed_url"
@@ -50,14 +48,12 @@
             android:id="@+id/btn_connect"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="wrap_content"
-            android:layout_height="56dp"
+            android:layout_height="wrap_content"
             android:backgroundTint="@color/color_facebook"
             android:text="Test"
-            android:layout_marginTop="16dp"
             android:textColor="@color/WHITE"
-            app:layout_constraintTop_toBottomOf="@id/tv_url"
             app:layout_constraintEnd_toEndOf="parent"
-            />
+            app:layout_constraintTop_toBottomOf="@+id/til_url" />
 
         <TextView
             android:id="@+id/tv_log"

@@ -26,8 +26,11 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme">
-        <activity android:name=".ui.activities.StreamingActivity">
+        android:theme="@style/AppTheme"
+
+        >
+        <activity android:name=".ui.activities.StreamingActivity"
+            android:configChanges="keyboardHidden|orientation">
 
             <!-- <intent-filter> -->
             <!-- <action android:name="android.intent.action.MAIN" /> -->
@@ -37,6 +40,7 @@
 
         <activity
             android:name=".ui.activities.SyncActivity"
+            android:configChanges="keyboardHidden|orientation"
             android:parentActivityName=".ui.activities.MainActivity">
 
             <!-- <intent-filter> -->
@@ -50,6 +54,7 @@
 
         <activity
             android:name=".ui.activities.MainActivity"
+            android:configChanges="keyboardHidden|orientation"
             android:windowSoftInputMode="adjustPan">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

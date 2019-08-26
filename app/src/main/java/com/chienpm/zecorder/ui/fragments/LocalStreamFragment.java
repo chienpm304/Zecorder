@@ -1,15 +1,8 @@
 package com.chienpm.zecorder.ui.fragments;
 
 import android.content.Context;
-import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -20,15 +13,15 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+
 import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.controllers.streaming.StreamProfile;
 import com.chienpm.zecorder.ui.activities.MainActivity;
-import com.chienpm.zecorder.ui.activities.StreamingActivity;
 import com.chienpm.zecorder.ui.services.ControllerService;
-import com.chienpm.zecorder.ui.services.recording.RecordingControllerService;
 import com.chienpm.zecorder.ui.services.recording.RecordingService;
-import com.chienpm.zecorder.ui.services.streaming.StreamingControllerService;
-import com.chienpm.zecorder.ui.services.streaming.StreamingService;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputLayout;
@@ -50,17 +43,63 @@ import com.takusemba.rtmppublisher.Muxer;
 
 public class LocalStreamFragment extends Fragment {
     private static final String TAG = "LocalStreamFragment";
-    private final MainActivity mActivity;
+    private MainActivity mActivity=null;
+    String mUrl;
     private OnFragmentInteractionListener mListener;
     private View mViewRoot;
     private EditText mEdUrl, mEdLog;
     private Button mBtnConnect;
     private boolean isTested = false;
+    private String mLog;
 
 
-    public LocalStreamFragment(MainActivity mainActivity) {
-        // Required empty public constructor
-        this.mActivity = mainActivity;
+//    public LocalStreamFragment(MainActivity mainActivity) {
+//        // Required empty public constructor
+//        this.mActivity = mainActivity;
+//    }
+
+    public LocalStreamFragment(){
+
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(MyUtils.KEY_STREAM_URL, mUrl);
+        outState.putString(MyUtils.KEY_STREAM_LOG, mEdLog.getText().toString());
+        outState.putBoolean(MyUtils.KEY_STREAM_IS_TESTED, isTested);
+
+    }
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        if(savedInstanceState!=null){
+            String tmpUrl = savedInstanceState.getString(MyUtils.KEY_STREAM_URL);
+            String tmpLog = savedInstanceState.getString(MyUtils.KEY_STREAM_LOG);
+            this.isTested = savedInstanceState.getBoolean(MyUtils.KEY_STREAM_IS_TESTED);
+            if(isTested){
+                mBtnConnect.setText("Connected");
+                mBtnConnect.setEnabled(false);
+                mEdUrl.setEnabled(false);
+            }
+            else{
+                mBtnConnect.setText("Test");
+                mBtnConnect.setEnabled(true);
+                mEdUrl.setEnabled(true);
+            }
+            if(!TextUtils.isEmpty(tmpUrl))
+            {
+                mEdUrl.setText(tmpUrl);
+                mUrl = tmpUrl;
+            }
+            if(!TextUtils.isEmpty(tmpLog))
+            {
+                mEdLog.setText(tmpLog);
+                mLog = tmpLog;
+            }
+
+        }
     }
 
     @Override
@@ -83,9 +122,14 @@ public class LocalStreamFragment extends Fragment {
 
     private void initViews() {
         final TextInputLayout tilUrl = mViewRoot.findViewById(R.id.til_url);
+        final TextInputLayout tilLog = mViewRoot.findViewById(R.id.til_log);
+
         mBtnConnect = mViewRoot.findViewById(R.id.btn_connect);
-        mBtnConnect.setEnabled(false);
+        mBtnConnect.setEnabled(true);
         mEdUrl = mViewRoot.findViewById(R.id.ed_url);
+        mEdLog = mViewRoot.findViewById(R.id.ed_log);
+
+        mEdUrl.setText(MyUtils.SAMPLE_RMPT_URL);
 
         mBtnConnect.setOnClickListener(mConnectStreamServiceListener);
 
@@ -111,6 +155,7 @@ public class LocalStreamFragment extends Fragment {
                     else{
                         tilUrl.setError("");
                         mBtnConnect.setEnabled(true);
+                        mUrl = mEdUrl.getText().toString();
                     }
 
                 }
@@ -143,6 +188,10 @@ public class LocalStreamFragment extends Fragment {
         mListener = null;
     }
 
+    public void setContext(MainActivity mainActivity) {
+        this.mActivity = mainActivity;
+    }
+
     /**
      * This interface must be implemented by activities that contain this
      * fragment to allow an interaction in this fragment to be communicated
@@ -160,11 +209,16 @@ public class LocalStreamFragment extends Fragment {
     private View.OnClickListener mConnectStreamServiceListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
+            if(mActivity ==null){
+                MyUtils.showSnackBarNotification(mViewRoot, "Streaming is detached form application. Try later", Snackbar.LENGTH_LONG);
+                Log.e(TAG, "onBtnConnect clicked", new RuntimeException("Activity is null") );
+                return;
+            }
             if(v.getId() != R.id.btn_connect)
                 return;
             mActivity.mMode = MyUtils.MODE_STREAMING;
-            String url = mEdUrl.getText().toString();
-            if(!MyUtils.isValidStreamUrlFormat(url)) {
+            mUrl = mEdUrl.getText().toString();
+            if(!MyUtils.isValidStreamUrlFormat(mUrl)) {
                 MyUtils.showSnackBarNotification(mViewRoot, "Wrong stream url format (ex: rtmp://127.192.123.1/live/stream)", Snackbar.LENGTH_INDEFINITE);
                 mEdUrl.requestFocus();
             }
@@ -178,18 +232,21 @@ public class LocalStreamFragment extends Fragment {
                     MyUtils.showSnackBarNotification(mViewRoot,"Streaming service is running!", Snackbar.LENGTH_LONG);
                     return;
                 }
+
                 if(isTested){
-                    mActivity.mMode = MyUtils.MODE_RECORDING;
+                    mActivity.mMode = MyUtils.MODE_STREAMING;
                     StreamProfile mStreamProfile = new StreamProfile("", mEdUrl.getText().toString(), "");
                     mActivity.setStreamProfile(mStreamProfile);
                     mActivity.shouldStartControllerService();
                     mBtnConnect.setText("Connected");
                     mBtnConnect.setEnabled(false);
                     mEdUrl.setEnabled(false);
+
                 }
+
                 else{
                     mBtnConnect.setText("Testing");
-                    if(testStreamUrlConnection(url)){
+                    if(testStreamUrlConnection(mUrl)){
                         isTested = true;
                         mBtnConnect.setText("Connect");
                         MyUtils.showSnackBarNotification(mViewRoot, "Tested: URL SUCCEED", Snackbar.LENGTH_LONG);

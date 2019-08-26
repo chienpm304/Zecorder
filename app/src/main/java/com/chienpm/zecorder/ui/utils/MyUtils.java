@@ -7,7 +7,6 @@ import android.graphics.Canvas;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Environment;
-import android.text.Editable;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
@@ -47,6 +46,10 @@ public class MyUtils {
     public static final String KEY_CAMERA_AVAILABLE = "KEY_CAMERA_AVAILABLE";
     public static final String KEY_CONTROLlER_MODE = "KEY_CONTROLLER_MODE";
     public static final String ACTION_INIT_CONTROLLER = "ACTION INIT CONTROLLER";
+    public static final String SAMPLE_RMPT_URL = "rtmp://10.199.220.239/live/test";
+    public static final String KEY_STREAM_URL = "rtmp stream";
+    public static final String KEY_STREAM_LOG = "Stream log";
+    public static final String KEY_STREAM_IS_TESTED = "KEY_STREAM_IS_TESTED";
     private static final String TAG = "chienpm_utils";
     public static final int MODE_STREAMING = 101;
     public static final int MODE_RECORDING = 102;

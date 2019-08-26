@@ -8,31 +8,30 @@ import android.content.pm.PackageManager;
 import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
 import android.os.Build;
-import android.provider.Settings;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
-
-import com.chienpm.zecorder.controllers.streaming.StreamProfile;
-import com.chienpm.zecorder.ui.fragments.LocalStreamFragment;
-import com.chienpm.zecorder.ui.services.ControllerService;
-import com.chienpm.zecorder.ui.services.streaming.StreamingService;
-import com.google.android.material.snackbar.Snackbar;
-import com.google.android.material.tabs.TabLayout;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-import androidx.viewpager.widget.ViewPager;
-import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.View;
 import android.widget.ImageView;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.viewpager.widget.ViewPager;
+
 import com.chienpm.zecorder.R;
+import com.chienpm.zecorder.controllers.streaming.StreamProfile;
 import com.chienpm.zecorder.ui.adapters.ViewPaperAdapter;
+import com.chienpm.zecorder.ui.fragments.LocalStreamFragment;
 import com.chienpm.zecorder.ui.fragments.SettingFragment;
 import com.chienpm.zecorder.ui.fragments.VideoManagerFragment;
-import com.chienpm.zecorder.ui.services.recording.RecordingControllerService;
+import com.chienpm.zecorder.ui.services.ControllerService;
+import com.chienpm.zecorder.ui.services.streaming.StreamingService;
 import com.chienpm.zecorder.ui.utils.MyUtils;
+import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.tabs.TabLayout;
 
 import java.util.Objects;
 
@@ -63,6 +62,24 @@ public class MainActivity extends AppCompatActivity {
     private int mScreenCaptureResultCode = MyUtils.RESULT_CODE_FAILED;
     private StreamProfile mStreamProfile;
 
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt(MyUtils.KEY_CONTROLlER_MODE, mMode);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        if(savedInstanceState!=null){
+            mMode = savedInstanceState.getInt(MyUtils.KEY_CONTROLlER_MODE);
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -175,7 +192,9 @@ public class MainActivity extends AppCompatActivity {
         mAdapter = new ViewPaperAdapter(getSupportFragmentManager());
         mAdapter.addFragment(new VideoManagerFragment(), "Video");
 //        mAdapter.addFragment(new LiveStreamFragment(), "Live");
-        mAdapter.addFragment(new LocalStreamFragment(this), "Stream");
+        LocalStreamFragment lcFrag = new LocalStreamFragment();
+        lcFrag.setContext(this);
+        mAdapter.addFragment(lcFrag, "Stream");
         mAdapter.addFragment(new SettingFragment(), "Setting");
         mViewPager.setAdapter(mAdapter);
     }
@@ -279,8 +298,8 @@ public class MainActivity extends AppCompatActivity {
             controller.putExtras(bundle);
         }
         startService(controller);
-
-        finish();
+        if(mMode==MyUtils.MODE_RECORDING)
+            finish();
     }
 
      /** Check if this device has a camera */
