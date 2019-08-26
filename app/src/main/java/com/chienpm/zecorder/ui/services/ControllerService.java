@@ -64,6 +64,7 @@ public class ControllerService extends Service{
     private Boolean mRecordingPaused = false;
     private Camera mCamera;
     private LinearLayout cameraPreview;
+    private CameraPreview mPreview;
     private int mScreenWidth, mScreenHeight;
     private TextView mTvCountdown;
     private View mCountdownLayout;
@@ -80,11 +81,11 @@ public class ControllerService extends Service{
         if(action!=null) {
             handleIncomeAction(intent);
 
-            Log.i(TAG, "StreamingControllerService: onStartCommand()");
+            Log.i(TAG, "return START_REDELIVER_INTENT" + action);
 
             return START_NOT_STICKY;
         }
-
+        Log.i(TAG, "StreamingControllerService: return super()"+action);
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -101,15 +102,16 @@ public class ControllerService extends Service{
                     mStreamProfile = (StreamProfile) intent.getSerializableExtra(MyUtils.STREAM_PROFILE);
                 boolean isCamera = intent.getBooleanExtra(MyUtils.KEY_CAMERA_AVAILABLE, false);
 
-                if(isCamera)
+                if(isCamera && mCamera ==null) {
+                    Log.i(TAG, "onStartCommand: before initCameraView");
                     initCameraView();
-
+                }
                 if(mScreenCaptureIntent == null){
-                    Log.d(TAG, "mScreenCaptureIntent is NULL");
+                    Log.i(TAG, "mScreenCaptureIntent is NULL");
                     stopSelf();
                 }
-                else{
-                    Log.d(TAG, "StreamingControllerService: before run bindStreamService()");
+                else if(!mRecordingServiceBound){
+                    Log.i(TAG, "before run bindStreamService()"+action);
                     bindStreamingService();
                 }
                 break;
@@ -183,7 +185,7 @@ public class ControllerService extends Service{
     }
 
     private void updateCameraPosition() {
-        Log.d(TAG, "updateCameraPosition: ");
+        Log.i(TAG, "updateCameraPosition: ");
         CameraSetting profile = SettingManager.getCameraProfile(getApplicationContext());
         paramCam.gravity = profile.getParamGravity();
         paramCam.x = 0;
@@ -209,7 +211,7 @@ public class ControllerService extends Service{
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d(TAG, "StreamingControllerService: onCreate");
+        Log.i(TAG, "StreamingControllerService: onCreate");
         updateScreenSize();
         initParam();
         initializeViews();
@@ -254,7 +256,7 @@ public class ControllerService extends Service{
     }
 
     private void initCameraView() {
-        Log.d(TAG, "StreamingControllerService: initializeCamera()");
+        Log.i(TAG, "StreamingControllerService: initializeCamera()");
         CameraSetting cameraProfile = SettingManager.getCameraProfile(getApplication());
 
         mCameraLayout = LayoutInflater.from(this).inflate(R.layout.layout_camera_view, null);
@@ -274,7 +276,7 @@ public class ControllerService extends Service{
         paramCam.x = 0;
         paramCam.y = 0;
 
-        CameraPreview mPreview = new CameraPreview(this, mCamera);
+        mPreview = new CameraPreview(this, mCamera);
 
         cameraPreview.addView(mPreview);
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
@@ -311,14 +313,14 @@ public class ControllerService extends Service{
             mCameraWidth = mScreenHeight/factor;
             mCameraHeight = mScreenWidth/factor;
         }
-        Log.d(TAG, "calculateCameraSize: "+mScreenWidth+"x"+mScreenHeight);
+        Log.i(TAG, "calculateCameraSize: "+mScreenWidth+"x"+mScreenHeight);
     }
 
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
 //        super.onConfigurationChanged(newConfig);
-        Log.d(TAG, "onConfigurationChanged: DETECTED" + newConfig.orientation);
+        Log.i(TAG, "onConfigurationChanged: DETECTED" + newConfig.orientation);
 
         if(cameraPreview!=null) {
             int width = mCameraWidth, height = mCameraHeight;
@@ -337,7 +339,7 @@ public class ControllerService extends Service{
     }
 
     private void initializeViews() {
-        Log.d(TAG, "StreamingControllerService: initializeViews()");
+        Log.i(TAG, "StreamingControllerService: initializeViews()");
         mViewRoot = LayoutInflater.from(this).inflate(R.layout.layout_recording, null);
         View mViewCountdown = LayoutInflater.from(this).inflate(R.layout.layout_countdown, null);
 
@@ -493,7 +495,7 @@ public class ControllerService extends Service{
                 stopSelf();
                 Intent intent = new Intent(getApplicationContext(), MainActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                intent.setAction(MyUtils.ACTION_OPEN_LIVE_ACTIVITY);
+                intent.setAction(MyUtils.ACTION_OPEN_VIDEO_MANAGER_ACTIVITY);
                 startActivity(intent);
             }
         });
@@ -575,7 +577,7 @@ public class ControllerService extends Service{
     }
 
     private void bindStreamingService() {
-        Log.d(TAG, "Controller: bindService()");
+        Log.i(TAG, "Controller: bindService()");
 
         Intent service;
 
