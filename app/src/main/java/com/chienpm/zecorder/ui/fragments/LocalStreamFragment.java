@@ -144,18 +144,25 @@ public class LocalStreamFragment extends Fragment {
 
             @Override
             public void afterTextChanged(Editable s) {
-                if (TextUtils.isEmpty(s.toString())) {
+                String tmp = s.toString();
+                if (TextUtils.isEmpty(tmp)) {
                     tilUrl.setError("Please enter a Steaming URL!");
                     mBtnConnect.setEnabled(false);
                 } else {
-                    if(!MyUtils.isValidStreamUrlFormat(s.toString())) {
+                    if(!MyUtils.isValidStreamUrlFormat(tmp)) {
                         tilUrl.setError("Wrong Url format (ex: rtmp://127.0.0.1/live/key)");
                         mBtnConnect.setEnabled(false);
                     }
                     else{
                         tilUrl.setError("");
                         mBtnConnect.setEnabled(true);
-                        mUrl = mEdUrl.getText().toString();
+                        if(!tmp.equals(mUrl)){
+                            isTested = false;
+                            mBtnConnect.setText("Test");
+                            mBtnConnect.setEnabled(true);
+                            mUrl = mEdUrl.getText().toString();
+                        }
+
                     }
 
                 }
