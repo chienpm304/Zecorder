@@ -322,7 +322,10 @@ public class ControllerService extends Service{
 //        super.onConfigurationChanged(newConfig);
         Log.i(TAG, "onConfigurationChanged: DETECTED" + newConfig.orientation);
         updateScreenSize();
-        if()
+        if(paramViewRoot!=null){
+            paramViewRoot.x = 0;
+            paramViewRoot.y = 0;
+        }
         if(cameraPreview!=null) {
             int width = mCameraWidth, height = mCameraHeight;
 
