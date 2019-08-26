@@ -36,7 +36,7 @@ import com.takusemba.rtmppublisher.helper.StreamProfile;
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String TAG = MainActivity.class.getSimpleName()+"_chienpm";
+    private static final String TAG = MainActivity.class.getSimpleName();
     private static final boolean DEBUG = MyUtils.DEBUG;
     private static final int PERMISSION_REQUEST_CODE = 3004;
     private static final int PERMISSION_DRAW_OVER_WINDOW = 3005;
@@ -61,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
     };
 
     private int mScreenCaptureResultCode = MyUtils.RESULT_CODE_FAILED;
+
     private StreamProfile mStreamProfile;
 
     @Override

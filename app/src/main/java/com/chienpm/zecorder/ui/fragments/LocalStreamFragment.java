@@ -1,7 +1,9 @@
 package com.chienpm.zecorder.ui.fragments;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.net.Uri;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextUtils;
@@ -21,12 +23,18 @@ import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.ui.activities.MainActivity;
 import com.chienpm.zecorder.ui.services.ControllerService;
 import com.chienpm.zecorder.ui.services.recording.RecordingService;
+import com.chienpm.zecorder.ui.services.streaming.StreamingService;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputLayout;
 import com.takusemba.rtmppublisher.Muxer;
 import com.takusemba.rtmppublisher.helper.StreamProfile;
 
+import static com.chienpm.zecorder.ui.services.streaming.StreamingService.NOTIFY_MSG_CONNECTION_DISCONNECTED;
+import static com.chienpm.zecorder.ui.services.streaming.StreamingService.NOTIFY_MSG_CONNECTION_FAILED;
+import static com.chienpm.zecorder.ui.services.streaming.StreamingService.NOTIFY_MSG_CONNECTION_STARTED;
+import static com.chienpm.zecorder.ui.services.streaming.StreamingService.NOTIFY_MSG_ERROR;
+import static com.chienpm.zecorder.ui.services.streaming.StreamingService.NOTIFY_MSG_STREAM_STOPPED;
 import static com.chienpm.zecorder.ui.utils.MyUtils.DEBUG;
 
 /**
@@ -48,21 +56,14 @@ public class LocalStreamFragment extends Fragment {
 
     private MainActivity mActivity=null;
     String mUrl;
-    private OnFragmentInteractionListener mListener;
     private View mViewRoot;
     private EditText mEdUrl, mEdLog;
     private Button mBtnConnect;
     private boolean isTested = false;
     private String mLog;
-
-
-//    public LocalStreamFragment(MainActivity mainActivity) {
-//        // Required empty public constructor
-//        this.mActivity = mainActivity;
-//    }
+    private StreamingReceiver mStreamReceiver = null;
 
     public LocalStreamFragment(){
-
     }
 
     @Override
@@ -108,6 +109,9 @@ public class LocalStreamFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if(mStreamReceiver ==null){
+            registerSyncServiceReceiver();
+        }
     }
 
     @Override
@@ -121,6 +125,32 @@ public class LocalStreamFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         initViews();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if(mStreamReceiver ==null){
+            registerSyncServiceReceiver();
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if(mStreamReceiver!=null && getActivity()!=null){
+            getActivity().unregisterReceiver(mStreamReceiver);
+            mStreamReceiver = null;
+        }
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        if(mStreamReceiver!=null && getActivity()!=null){
+            getActivity().unregisterReceiver(mStreamReceiver);
+            mStreamReceiver = null;
+        }
     }
 
     private void initViews() {
@@ -174,13 +204,6 @@ public class LocalStreamFragment extends Fragment {
 
     }
 
-    // TODO: Rename method, update argument and hook method into UI event
-    public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.onFragmentInteraction(uri);
-        }
-    }
-
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
@@ -190,27 +213,64 @@ public class LocalStreamFragment extends Fragment {
     @Override
     public void onDetach() {
         super.onDetach();
-        mListener = null;
     }
 
     public void setContext(MainActivity mainActivity) {
         this.mActivity = mainActivity;
     }
 
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
-    public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        void onFragmentInteraction(Uri uri);
+    private void registerSyncServiceReceiver() {
+        mStreamReceiver = new StreamingReceiver();
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(MyUtils.ACTION_NOTIFY_FROM_STREAM_SERVICE);
+        getActivity().registerReceiver(mStreamReceiver, intentFilter);
+
     }
+
+
+    //Receiver
+    private class StreamingReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if(!TextUtils.isEmpty(action) &&
+                    MyUtils.ACTION_NOTIFY_FROM_STREAM_SERVICE.equals(action)) {
+
+                String notify_msg = intent.getStringExtra(StreamingService.KEY_NOTIFY_MSG);
+                if(TextUtils.isEmpty(notify_msg))
+                    return;
+                switch (notify_msg){
+                    case NOTIFY_MSG_CONNECTION_STARTED:
+//                            MyUtils.toast(getContext(), "Stream started", Toast.LENGTH_SHORT);
+//                            mLog.concat("Streaming started: "+mUrl+"\n");
+                            mEdLog.append("Streaming started: "+mUrl+"\n");
+                        break;
+
+                    case NOTIFY_MSG_CONNECTION_FAILED:
+//                            MyUtils.toast(getContext(), "Connection to server failed. Please try later", Toast.LENGTH_LONG);
+                            mEdLog.append("Connection to server failed"+"\n");
+                        break;
+
+                    case NOTIFY_MSG_CONNECTION_DISCONNECTED:
+//                            MyUtils.toast(getContext(), "Connection disconnected", Toast.LENGTH_SHORT);
+                            mEdLog.append("Connection disconnected"+"\n");
+                        break;
+
+                    case NOTIFY_MSG_STREAM_STOPPED:
+//                            MyUtils.toast(getContext(), "Stream Stopped", Toast.LENGTH_LONG);
+                        mEdLog.append("Streaming stopped"+"\n");
+                        break;
+
+                    case NOTIFY_MSG_ERROR:
+//                            MyUtils.toast(getContext(), "Sorry, Error occurs!", Toast.LENGTH_LONG);
+                        mEdLog.append("Sorry, an error occurs!");
+                        break;
+
+                }
+            }
+        }
+    }
+
     private View.OnClickListener mConnectStreamServiceListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {

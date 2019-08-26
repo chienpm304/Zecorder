@@ -94,7 +94,8 @@ public class StreamingService extends BaseService implements PublisherListener {
         Intent intent = new Intent(getApplicationContext(), ControllerService.class);
         intent.setAction(MyUtils.ACTION_NOTIFY_FROM_STREAM_SERVICE);
         intent.putExtra(KEY_NOTIFY_MSG, notify_msg);
-        startService(intent);
+        sendBroadcast(intent);
+//        startService(intent);
     }
 
     @Override

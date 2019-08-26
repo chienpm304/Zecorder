@@ -127,7 +127,7 @@ public class ControllerService extends Service{
                 break;
 
             case MyUtils.ACTION_NOTIFY_FROM_STREAM_SERVICE:
-                handleNotifyFromStreamService(intent);
+//                handleNotifyFromStreamService(intent);
                 break;
 
 
@@ -138,6 +138,8 @@ public class ControllerService extends Service{
         String notify_msg = intent.getStringExtra(StreamingService.KEY_NOTIFY_MSG);
         if(TextUtils.isEmpty(notify_msg))
             return;
+//        intent.setComponent(LocalStreamFragment.class);
+//        startActivity();
         switch (notify_msg){
             case NOTIFY_MSG_CONNECTION_STARTED:
                 MyUtils.toast(getApplicationContext(), "Stream started", Toast.LENGTH_SHORT);
@@ -463,7 +465,11 @@ public class ControllerService extends Service{
                             toggleView(mViewRoot, View.VISIBLE);
                             mRecordingStarted = true;
                             mService.startPerformService();
-                            MyUtils.toast(getApplicationContext(), "Recording Started", Toast.LENGTH_LONG);
+
+                            if(mMode == MyUtils.MODE_RECORDING)
+                                MyUtils.toast(getApplicationContext(), "Recording Started", Toast.LENGTH_SHORT);
+//                            else
+//                                MyUtils.toast(getApplicationContext(), "Streaming Started", Toast.LENGTH_SHORT);
                         }
                     }.start();
 
@@ -471,6 +477,8 @@ public class ControllerService extends Service{
                 else{
                     mRecordingStarted = false;
                     MyUtils.toast(getApplicationContext(), "Recording Service connection has not been established", Toast.LENGTH_LONG);
+                    Log.e(TAG, "Recording Service connection has not been established");
+                    stopSelf();
                 }
             }
         });
