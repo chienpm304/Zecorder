@@ -82,6 +82,11 @@ public class StreamingService extends BaseService implements PublisherListener {
         MyUtils.toast(getApplicationContext(), "Streaming Connection Failed", Toast.LENGTH_SHORT);
     }
 
+    @Override
+    public void onSentVideoData(int result, int timestamp) {
+        Log.i(TAG, "Sent video data at "+timestamp+" - result: "+result);
+    }
+
     public class StreamingBinder extends Binder{
         public StreamingService getService(){
             return StreamingService.this;

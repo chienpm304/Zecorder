@@ -521,7 +521,7 @@ public class SyncActivity extends AppCompatActivity {
                     MyUtils.showSnackBarNotification(mTvEmpty, "Disconnected from Network. Please check and try again!", Snackbar.LENGTH_INDEFINITE);
 
                 } else{
-                    if(mSyncAdapter.isEmpty())
+                    if(mSyncAdapter != null && mSyncAdapter.isEmpty())
                         checkAuthentication();
 //                    new ResumeForceExitPause(context).execute();
                 }

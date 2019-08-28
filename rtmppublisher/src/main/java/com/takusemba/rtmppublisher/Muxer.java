@@ -74,6 +74,7 @@ public class Muxer {
                         if (isConnected()) {
                             byte[]data = (byte[]) msg.obj;
                             int res = rtmpMuxer.writeVideo(data, 0, msg.arg1, msg.arg2);
+                            listener.onSentVideoData(res, msg.arg2);
                             if(DEBUG) Log.i(TAG, "write video (handle MSG): "+data.length+", at: "+msg.arg2);
                             if(DEBUG) Log.i(TAG, "write video res: "+res);
                         } else {

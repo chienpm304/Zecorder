@@ -533,13 +533,16 @@ public class ControllerService extends Service{
                 }
 
                 stopSelf();
-                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                if(mMode == MyUtils.MODE_RECORDING)
-                    intent.setAction(MyUtils.ACTION_OPEN_VIDEO_MANAGER_ACTIVITY);
-                else
-                    intent.setAction(MyUtils.ACTION_OPEN_LIVE_ACTIVITY);
-                startActivity(intent);
+                if(!MainActivity.active) {
+                    Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    if (mMode == MyUtils.MODE_RECORDING) {
+                        intent.setAction(MyUtils.ACTION_OPEN_VIDEO_MANAGER_ACTIVITY);
+                    } else {
+                        intent.setAction(MyUtils.ACTION_OPEN_LIVE_ACTIVITY);
+                    }
+                    startActivity(intent);
+                }
             }
         });
 

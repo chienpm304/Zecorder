@@ -22,4 +22,9 @@ public interface PublisherListener {
      */
     void onFailedToConnect();
 
+    /**
+     * test fucntion to check fame sent
+     */
+    void onSentVideoData(int result, int timestamp);
+
 }
