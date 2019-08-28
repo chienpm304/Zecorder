@@ -13,19 +13,22 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         android:contentDescription="VideoThumb" />
+
     <TextView
         android:id="@+id/tvTitle"
-        android:text="Video co title dai thiet la dai thi se ra sao day"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:textColor="@color/BLACK"
-        android:textStyle="bold"
-        android:textSize="16sp"
         android:layout_marginTop="8dp"
-        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginEnd="8dp"
+        android:text="Zecorder-...mp4"
+        android:textColor="@color/BLACK"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintLeft_toRightOf="@id/imgThumbnail"
-        />
+        app:layout_constraintStart_toEndOf="@+id/tvResolution"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
         android:id="@+id/tvDuration"

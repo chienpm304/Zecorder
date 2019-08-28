@@ -17,15 +17,17 @@
 
     <TextView
         android:id="@+id/sync_tvTitle"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
         android:text="Video co title dai thiet la dai "
+
         android:textColor="@color/BLACK"
-        android:textSize="16sp"
+        android:textSize="14sp"
         android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintLeft_toRightOf="@id/sync_imgThumbnail"
         app:layout_constraintStart_toEndOf="@+id/sync_tvResolution"
         app:layout_constraintTop_toTopOf="parent" />
