@@ -19,7 +19,6 @@ import android.widget.Toast;
 import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.controllers.encoder.RenderUtil.CustomDecorator;
 import com.chienpm.zecorder.ui.services.BaseService;
-import com.chienpm.zecorder.ui.services.ControllerService;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 import com.takusemba.rtmppublisher.Publisher;
 import com.takusemba.rtmppublisher.PublisherListener;
@@ -31,11 +30,14 @@ public class StreamingService extends BaseService implements PublisherListener {
     private static final boolean DEBUG = MyUtils.DEBUG;	// TODO set false on release
     public static final String KEY_NOTIFY_MSG = "stream service notify";
 
-    public static final String NOTIFY_MSG_CONNECTION_FAILED = "STREAM CONNECTION FAILED";
-    public static final String NOTIFY_MSG_CONNECTION_STARTED = "STREAM CONNECTION SUCCEED";
-    public static final String NOTIFY_MSG_ERROR = "STREAM CONNECTION ERROR";
-    public static final String NOTIFY_MSG_CONNECTION_DISCONNECTED = "NOTIFY_MSG_CONNECTION_DISCONNECTED";
-    public static final String NOTIFY_MSG_STREAM_STOPPED = "NOTIFY_MSG_STREAM_STOPPED";
+    public static final String NOTIFY_MSG_CONNECTION_FAILED = "Stream connection failed";
+    public static final String NOTIFY_MSG_CONNECTION_STARTED = "Stream started";
+    public static final String NOTIFY_MSG_ERROR = "Stream connection error!";
+    public static final String NOTIFY_MSG_UPDATED_STREAM_PROFILE = "Updated stream profile";
+    public static final String NOTIFY_MSG_CONNECTION_DISCONNECTED = "Connection disconnected!";
+    public static final String NOTIFY_MSG_STREAM_STOPPED = "Stream stopped";
+    private static final String NOTIFY_MSG_REQUEST_START = "Request start stream";
+    private static final String NOTIFY_MSG_REQUEST_STOP = "Request stop stream";
 
     private final IBinder mIBinder = new StreamingBinder();
 
@@ -50,32 +52,32 @@ public class StreamingService extends BaseService implements PublisherListener {
 
     private StreamProfile mStreamProfile;
 
-    private String url = MyUtils.SAMPLE_RMPT_URL;
+    private String mUrl = MyUtils.SAMPLE_RMPT_URL;
 
     //Implement Publisher listener
     @Override
     public void onStarted() {
         if(DEBUG) Log.i(TAG, "onStarted");
-        notifyStreamControllerAction(NOTIFY_MSG_CONNECTION_STARTED);
+        notifyStreamingCallback(NOTIFY_MSG_CONNECTION_STARTED);
     }
 
     @Override
     public void onStopped() {
         if(DEBUG) Log.i(TAG, "onStopped");
-        notifyStreamControllerAction(NOTIFY_MSG_STREAM_STOPPED);
+        notifyStreamingCallback(NOTIFY_MSG_STREAM_STOPPED);
     }
 
     @Override
     public void onDisconnected() {
         if(DEBUG) Log.i(TAG, "onDisconnected");
-        notifyStreamControllerAction(NOTIFY_MSG_CONNECTION_DISCONNECTED);
+        notifyStreamingCallback(NOTIFY_MSG_CONNECTION_DISCONNECTED);
     }
 
     @Override
     public void onFailedToConnect() {
         if(mPublisher!=null && mPublisher.isPublishing())
             mPublisher.stopPublishing();
-        notifyStreamControllerAction(NOTIFY_MSG_CONNECTION_FAILED);
+        notifyStreamingCallback(NOTIFY_MSG_CONNECTION_FAILED);
         if(DEBUG) Log.i(TAG, "onFailedToConnect");
         MyUtils.toast(getApplicationContext(), "Streaming Connection Failed", Toast.LENGTH_SHORT);
     }
@@ -90,12 +92,12 @@ public class StreamingService extends BaseService implements PublisherListener {
 
     }
 
-    void notifyStreamControllerAction(String notify_msg){
-        Intent intent = new Intent(getApplicationContext(), ControllerService.class);
+    void notifyStreamingCallback(String notify_msg){
+        if(DEBUG) Log.i(TAG, "sent notify stream "+notify_msg);
+        Intent intent = new Intent();
         intent.setAction(MyUtils.ACTION_NOTIFY_FROM_STREAM_SERVICE);
         intent.putExtra(KEY_NOTIFY_MSG, notify_msg);
         sendBroadcast(intent);
-//        startService(intent);
     }
 
     @Override
@@ -103,8 +105,6 @@ public class StreamingService extends BaseService implements PublisherListener {
         super.onCreate();
         mMediaProjectionManager = (MediaProjectionManager) getSystemService(
                 Context.MEDIA_PROJECTION_SERVICE);
-
-
     }
 
     private void getScreenSize() {
@@ -148,7 +148,7 @@ public class StreamingService extends BaseService implements PublisherListener {
         if(mStreamProfile == null)
             throw new RuntimeException("Stream Profile is null");
         else
-            url = mStreamProfile.getStreamUrl();
+            mUrl = mStreamProfile.getStreamUrl();
 
         getScreenSize();
         mMediaProjection = mMediaProjectionManager.getMediaProjection(mScreenCaptureResultCode, mScreenCaptureIntent);
@@ -170,14 +170,18 @@ public class StreamingService extends BaseService implements PublisherListener {
 
     @Override
     public void startPerformService() {
+        if(DEBUG) Log.i(TAG, "startPerformService: from StreamingService");
+        notifyStreamingCallback(NOTIFY_MSG_REQUEST_START+" "+ mUrl);
         startStreaming();
     }
 
     @Override
     public void stopPerformService() {
         if(DEBUG) Log.i(TAG, "stopPerformService: from StreamingService");
+        notifyStreamingCallback(NOTIFY_MSG_REQUEST_STOP+" "+ mUrl);
         stopStreaming();
     }
+
 
     public void startStreaming() {
         synchronized (sSync) {
@@ -186,7 +190,7 @@ public class StreamingService extends BaseService implements PublisherListener {
                 try {
 
                     mPublisher = new Publisher.Builder()
-                            .setUrl(url)
+                            .setUrl(mUrl)
                             .setSize(mScreenWidth, mScreenHeight)
                             .setAudioBitrate(Publisher.Builder.DEFAULT_AUDIO_BITRATE)
                             .setVideoBitrate(Publisher.Builder.DEFAULT_VIDEO_BITRATE)
@@ -199,13 +203,21 @@ public class StreamingService extends BaseService implements PublisherListener {
 
                  } catch (final Exception e) {
                     Log.e(TAG, "startStreaming error:", e);
-                    notifyStreamControllerAction(NOTIFY_MSG_ERROR);
+                    notifyStreamingCallback(NOTIFY_MSG_ERROR);
                 }
             }else{
                 mPublisher.startPublishing();
             }
         }
 
+    }
+
+    public void updateStreamProfile(StreamProfile profile){
+        mStreamProfile = profile;
+        if(!mUrl.equals(profile.getStreamUrl())){
+            mUrl = profile.getStreamUrl();
+            notifyStreamingCallback(NOTIFY_MSG_UPDATED_STREAM_PROFILE);
+        }
     }
 
     private ArrayList<CustomDecorator> createDecorators() {
@@ -220,8 +232,9 @@ public class StreamingService extends BaseService implements PublisherListener {
     }
 
     public void stopStreaming() {
-        if(mPublisher!=null && mPublisher.isPublishing())
+        if(mPublisher!=null && mPublisher.isPublishing()) {
             mPublisher.stopPublishing();
+        }
     }
 
 }

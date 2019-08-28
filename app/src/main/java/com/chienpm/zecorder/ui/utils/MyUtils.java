@@ -30,7 +30,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MyUtils {
-    public static final boolean DEBUG = false;	// TODO set false on release
+    public static final boolean DEBUG = true;	// TODO set false on release
 
     public static final int RESULT_CODE_FAILED = -999999;
     public static final String SCREEN_CAPTURE_INTENT_RESULT_CODE = "SCREEN_CAPTURE_INTENT_RESULT_CODE";
@@ -52,6 +52,7 @@ public class MyUtils {
     public static final String KEY_STREAM_URL = "rtmp stream";
     public static final String KEY_STREAM_LOG = "Stream log";
     public static final String KEY_STREAM_IS_TESTED = "KEY_STREAM_IS_TESTED";
+    public static final String ACTION_UPDATE_STREAM_PROFILE = "ACTION_UPDATE_STREAM_PROFILE";
 
     private static final String TAG = "chienpm_utils";
     public static final int MODE_STREAMING = 101;

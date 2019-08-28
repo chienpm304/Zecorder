@@ -332,5 +332,17 @@ public class MainActivity extends AppCompatActivity {
         this.mStreamProfile = streamProfile;
 
     }
+
+    public void notifyUpdateStreamProfile() {
+        if(mMode == MyUtils.MODE_STREAMING){
+            Intent controller = new Intent(MainActivity.this, ControllerService.class);
+
+            controller.setAction(MyUtils.ACTION_UPDATE_STREAM_PROFILE);
+            Bundle bundle = new Bundle();
+            bundle.putSerializable(MyUtils.STREAM_PROFILE, mStreamProfile);
+            controller.putExtras(bundle);
+            startService(controller);
+        }
+    }
 }
 

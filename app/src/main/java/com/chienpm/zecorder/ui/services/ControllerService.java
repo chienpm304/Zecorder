@@ -129,7 +129,15 @@ public class ControllerService extends Service{
             case MyUtils.ACTION_NOTIFY_FROM_STREAM_SERVICE:
 //                handleNotifyFromStreamService(intent);
                 break;
-
+            case MyUtils.ACTION_UPDATE_STREAM_PROFILE:
+                if(mMode == MyUtils.MODE_STREAMING && mService!=null && mRecordingServiceBound) {
+                    mStreamProfile = (StreamProfile) intent.getSerializableExtra(MyUtils.STREAM_PROFILE);
+                    ((StreamingService)mService).updateStreamProfile(mStreamProfile);
+                }
+                else{
+                    Log.e(TAG, "handleIncomeAction: ", new Exception("Update stream profile error") );
+                }
+                break;
 
         }
     }

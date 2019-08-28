@@ -91,6 +91,8 @@
                 android:enabled="true"
                 android:isScrollContainer="true"
                 android:editable="false"
+                android:textColor="@color/GRAY"
+                android:textSize="14sp"
                 android:text="Welcome to Zecorder's streaming\n"
                 />
 

@@ -161,7 +161,7 @@ public class LocalStreamFragment extends Fragment {
         mBtnConnect.setEnabled(true);
         mEdUrl = mViewRoot.findViewById(R.id.ed_url);
         mEdLog = mViewRoot.findViewById(R.id.ed_log);
-
+        mEdLog.setEnabled(false);
         mEdUrl.setText(MyUtils.SAMPLE_RMPT_URL);
 
         mBtnConnect.setOnClickListener(mConnectStreamServiceListener);
@@ -220,6 +220,7 @@ public class LocalStreamFragment extends Fragment {
     }
 
     private void registerSyncServiceReceiver() {
+        if(DEBUG) Log.i(TAG, "registerSyncServiceReceiver: registered");
         mStreamReceiver = new StreamingReceiver();
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(MyUtils.ACTION_NOTIFY_FROM_STREAM_SERVICE);
@@ -232,40 +233,53 @@ public class LocalStreamFragment extends Fragment {
     private class StreamingReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
+
             String action = intent.getAction();
+            if(DEBUG) Log.i(TAG, "onReceive: "+action);
             if(!TextUtils.isEmpty(action) &&
                     MyUtils.ACTION_NOTIFY_FROM_STREAM_SERVICE.equals(action)) {
 
                 String notify_msg = intent.getStringExtra(StreamingService.KEY_NOTIFY_MSG);
                 if(TextUtils.isEmpty(notify_msg))
                     return;
+//                appendLog(notify_msg);
                 switch (notify_msg){
                     case NOTIFY_MSG_CONNECTION_STARTED:
 //                            MyUtils.toast(getContext(), "Stream started", Toast.LENGTH_SHORT);
 //                            mLog.concat("Streaming started: "+mUrl+"\n");
-                            mEdLog.append("Streaming started: "+mUrl+"\n");
+                        appendLog("Streaming started");
+                        appendLog("Streaming ...");
+
                         break;
 
                     case NOTIFY_MSG_CONNECTION_FAILED:
 //                            MyUtils.toast(getContext(), "Connection to server failed. Please try later", Toast.LENGTH_LONG);
-                            mEdLog.append("Connection to server failed"+"\n");
+                        appendLog("Connection to server failed");
                         break;
 
                     case NOTIFY_MSG_CONNECTION_DISCONNECTED:
 //                            MyUtils.toast(getContext(), "Connection disconnected", Toast.LENGTH_SHORT);
-                            mEdLog.append("Connection disconnected"+"\n");
+                        appendLog("Connection disconnected");
                         break;
 
                     case NOTIFY_MSG_STREAM_STOPPED:
 //                            MyUtils.toast(getContext(), "Stream Stopped", Toast.LENGTH_LONG);
-                        mEdLog.append("Streaming stopped"+"\n");
+                        appendLog("Streaming stopped");
+
+                        isTested = false;
+                        mEdUrl.setEnabled(true);
+//                        mBtnConnect.setEnabled(true);
+//                        mBtnConnect.setText("Test");
+//                        m
+
                         break;
 
                     case NOTIFY_MSG_ERROR:
 //                            MyUtils.toast(getContext(), "Sorry, Error occurs!", Toast.LENGTH_LONG);
-                        mEdLog.append("Sorry, an error occurs!");
+                        appendLog("Sorry, an error occurs!");
                         break;
-
+                    default:
+                        appendLog(notify_msg);
                 }
             }
         }
@@ -290,42 +304,54 @@ public class LocalStreamFragment extends Fragment {
             else{
                 if(mActivity.isMyServiceRunning(RecordingService.class))
                 {
-                    MyUtils.showSnackBarNotification(mViewRoot, "You are in RECORDING Mode. Please close Recording controoller", Snackbar.LENGTH_INDEFINITE);
+                    MyUtils.showSnackBarNotification(mViewRoot, "You are in RECORDING Mode. Please close Recording controller", Snackbar.LENGTH_INDEFINITE);
                     return;
                 }
-                if(mActivity.isMyServiceRunning(ControllerService.class)){
-                    MyUtils.showSnackBarNotification(mViewRoot,"Streaming service is running!", Snackbar.LENGTH_LONG);
-                    return;
-                }
+
 
                 if(isTested){
                     mActivity.mMode = MyUtils.MODE_STREAMING;
                     StreamProfile mStreamProfile = new StreamProfile("", mEdUrl.getText().toString(), "");
                     mActivity.setStreamProfile(mStreamProfile);
-                    mActivity.shouldStartControllerService();
+
+                    if(mActivity.isMyServiceRunning(ControllerService.class)){
+                        MyUtils.showSnackBarNotification(mViewRoot,"Streaming service is running!", Snackbar.LENGTH_LONG);
+                        mActivity.notifyUpdateStreamProfile();
+//                        return;
+                    }
+                    else
+                        mActivity.shouldStartControllerService();
+
                     mBtnConnect.setText("Connected");
                     mBtnConnect.setEnabled(false);
                     mEdUrl.setEnabled(false);
-
+                    appendLog("Stream connected");
                 }
 
                 else{
                     mBtnConnect.setText("Testing");
+                    appendLog("Test stream "+mUrl);
                     if(testStreamUrlConnection(mUrl)){
                         isTested = true;
                         mBtnConnect.setText("Connect");
+                        appendLog("Tested stream: SUCCESS");
                         MyUtils.showSnackBarNotification(mViewRoot, "Tested: URL SUCCEED", Snackbar.LENGTH_LONG);
 
                     }
                     else{
                         isTested = false;
                         mBtnConnect.setText("Test");
+                        appendLog("Tested stream: FAILED");
                         MyUtils.showSnackBarNotification(mViewRoot, "Tested: URL FAILED", Snackbar.LENGTH_LONG);
                     }
                 }
             }
         }
     };
+
+    private void appendLog(String msg) {
+        mEdLog.append("\n"+msg);
+    }
 
     private boolean testStreamUrlConnection(String url) {
         int t = 0;
