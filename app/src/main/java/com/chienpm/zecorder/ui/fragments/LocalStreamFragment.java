@@ -14,6 +14,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ScrollView;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -57,7 +59,9 @@ public class LocalStreamFragment extends Fragment {
     private MainActivity mActivity=null;
     String mUrl;
     private View mViewRoot;
-    private EditText mEdUrl, mEdLog;
+    private ScrollView mScrollView;
+    private TextView mTvLog;
+    private EditText mEdUrl;
     private Button mBtnConnect;
     private boolean isTested = false;
     private String mLog;
@@ -70,7 +74,7 @@ public class LocalStreamFragment extends Fragment {
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putString(MyUtils.KEY_STREAM_URL, mUrl);
-        outState.putString(MyUtils.KEY_STREAM_LOG, mEdLog.getText().toString());
+        outState.putString(MyUtils.KEY_STREAM_LOG, mTvLog.getText().toString());
         outState.putBoolean(MyUtils.KEY_STREAM_IS_TESTED, isTested);
 
     }
@@ -99,8 +103,9 @@ public class LocalStreamFragment extends Fragment {
             }
             if(!TextUtils.isEmpty(tmpLog))
             {
-                mEdLog.setText(tmpLog);
+//                mTvLog.setText(tmpLog);
                 mLog = tmpLog;
+                appendLog(mLog);
             }
 
         }
@@ -155,13 +160,12 @@ public class LocalStreamFragment extends Fragment {
 
     private void initViews() {
         final TextInputLayout tilUrl = mViewRoot.findViewById(R.id.til_url);
-        final TextInputLayout tilLog = mViewRoot.findViewById(R.id.til_log);
 
         mBtnConnect = mViewRoot.findViewById(R.id.btn_connect);
         mBtnConnect.setEnabled(true);
         mEdUrl = mViewRoot.findViewById(R.id.ed_url);
-        mEdLog = mViewRoot.findViewById(R.id.ed_log);
-        mEdLog.setEnabled(false);
+        mTvLog = mViewRoot.findViewById(R.id.tvLog);
+        mScrollView = mViewRoot.findViewById(R.id.scroll_log);
         mEdUrl.setText(MyUtils.SAMPLE_RMPT_URL);
 
         mBtnConnect.setOnClickListener(mConnectStreamServiceListener);
@@ -195,7 +199,6 @@ public class LocalStreamFragment extends Fragment {
                             mBtnConnect.setEnabled(true);
                             mUrl = mEdUrl.getText().toString();
                         }
-
                     }
 
                 }
@@ -242,40 +245,30 @@ public class LocalStreamFragment extends Fragment {
                 String notify_msg = intent.getStringExtra(StreamingService.KEY_NOTIFY_MSG);
                 if(TextUtils.isEmpty(notify_msg))
                     return;
-//                appendLog(notify_msg);
                 switch (notify_msg){
                     case NOTIFY_MSG_CONNECTION_STARTED:
-//                            MyUtils.toast(getContext(), "Stream started", Toast.LENGTH_SHORT);
-//                            mLog.concat("Streaming started: "+mUrl+"\n");
+                        mEdUrl.setEnabled(false);
                         appendLog("Streaming started");
                         appendLog("Streaming ...");
 
                         break;
 
                     case NOTIFY_MSG_CONNECTION_FAILED:
-//                            MyUtils.toast(getContext(), "Connection to server failed. Please try later", Toast.LENGTH_LONG);
                         appendLog("Connection to server failed");
                         break;
 
                     case NOTIFY_MSG_CONNECTION_DISCONNECTED:
-//                            MyUtils.toast(getContext(), "Connection disconnected", Toast.LENGTH_SHORT);
                         appendLog("Connection disconnected");
                         break;
 
                     case NOTIFY_MSG_STREAM_STOPPED:
-//                            MyUtils.toast(getContext(), "Stream Stopped", Toast.LENGTH_LONG);
                         appendLog("Streaming stopped");
 
                         isTested = false;
                         mEdUrl.setEnabled(true);
-//                        mBtnConnect.setEnabled(true);
-//                        mBtnConnect.setText("Test");
-//                        m
-
                         break;
 
                     case NOTIFY_MSG_ERROR:
-//                            MyUtils.toast(getContext(), "Sorry, Error occurs!", Toast.LENGTH_LONG);
                         appendLog("Sorry, an error occurs!");
                         break;
                     default:
@@ -350,7 +343,14 @@ public class LocalStreamFragment extends Fragment {
     };
 
     private void appendLog(String msg) {
-        mEdLog.append("\n"+msg);
+        mTvLog.append("\n"+msg);
+        mScrollView.post(new Runnable() {
+            @Override
+            public void run() {
+                mScrollView.fullScroll(View.FOCUS_DOWN);
+            }
+        });
+
     }
 
     private boolean testStreamUrlConnection(String url) {

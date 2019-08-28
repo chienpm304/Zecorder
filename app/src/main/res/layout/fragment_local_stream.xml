@@ -56,7 +56,7 @@
             app:layout_constraintTop_toBottomOf="@+id/til_url" />
 
         <TextView
-            android:id="@+id/tv_log"
+            android:id="@+id/tv_status"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
@@ -67,36 +67,28 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/til_url" />
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/til_log"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
+        <ScrollView
+            android:id="@+id/scroll_log"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_marginTop="16dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_log"
             app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tv_status"
+            android:background="@drawable/bg_tvlog"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
             >
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/ed_log"
+            <TextView
+                android:id="@+id/tvLog"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:gravity="top"
-                android:inputType="textCapSentences|textNoSuggestions|textMultiLine"
-                android:maxLines="1000"
-                android:minLines="4"
-                android:scrollbars="vertical"
-                android:enabled="true"
-                android:isScrollContainer="true"
-                android:editable="false"
-                android:textColor="@color/GRAY"
-                android:textSize="14sp"
-                android:text="Welcome to Zecorder's streaming\n"
+                android:text="Zecorder's Streaming"
+                android:textSize="16sp"
+                android:padding="16dp"
                 />
 
-        </com.google.android.material.textfield.TextInputLayout>
+        </ScrollView>
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 
