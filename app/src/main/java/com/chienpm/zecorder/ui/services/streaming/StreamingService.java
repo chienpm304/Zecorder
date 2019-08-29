@@ -196,7 +196,7 @@ public class StreamingService extends BaseService implements PublisherListener {
 
                     mPublisher = new Publisher.Builder()
                             .setUrl(mUrl)
-                            .setSize(mScreenWidth, mScreenHeight)
+                            .setSize(1280, 720)
                             .setAudioBitrate(Publisher.Builder.DEFAULT_AUDIO_BITRATE)
                             .setVideoBitrate(Publisher.Builder.DEFAULT_VIDEO_BITRATE)
                             .setDensity(mScreenDensity)
