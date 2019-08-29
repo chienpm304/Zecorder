@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -36,6 +37,8 @@ import static com.chienpm.zecorder.ui.services.streaming.StreamingService.NOTIFY
 import static com.chienpm.zecorder.ui.services.streaming.StreamingService.NOTIFY_MSG_CONNECTION_FAILED;
 import static com.chienpm.zecorder.ui.services.streaming.StreamingService.NOTIFY_MSG_CONNECTION_STARTED;
 import static com.chienpm.zecorder.ui.services.streaming.StreamingService.NOTIFY_MSG_ERROR;
+import static com.chienpm.zecorder.ui.services.streaming.StreamingService.NOTIFY_MSG_REQUEST_START;
+import static com.chienpm.zecorder.ui.services.streaming.StreamingService.NOTIFY_MSG_REQUEST_STOP;
 import static com.chienpm.zecorder.ui.services.streaming.StreamingService.NOTIFY_MSG_STREAM_STOPPED;
 import static com.chienpm.zecorder.ui.utils.MyUtils.DEBUG;
 import static com.chienpm.zecorder.ui.utils.MyUtils.isMyServiceRunning;
@@ -235,6 +238,8 @@ public class LocalStreamFragment extends Fragment {
 
     //Receiver
     private class StreamingReceiver extends BroadcastReceiver {
+        private boolean isStarted = false;
+
         @Override
         public void onReceive(Context context, Intent intent) {
 
@@ -251,7 +256,7 @@ public class LocalStreamFragment extends Fragment {
                         mEdUrl.setEnabled(false);
                         appendLog("Streaming started");
                         appendLog("Streaming ...");
-
+                        isStarted = true;
                         break;
 
                     case NOTIFY_MSG_CONNECTION_FAILED:
@@ -264,13 +269,43 @@ public class LocalStreamFragment extends Fragment {
 
                     case NOTIFY_MSG_STREAM_STOPPED:
                         appendLog("Streaming stopped");
-
-                        isTested = false;
-                        mEdUrl.setEnabled(true);
+                        isTested = true;
                         break;
 
                     case NOTIFY_MSG_ERROR:
                         appendLog("Sorry, an error occurs!");
+
+                        break;
+                    case NOTIFY_MSG_REQUEST_STOP:
+                        appendLog("Requesting stop stream...");
+                        isTested = false;
+                        mEdUrl.setEnabled(true);
+
+                        break;
+                    case NOTIFY_MSG_REQUEST_START:
+                        appendLog("Requesting start stream...");
+
+                        new Thread(new Runnable() {
+                            int i = 0;
+                            @Override
+                            public void run() {
+                                while(!isStarted){
+                                    if(i>5000){
+                                        //failed
+                                        appendLog("Cannot stream to server. Try later..");
+                                        onStop();
+                                        break;
+                                    }
+                                    try {
+                                        i+=1000;
+                                        Thread.sleep(1000);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }
+                        }).start();
+
                         break;
                     default:
                         appendLog(notify_msg);
@@ -321,23 +356,10 @@ public class LocalStreamFragment extends Fragment {
                     mEdUrl.setEnabled(false);
                     appendLog("Stream connected");
                 }
-
                 else{
                     mBtnConnect.setText("Testing");
                     appendLog("Test stream "+mUrl);
-                    if(testStreamUrlConnection(mUrl)){
-                        isTested = true;
-                        mBtnConnect.setText("Connect");
-                        appendLog("Tested stream: SUCCESS");
-                        MyUtils.showSnackBarNotification(mViewRoot, "Tested: URL SUCCEED", Snackbar.LENGTH_LONG);
-
-                    }
-                    else{
-                        isTested = false;
-                        mBtnConnect.setText("Test");
-                        appendLog("Tested stream: FAILED");
-                        MyUtils.showSnackBarNotification(mViewRoot, "Tested: URL FAILED", Snackbar.LENGTH_LONG);
-                    }
+                    testStreamUrlConnection(mUrl);
                 }
             }
         }
@@ -354,31 +376,64 @@ public class LocalStreamFragment extends Fragment {
 
     }
 
-    private boolean testStreamUrlConnection(String url) {
-        int t = 0;
+    private void testStreamUrlConnection(String url) {
+        Handler mHandler = new Handler();
         Muxer muxer = new Muxer();
         muxer.open(url, 1280, 720);
-        while (!muxer.isConnected()){
-            try {
-                t+=100;
-                Thread.sleep(100);
-                if(t>5000)
-                    break;
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
 
-        if(muxer.isConnected()) {
-            if(DEBUG) Log.i(TAG, "test Streaming: connected");
-            muxer.close();
-            return true;
-        }
-        else{
-            if(DEBUG) Log.i(TAG, "test Streaming: failed coz muxer is not connected");
-            muxer.close();
-            return false;
-        }
+        new Thread(new Runnable() {
+            int t = 0;
+            @Override
+            public void run() {
+                while (!muxer.isConnected()){
+                    try {
+                        t+=1000;
+                        Thread.sleep(1000);
+                        if(t>5000) {
+                            break;
+                        }
+                        mHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                // checking
+                                isTested = false;
+                                mBtnConnect.setText("Testing");
+                                appendLog("Testing stream");
+                            }
+                        });
+
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                if(muxer.isConnected()) {
+                    if(DEBUG) Log.i(TAG, "test Streaming: connected");
+                    mHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            isTested = true;
+                            mBtnConnect.setText("Connect");
+                            appendLog("Tested stream: SUCCESS");
+                            MyUtils.showSnackBarNotification(mViewRoot, "Tested: URL SUCCEED", Snackbar.LENGTH_LONG);
+                        }
+                    });
+                }
+                else{
+                    if(DEBUG) Log.i(TAG, "test Streaming: failed coz muxer is not connected");
+                    mHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            isTested = false;
+                            mBtnConnect.setText("Test");
+                            appendLog("Tested stream: FAILED");
+                            MyUtils.showSnackBarNotification(mViewRoot, "Tested: URL FAILED", Snackbar.LENGTH_LONG);
+                        }
+                    });
+                }
+                muxer.close();
+            }
+        }).start();
     }
 
 }

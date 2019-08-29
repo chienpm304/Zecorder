@@ -36,8 +36,8 @@ public class StreamingService extends BaseService implements PublisherListener {
     public static final String NOTIFY_MSG_UPDATED_STREAM_PROFILE = "Updated stream profile";
     public static final String NOTIFY_MSG_CONNECTION_DISCONNECTED = "Connection disconnected!";
     public static final String NOTIFY_MSG_STREAM_STOPPED = "Stream stopped";
-    private static final String NOTIFY_MSG_REQUEST_START = "Request start stream";
-    private static final String NOTIFY_MSG_REQUEST_STOP = "Request stop stream";
+    public static final String NOTIFY_MSG_REQUEST_START = "Request start stream";
+    public static final String NOTIFY_MSG_REQUEST_STOP = "Request stop stream";
 
     private final IBinder mIBinder = new StreamingBinder();
 
@@ -203,6 +203,7 @@ public class StreamingService extends BaseService implements PublisherListener {
                             .setMediaProjection(mMediaProjection)
                             .setListener(this)
                             .build();
+
                     mPublisher.startPublishing();
 
 
