@@ -42,12 +42,6 @@ import com.chienpm.zecorder.ui.utils.MyUtils;
 import com.chienpm.zecorder.ui.utils.NotificationHelper;
 import com.takusemba.rtmppublisher.helper.StreamProfile;
 
-import static com.chienpm.zecorder.ui.services.streaming.StreamingService.NOTIFY_MSG_CONNECTION_DISCONNECTED;
-import static com.chienpm.zecorder.ui.services.streaming.StreamingService.NOTIFY_MSG_CONNECTION_FAILED;
-import static com.chienpm.zecorder.ui.services.streaming.StreamingService.NOTIFY_MSG_CONNECTION_STARTED;
-import static com.chienpm.zecorder.ui.services.streaming.StreamingService.NOTIFY_MSG_ERROR;
-import static com.chienpm.zecorder.ui.services.streaming.StreamingService.NOTIFY_MSG_STREAM_STOPPED;
-
 
 public class ControllerService extends Service{
     private static final String TAG = ControllerService.class.getSimpleName();
@@ -143,36 +137,6 @@ public class ControllerService extends Service{
                 }
                 break;
 
-        }
-    }
-
-    private void handleNotifyFromStreamService(Intent intent) {
-        String notify_msg = intent.getStringExtra(StreamingService.KEY_NOTIFY_MSG);
-        if(TextUtils.isEmpty(notify_msg))
-            return;
-//        intent.setComponent(LocalStreamFragment.class);
-//        startActivity();
-        switch (notify_msg){
-            case NOTIFY_MSG_CONNECTION_STARTED:
-                MyUtils.toast(getApplicationContext(), "Stream started", Toast.LENGTH_SHORT);
-                break;
-
-            case NOTIFY_MSG_CONNECTION_FAILED:
-                MyUtils.toast(getApplicationContext(), "Connection to server failed. Please try later", Toast.LENGTH_LONG);
-                mImgStop.performClick();
-                break;
-
-            case NOTIFY_MSG_CONNECTION_DISCONNECTED:
-                MyUtils.toast(getApplicationContext(), "Connection disconnected", Toast.LENGTH_SHORT);
-                break;
-
-            case NOTIFY_MSG_STREAM_STOPPED:
-                MyUtils.toast(getApplicationContext(), "Stream Stopped", Toast.LENGTH_LONG);
-                break;
-
-            case NOTIFY_MSG_ERROR:
-                MyUtils.toast(getApplicationContext(), "Sorry, Error occurs!", Toast.LENGTH_LONG);
-                break;
         }
     }
 
@@ -427,7 +391,7 @@ public class ControllerService extends Service{
         mImgCapture.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                MyUtils.toast(getApplicationContext(), "Capture clicked", Toast.LENGTH_SHORT);
+//                MyUtils.toast(getApplicationContext(), "Capture clicked", Toast.LENGTH_SHORT);
                 toggleNavigationButton(View.GONE);
                 if(mCameraLayout.getVisibility() == View.GONE){
                     toggleView(mCameraLayout, View.VISIBLE);
@@ -441,7 +405,7 @@ public class ControllerService extends Service{
         mImgPause.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                MyUtils.toast(getApplicationContext(), "Pause recording!", Toast.LENGTH_SHORT);
+                MyUtils.toast(getApplicationContext(), "Pause will available soon!", Toast.LENGTH_SHORT);
                 toggleNavigationButton(View.GONE);
 
                 mRecordingPaused = true;
@@ -451,7 +415,7 @@ public class ControllerService extends Service{
         mImgResume.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                MyUtils.toast(getApplicationContext(), "Resume recording!", Toast.LENGTH_SHORT);
+                MyUtils.toast(getApplicationContext(), "Resume will available soon!", Toast.LENGTH_SHORT);
                 toggleNavigationButton(View.GONE);
                 mRecordingPaused = false;
             }
@@ -539,9 +503,13 @@ public class ControllerService extends Service{
         mImgLive.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(getApplicationContext(), "Live clicked", Toast.LENGTH_SHORT).show();
                 toggleNavigationButton(View.GONE);
-
+                if(!MainActivity.active) {
+                    Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    intent.setAction(MyUtils.ACTION_OPEN_LIVE_ACTIVITY);
+                    startActivity(intent);
+                }
             }
         });
 
