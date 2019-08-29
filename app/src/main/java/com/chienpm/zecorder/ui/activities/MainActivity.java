@@ -299,7 +299,15 @@ public class MainActivity extends AppCompatActivity {
             bundle.putSerializable(MyUtils.STREAM_PROFILE, mStreamProfile);
             controller.putExtras(bundle);
         }
-        startService(controller);
+
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(controller);
+        }
+        else{
+            startService(controller);
+        }
+
         if(mMode==MyUtils.MODE_RECORDING)
             finish();
     }

@@ -171,7 +171,6 @@ public class SyncService extends Service {
                 .setAutoCancel(false);
 
         //must be call in 5s when onCreate run
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForeground(mId, mNotiBuilder.build());
         }

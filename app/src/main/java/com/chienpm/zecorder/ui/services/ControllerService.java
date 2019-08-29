@@ -1,5 +1,6 @@
 package com.chienpm.zecorder.ui.services;
 
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
@@ -26,6 +27,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.core.app.NotificationCompat;
+
 import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.controllers.settings.CameraSetting;
 import com.chienpm.zecorder.controllers.settings.SettingManager;
@@ -36,6 +39,7 @@ import com.chienpm.zecorder.ui.services.streaming.StreamingService;
 import com.chienpm.zecorder.ui.services.streaming.StreamingService.StreamingBinder;
 import com.chienpm.zecorder.ui.utils.CameraPreview;
 import com.chienpm.zecorder.ui.utils.MyUtils;
+import com.chienpm.zecorder.ui.utils.NotificationHelper;
 import com.takusemba.rtmppublisher.helper.StreamProfile;
 
 import static com.chienpm.zecorder.ui.services.streaming.StreamingService.NOTIFY_MSG_CONNECTION_DISCONNECTED;
@@ -72,7 +76,7 @@ public class ControllerService extends Service{
     private int mScreenWidth, mScreenHeight;
     private TextView mTvCountdown;
     private View mCountdownLayout;
-    private int mCameraWidth = 160, mCameraHeight = 90;
+    private int mCameraWidth = 160, mCameraHeight = 120;
     private StreamProfile mStreamProfile;
     private int mMode;
 
@@ -230,9 +234,25 @@ public class ControllerService extends Service{
         super.onCreate();
         if(DEBUG)
         Log.i(TAG, "StreamingControllerService: onCreate");
+
         updateScreenSize();
-        if(paramViewRoot==null)
+        if(paramViewRoot==null) {
             initParam();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                NotificationManager mNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                //create notification builder
+                NotificationCompat.Builder mNotiBuilder = new NotificationCompat.Builder(this, NotificationHelper.CHANNEL_ID)
+                        .setContentTitle("Zecorder service is running")
+                        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                        .setAutoCancel(false);
+
+                //must be call in 5s when onCreate run
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForeground(1, mNotiBuilder.build());
+                }
+            }
+
+        }
         if(mViewRoot == null)
             initializeViews();
     }
