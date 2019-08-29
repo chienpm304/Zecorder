@@ -1,5 +1,7 @@
 package com.chienpm.zecorder.ui.services.sync;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -7,6 +9,7 @@ import android.app.TaskStackBuilder;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.IBinder;
 import android.text.TextUtils;
@@ -172,7 +175,15 @@ public class SyncService extends Service {
 
         //must be call in 5s when onCreate run
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForeground(mId, mNotiBuilder.build());
+            NotificationChannel chan = new NotificationChannel(NotificationHelper.CHANNEL_ID, NotificationHelper.CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
+            chan.setLightColor(Color.BLUE);
+            chan.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+
+            NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            assert manager != null;
+            manager.createNotificationChannel(chan);
+
+            startForeground(mId,  mNotiBuilder.build());
         }
         //create notification list Ids
         Log.d(TAG, "RecordingControllerService: onCreate");

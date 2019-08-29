@@ -42,6 +42,7 @@ import com.chienpm.zecorder.ui.services.streaming.StreamingService;
 import com.chienpm.zecorder.ui.services.streaming.StreamingService.StreamingBinder;
 import com.chienpm.zecorder.ui.utils.CameraPreview;
 import com.chienpm.zecorder.ui.utils.MyUtils;
+import com.chienpm.zecorder.ui.utils.NotificationHelper;
 import com.takusemba.rtmppublisher.helper.StreamProfile;
 
 
@@ -204,16 +205,15 @@ public class ControllerService extends Service{
         if(paramViewRoot==null) {
             initParam();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                String NOTIFICATION_CHANNEL_ID = "com.example.simpleapp";
-                String channelName = "My Background Service";
-                NotificationChannel chan = new NotificationChannel(NOTIFICATION_CHANNEL_ID, channelName, NotificationManager.IMPORTANCE_NONE);
+                NotificationChannel chan = new NotificationChannel(NotificationHelper.CHANNEL_ID, NotificationHelper.CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
                 chan.setLightColor(Color.BLUE);
                 chan.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+
                 NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
                 assert manager != null;
                 manager.createNotificationChannel(chan);
 
-                NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID);
+                NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, NotificationHelper.CHANNEL_ID);
                 Notification notification = notificationBuilder.setOngoing(true)
                         .setSmallIcon(R.drawable.ic_launcher_foreground)
                         .setContentTitle("App is running in background")

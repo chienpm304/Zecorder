@@ -6,8 +6,8 @@ import android.content.Context;
 import android.os.Build;
 
 public class NotificationHelper {
-    public static final String CHANNEL_ID = "Zecorder_Channel_Id";
-    private static final String CHANNEL_NAME = "Zecorder_Channel_Name";
+    public static final String CHANNEL_ID = "com.chienpm.zecorder";
+    public static final String CHANNEL_NAME = "Zecorder Service";
     private static final String CHANNEL_DESCRTIPTION = "Zecorder_Channel_Description";
 
     private static final NotificationHelper ourInstance = new NotificationHelper();
