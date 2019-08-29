@@ -111,7 +111,7 @@ public class ControllerService extends Service{
                 }
                 if(mScreenCaptureIntent == null){
                     Log.i(TAG, "mScreenCaptureIntent is NULL");
-                    stopSelf();
+                    stopService();
                 }
                 else if(!mRecordingServiceBound){
                     if(DEBUG)
@@ -470,7 +470,7 @@ public class ControllerService extends Service{
                     mRecordingStarted = false;
                     MyUtils.toast(getApplicationContext(), "Recording Service connection has not been established", Toast.LENGTH_LONG);
                     Log.e(TAG, "Recording Service connection has not been established");
-                    stopSelf();
+                    stopService();
                 }
             }
         });
@@ -519,8 +519,8 @@ public class ControllerService extends Service{
                 if(mRecordingStarted){
                     mImgStop.performClick();
                 }
+                stopService();
 
-                stopSelf();
                 if(!MainActivity.active) {
                     Intent intent = new Intent(getApplicationContext(), MainActivity.class);
                     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -603,6 +603,16 @@ public class ControllerService extends Service{
                     toggleNavigationButton(View.GONE);
             }
         });
+    }
+
+    private void stopService() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            stopForeground(true);
+        }
+        else {
+            stopSelf();
+        }
+
     }
 
 
