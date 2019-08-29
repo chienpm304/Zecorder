@@ -315,11 +315,7 @@ public class SyncService extends Service {
         sendBroadcast(intent);
         if(mSyncingVideos.isEmpty()) {
             notifySyncCompleted();
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                stopForeground(true);
-            } else {
-                stopSelf();
-            }
+            stopService();
         }
         else{
             updateNotifyIntent();
@@ -327,7 +323,18 @@ public class SyncService extends Service {
 
     }
 
-
+    private void stopService() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                stopForeground(true);
+                stopSelf();
+            } else {
+                stopSelf();
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
 
 
     private String getMasterFolderId() {

@@ -1,5 +1,7 @@
 package com.chienpm.zecorder.ui.services;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
 import android.content.ComponentName;
@@ -7,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.res.Configuration;
+import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.hardware.Camera;
 import android.os.Build;
@@ -39,7 +42,6 @@ import com.chienpm.zecorder.ui.services.streaming.StreamingService;
 import com.chienpm.zecorder.ui.services.streaming.StreamingService.StreamingBinder;
 import com.chienpm.zecorder.ui.utils.CameraPreview;
 import com.chienpm.zecorder.ui.utils.MyUtils;
-import com.chienpm.zecorder.ui.utils.NotificationHelper;
 import com.takusemba.rtmppublisher.helper.StreamProfile;
 
 
@@ -202,17 +204,23 @@ public class ControllerService extends Service{
         if(paramViewRoot==null) {
             initParam();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                NotificationManager mNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-                //create notification builder
-                NotificationCompat.Builder mNotiBuilder = new NotificationCompat.Builder(this, NotificationHelper.CHANNEL_ID)
-                        .setContentTitle("Zecorder service is running")
-                        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                        .setAutoCancel(false);
+                String NOTIFICATION_CHANNEL_ID = "com.example.simpleapp";
+                String channelName = "My Background Service";
+                NotificationChannel chan = new NotificationChannel(NOTIFICATION_CHANNEL_ID, channelName, NotificationManager.IMPORTANCE_NONE);
+                chan.setLightColor(Color.BLUE);
+                chan.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+                NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                assert manager != null;
+                manager.createNotificationChannel(chan);
 
-                //must be call in 5s when onCreate run
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    startForeground(1, mNotiBuilder.build());
-                }
+                NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID);
+                Notification notification = notificationBuilder.setOngoing(true)
+                        .setSmallIcon(R.drawable.ic_launcher_foreground)
+                        .setContentTitle("App is running in background")
+                        .setPriority(NotificationManager.IMPORTANCE_MIN)
+                        .setCategory(Notification.CATEGORY_SERVICE)
+                        .build();
+                startForeground(2, notification);
             }
 
         }
@@ -518,8 +526,10 @@ public class ControllerService extends Service{
                 if(mRecordingStarted){
                     mImgStop.performClick();
                 }
+
                 stopService();
 
+                if(!DEBUG)
                 if(!MainActivity.active) {
                     Intent intent = new Intent(getApplicationContext(), MainActivity.class);
                     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -605,13 +615,16 @@ public class ControllerService extends Service{
     }
 
     private void stopService() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            stopForeground(true);
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                stopForeground(true);
+                stopSelf();
+            } else {
+                stopSelf();
+            }
+        }catch (Exception e){
+            e.printStackTrace();
         }
-        else {
-            stopSelf();
-        }
-
     }
 
 
