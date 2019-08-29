@@ -228,7 +228,7 @@ public class RecordingService extends BaseService {
             return;
         MyUtils.toast(getApplicationContext(), "Recording Stopped"+outputFile, Toast.LENGTH_LONG);
 
-        final Video mVideo = MyUtils.tryToExtractVideoFile(mResultVideo);
+        final Video mVideo = MyUtils.tryToExtractVideoInfoFile(getApplicationContext(), mResultVideo);
 
         new Thread(new Runnable() {
             @Override

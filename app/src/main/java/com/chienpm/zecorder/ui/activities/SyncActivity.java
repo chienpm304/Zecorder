@@ -54,6 +54,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.chienpm.zecorder.ui.utils.DriveServiceHelper.getGoogleDriveService;
+import static com.chienpm.zecorder.ui.utils.MyUtils.isMyServiceRunning;
 
 
 public class SyncActivity extends AppCompatActivity {
@@ -241,7 +242,7 @@ public class SyncActivity extends AppCompatActivity {
     }
 
     private void shouldStartSyncService(GoogleSignInAccount googleSignInAccount) {
-        if(!MyUtils.isRunningSyncServices(getApplicationContext(), SyncService.class)){
+        if(!isMyServiceRunning(getApplicationContext(), SyncService.class)){
             startSynchronizeService(googleSignInAccount);
         }else{
             MyUtils.showSnackBarNotification(mTvEmpty, "Synchronize Services is running!", Snackbar.LENGTH_SHORT);

@@ -565,11 +565,11 @@ public class RecordingControllerService extends Service {
             mmr.release();
 
             mVideo = new Video(title, duration, bitrate, fps, width, height, size, localPath, 0, "", "");
-            if(DEBUG) Log.d(TAG, "tryToExtractVideoFile: size: "+mVideo.toString());
+            if(DEBUG) Log.d(TAG, "tryToExtractVideoInfoFile: size: "+mVideo.toString());
 
         } catch (Exception e) {
             e.printStackTrace();
-            Log.e(TAG, "tryToExtractVideoFile: error-"+ e.getMessage());
+            Log.e(TAG, "tryToExtractVideoInfoFile: error-"+ e.getMessage());
         }
         return mVideo;
     }

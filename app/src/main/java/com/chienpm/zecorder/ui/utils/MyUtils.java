@@ -16,7 +16,6 @@ import androidx.annotation.NonNull;
 
 import com.chienpm.zecorder.controllers.settings.VideoSetting;
 import com.chienpm.zecorder.data.entities.Video;
-import com.chienpm.zecorder.ui.services.sync.SyncService;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.io.BufferedOutputStream;
@@ -166,25 +165,6 @@ public class MyUtils {
         }
     }
 
-    public static boolean isRunningSyncServices(Context context, Class<SyncService> serviceClass) {
-        ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (serviceClass.getName().equals(service.service.getClassName())) {
-                return true;
-            }
-        }
-        return false;
-    }
-    public static boolean isRunningStreamServiceServices(Context context, Class<SyncService> serviceClass) {
-        ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (serviceClass.getName().equals(service.service.getClassName())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public static final String IP_ADDRESS_PATTERN =
             "^rtmp://"+
             "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
@@ -203,31 +183,53 @@ public class MyUtils {
         return matcher.find();
     }
 
-    public static Video tryToExtractVideoFile(VideoSetting videoSetting) {
+    public static Video tryToExtractVideoInfoFile(Context context, VideoSetting videoSetting) {
         Video mVideo = null;
         try {
-            File file = new File(Uri.parse(videoSetting.getOutputPath()).getPath());
+
+            File file = new File(Uri.parse(videoSetting.getOutputPath()).toString());
+            Log.i(TAG, "tryToExtractVideoInfoFile: "+file);
             long size = file.length();
             String title = file.getName();
 
-            int bitrate = videoSetting.getBirate();
-            int fps = videoSetting.getFPS();
+            String localPath = videoSetting.getOutputPath();
+            int bitrate;
             int width = videoSetting.getWidth();
             int height = videoSetting.getHeight();
-            String localPath = videoSetting.getOutputPath();
+            int fps = videoSetting.getFPS();
+            long duration;
 
-            MediaMetadataRetriever mmr = new MediaMetadataRetriever();
-            mmr.setDataSource(file.getAbsolutePath());
+            MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+            //use one of overloaded setDataSource() functions to set your data source
+            retriever.setDataSource(file.getAbsolutePath());
+            String time = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+            String sBitrate = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
+//            String sWidth = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
+//            String sHeight = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
+//            String sFps = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_CAPTURE_FRAMERATE);
 
-            long duration = Long.parseLong(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
-            mmr.release();
+            try {
+                bitrate = Integer.parseInt(sBitrate);
+            }catch (Exception e){
+                bitrate = videoSetting.getBirate();
+            }
+
+            try {
+                duration = Long.parseLong(time)/1000;
+            } catch (Exception e){
+                duration = 0;
+            }
+
 
             mVideo = new Video(title, duration, bitrate, fps, width, height, size, localPath, 0, "", "");
-            Log.d(TAG, "tryToExtractVideoFile: size: "+mVideo.toString());
+
+            retriever.release();
+
+            Log.i(TAG, "tryToExtractVideoInfoFile: "+mVideo.toString());
 
         } catch (Exception e) {
             e.printStackTrace();
-            Log.d(TAG, "tryToExtractVideoFile: error-"+ e.getMessage());
+            Log.i(TAG, "tryToExtractVideoInfoFile: error-"+ e.getMessage());
         }
         return mVideo;
     }
