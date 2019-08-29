@@ -172,7 +172,7 @@ public class RecordingService extends BaseService {
 
 
         //watermask
-        Bitmap bitmap = BitmapFactory.decodeResource(getResources(),R.drawable.wartermark);
+        Bitmap bitmap = BitmapFactory.decodeResource(getResources(),R.drawable.wartermark_small);
 
 //        Bitmap watermark = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
 //        Canvas canvas = new Canvas(watermark);
@@ -180,7 +180,7 @@ public class RecordingService extends BaseService {
 //        canvas.drawBitmap(bitmap, 0, 0, paint);
 //        bitmap.recycle();
 
-        list.add(new CustomDecorator(bitmap, new Size(240, 240), new Point(0, 0)));
+        list.add(new CustomDecorator(bitmap, new Size(200, 200), new Point(0, 0)));
 
         return list;
     }
