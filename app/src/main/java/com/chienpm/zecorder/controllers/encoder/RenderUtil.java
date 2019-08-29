@@ -119,8 +119,8 @@ public class RenderUtil {
 
         }
 
-//        GLES20.glFlush();
         // Disable blending
+        GLES20.glDisable(GLES20.GL_BLEND);
 
     }
 
@@ -297,8 +297,10 @@ public class RenderUtil {
         }
 
         public void updateTexId() {
-            if(mBitmap != null)
+            if(mBitmap != null) {
                 mTextureId = RenderUtil.createTexture(mBitmap);
+            }
+
         }
     }
 }

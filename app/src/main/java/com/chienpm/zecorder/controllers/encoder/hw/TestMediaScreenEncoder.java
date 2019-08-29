@@ -105,6 +105,7 @@ public class TestMediaScreenEncoder extends MediaVideoEncoderBase {
 		private SurfaceTexture mSourceTexture;
 		private Surface mSourceSurface;
     	private EGLBase.IEglSurface mEncoderSurface;
+
     	private GLDrawer2D mDrawer;
     	private final float[] mTexMatrix = new float[16];
 
@@ -231,19 +232,18 @@ public class TestMediaScreenEncoder extends MediaVideoEncoderBase {
 
 					mDrawer.draw(mTexId, mTexMatrix, 0);
 
-					for(CustomDecorator decor: mDecors)
-						decor.updateTexId();
-
-					RenderUtil.renderTextures(mDecors);
+//					for(CustomDecorator decor: mDecors)
+//						decor.updateTexId();
+//
+//					RenderUtil.renderTextures(mDecors);
 
 					mEncoderSurface.swap();
+
 					makeCurrent();
 
 					GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
 					GLES20.glFlush();
-
-					GLES20.glDisable(GLES20.GL_BLEND);
 
 					frameAvailableSoon();
 					queueEvent(this);
