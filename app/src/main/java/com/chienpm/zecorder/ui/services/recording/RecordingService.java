@@ -23,6 +23,7 @@ import com.chienpm.zecorder.controllers.encoder.MediaEncoder;
 import com.chienpm.zecorder.controllers.encoder.MediaMuxerWrapper;
 import com.chienpm.zecorder.controllers.encoder.MediaScreenEncoder;
 import com.chienpm.zecorder.controllers.encoder.RenderUtil.CustomDecorator;
+import com.chienpm.zecorder.controllers.encoder.hw.TestMediaScreenEncoder;
 import com.chienpm.zecorder.controllers.settings.SettingManager;
 import com.chienpm.zecorder.controllers.settings.VideoSetting;
 import com.chienpm.zecorder.data.database.VideoDatabase;
@@ -143,8 +144,8 @@ public class RecordingService extends BaseService {
                         List<CustomDecorator> decors = createDecorators();
 
                         //todo: test HWencoder
-                        new MediaScreenEncoder(mMuxer, mMediaEncoderListener, mMediaProjection, mCurrentVideoSetting, mScreenDensity, decors);
-//                        new TestMediaScreenEncoder(mMuxer, mMediaEncoderListener, mMediaProjection, mCurrentVideoSetting, mScreenDensity, decors);
+//                        new MediaScreenEncoder(mMuxer, mMediaEncoderListener, mMediaProjection, mCurrentVideoSetting, mScreenDensity, decors);
+                        new TestMediaScreenEncoder(mMuxer, mMediaEncoderListener, mMediaProjection, mCurrentVideoSetting, mScreenDensity, decors);
                     }
                     if (true) {
                         // for audio capturing
