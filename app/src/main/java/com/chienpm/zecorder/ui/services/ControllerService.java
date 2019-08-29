@@ -58,7 +58,6 @@ public class ControllerService extends Service{
 
     WindowManager.LayoutParams paramCountdown;
 
-
     private Intent mScreenCaptureIntent = null;
 
     private ImageView mImgClose, mImgRec, mImgStart, mImgStop, mImgPause, mImgResume, mImgCapture, mImgLive, mImgSetting;

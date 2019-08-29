@@ -80,7 +80,7 @@ public abstract class MediaEncoder implements Runnable {
     /**
      * BufferInfo instance for dequeuing
      */
-    private MediaCodec.BufferInfo mBufferInfo;		// API >= 16(Android4.1.2)
+    protected MediaCodec.BufferInfo mBufferInfo;		// API >= 16(Android4.1.2)
 
     protected final MediaEncoderListener mListener;
 

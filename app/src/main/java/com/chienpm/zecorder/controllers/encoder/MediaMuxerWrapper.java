@@ -29,7 +29,6 @@ import android.media.MediaMuxer;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.chienpm.zecorder.controllers.encoder.hw.HWMediaVideoEncoderBase;
 import com.chienpm.zecorder.ui.utils.MyUtils;
 
 import java.io.File;
@@ -131,7 +130,7 @@ public class MediaMuxerWrapper {
 	 * @param encoder instance of MediaVideoEncoderBase
 	 */
 	/*package*/ void addEncoder(final MediaEncoder encoder) {
-		if (encoder instanceof HWMediaVideoEncoderBase || encoder instanceof MediaVideoEncoderBase) {
+		if (encoder instanceof MediaVideoEncoderBase) {
 			if (mVideoEncoder != null)
 				throw new IllegalArgumentException("Video encoder already added.");
 			mVideoEncoder = encoder;
@@ -193,7 +192,8 @@ public class MediaMuxerWrapper {
 	 * @param byteBuf
 	 * @param bufferInfo
 	 */
-	/*package*/ synchronized void writeSampleData(final int trackIndex, final ByteBuffer byteBuf, final MediaCodec.BufferInfo bufferInfo) {
+	/*package*/
+	public synchronized void writeSampleData(final int trackIndex, final ByteBuffer byteBuf, final MediaCodec.BufferInfo bufferInfo) {
 		if (mStatredCount > 0)
 			mMediaMuxer.writeSampleData(trackIndex, byteBuf, bufferInfo);
 	}

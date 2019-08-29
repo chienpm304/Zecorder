@@ -140,9 +140,10 @@ public class RecordingService extends BaseService {
                         VideoSetting videoSetting = SettingManager.getVideoProfile(getApplicationContext());
                         mCurrentVideoSetting = videoSetting;
 
-                        List<CustomDecorator> decors = new ArrayList<>();//createDecorators();
+                        List<CustomDecorator> decors = createDecorators();
 
                         //todo: test HWencoder
+//                        new MediaScreenEncoder(mMuxer, mMediaEncoderListener, mMediaProjection, mCurrentVideoSetting, mScreenDensity, decors);
                         new MediaScreenEncoder(mMuxer, mMediaEncoderListener, mMediaProjection, mCurrentVideoSetting, mScreenDensity, decors);
                     }
                     if (true) {
@@ -157,7 +158,6 @@ public class RecordingService extends BaseService {
                 }
             }
         }
-
     }
 
     private ArrayList<CustomDecorator> createDecorators() {

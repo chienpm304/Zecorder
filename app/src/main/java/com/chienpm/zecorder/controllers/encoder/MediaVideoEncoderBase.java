@@ -29,9 +29,12 @@ import android.media.MediaFormat;
 import android.util.Log;
 import android.view.Surface;
 
+import com.chienpm.zecorder.controllers.encoder.hw.CodecUtil;
+import com.chienpm.zecorder.controllers.encoder.hw.FormatVideoEncoder;
 import com.chienpm.zecorder.controllers.settings.VideoSetting;
 
 import java.io.IOException;
+import java.util.List;
 
 import static com.chienpm.zecorder.ui.utils.MyUtils.DEBUG;
 import static com.takusemba.rtmppublisher.VideoEncoder.MIME_TYPE;
@@ -66,8 +69,7 @@ public abstract class MediaVideoEncoderBase extends MediaEncoder {
 	 * @return
 	 */
 	protected MediaFormat create_encoder_format(final String mime, final int frame_rate, final int bitrate) {
-		if (DEBUG) Log.v(TAG, String.format("create_encoder_format:(%d,%d),mime=%s,frame_rate=%d,bitrate=%d", mWidth, mHeight, mime, frame_rate, bitrate));
-        final MediaFormat format = MediaFormat.createVideoFormat(MIME_TYPE, mWidth, mHeight);
+		MediaFormat format = MediaFormat.createVideoFormat(MIME_TYPE, mWidth, mHeight);
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);	// API >= 18
         format.setInteger(MediaFormat.KEY_BIT_RATE, bitrate > 0 ? bitrate : calcBitRate(frame_rate));
         format.setInteger(MediaFormat.KEY_FRAME_RATE, frame_rate);
@@ -83,19 +85,23 @@ public abstract class MediaVideoEncoderBase extends MediaEncoder {
 		mTrackIndex = -1;
         mMuxerStarted = mIsEOS = false;
 
-        final MediaCodecInfo videoCodecInfo = selectVideoCodec(mime);
-        if (videoCodecInfo == null) {
+        final MediaCodecInfo videoCodecInfo =  chooseVideoEncoder(mime);;//selectVideoCodec(mime);
+
+        if (videoCodecInfo !=null) {
+			if (DEBUG) Log.i(TAG, "selected codec: " + videoCodecInfo.getName());
+
+//        mMediaCodec = MediaCodec.createEncoderByType(mime);
+			mMediaCodec = MediaCodec.createByCodecName(videoCodecInfo.getName());
+
+			final MediaFormat format = create_encoder_format(mime, frame_rate, bitrate);
+			if (DEBUG) Log.i(TAG, "format: " + format);
+
+			mMediaCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+		}
+        else{
             throw new IllegalArgumentException("Unable to find an appropriate codec for " + mime);
         }
-		if (DEBUG) Log.i(TAG, "selected codec: " + videoCodecInfo.getName());
 
-        final MediaFormat format = create_encoder_format(mime, frame_rate, bitrate);
-		if (DEBUG) Log.i(TAG, "format: " + format);
-
-        mMediaCodec = MediaCodec.createEncoderByType(mime);
-        mMediaCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-        // get Surface for encoder input
-        // this method only can call between #configure and #start
         return mMediaCodec.createInputSurface();	// API >= 18
 	}
 
@@ -136,6 +142,40 @@ public abstract class MediaVideoEncoderBase extends MediaEncoder {
         }
         return null;
     }
+
+	/**
+	 * choose the video encoder by mime.
+	 */
+	private CodecUtil.Force force = CodecUtil.Force.FIRST_COMPATIBLE_FOUND;
+	private FormatVideoEncoder formatVideoEncoder = FormatVideoEncoder.SURFACE;
+
+	private MediaCodecInfo chooseVideoEncoder(String mime) {
+		List<MediaCodecInfo> mediaCodecInfoList;
+		if (force == CodecUtil.Force.HARDWARE) {
+			mediaCodecInfoList = CodecUtil.getAllHardwareEncoders(mime);
+		} else if (force == CodecUtil.Force.SOFTWARE) {
+			mediaCodecInfoList = CodecUtil.getAllSoftwareEncoders(mime);
+		} else {
+			mediaCodecInfoList = CodecUtil.getAllEncoders(mime);
+		}
+		for (MediaCodecInfo mci : mediaCodecInfoList) {
+			Log.i(TAG, String.format("VideoEncoder %s", mci.getName()));
+			MediaCodecInfo.CodecCapabilities codecCapabilities = mci.getCapabilitiesForType(mime);
+			for (int color : codecCapabilities.colorFormats) {
+				Log.i(TAG, "Color supported: " + color);
+				if (formatVideoEncoder == FormatVideoEncoder.SURFACE) {
+					if (color == FormatVideoEncoder.SURFACE.getFormatCodec()) return mci;
+				} else {
+					//check if encoder support any yuv420 color
+					if (color == FormatVideoEncoder.YUV420PLANAR.getFormatCodec()
+							|| color == FormatVideoEncoder.YUV420SEMIPLANAR.getFormatCodec()) {
+						return mci;
+					}
+				}
+			}
+		}
+		return null;
+	}
 
     /**
      * select color format available on specific codec and we can use.

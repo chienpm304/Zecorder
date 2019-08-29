@@ -83,7 +83,7 @@ public class VideoEncoder implements Encoder {
                 mWidth, mHeight, mDensity,
                 DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
                 inputSurface, null, null
-    );
+                );
 
         if(DEBUG) Log.i(TAG, "prepare: video encoder");
     }
