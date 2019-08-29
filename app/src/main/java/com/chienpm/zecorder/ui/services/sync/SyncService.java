@@ -7,6 +7,7 @@ import android.app.TaskStackBuilder;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.IBinder;
 import android.text.TextUtils;
 import android.util.Log;
@@ -20,7 +21,6 @@ import com.chienpm.zecorder.R;
 import com.chienpm.zecorder.data.database.VideoDatabase;
 import com.chienpm.zecorder.data.entities.Video;
 import com.chienpm.zecorder.ui.activities.MainActivity;
-import com.chienpm.zecorder.ui.activities.SyncActivity;
 import com.chienpm.zecorder.ui.utils.DriveServiceHelper;
 import com.chienpm.zecorder.ui.utils.GoogleDriveFileHolder;
 import com.chienpm.zecorder.ui.utils.MyUtils;
@@ -65,7 +65,7 @@ public class SyncService extends Service {
     PendingIntent mPendingIntent;
     private NotificationManager mNotifyManager;
     private int mId = 1;
-    private boolean startedNotification = false;
+    public static boolean startedNotification = false;
 
     /**
      * Creates an IntentService.  Invoked by your subclass's constructor.
@@ -170,6 +170,11 @@ public class SyncService extends Service {
                 .setContentIntent(mPendingIntent)
                 .setAutoCancel(false);
 
+        //must be call in 5s when onCreate run
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForeground(mId, mNotiBuilder.build());
+        }
         //create notification list Ids
         Log.d(TAG, "RecordingControllerService: onCreate");
     }
@@ -216,8 +221,10 @@ public class SyncService extends Service {
 
     private void updateNotifyIntent() {
         Log.i(TAG, "updateNotifyIntent size: "+mSyncingVideos.size());
-        Intent resultIntent = new Intent(this, SyncActivity.class);
-        resultIntent.setAction(ACTION_FROM_NOTIFICATION);
+        //Todo: fixed callback to SyncActivity
+        Intent resultIntent = new Intent(this, MainActivity.class);
+        resultIntent.setAction(MyUtils.ACTION_OPEN_VIDEO_MANAGER_ACTIVITY);
+//        resultIntent.setAction(ACTION_FROM_NOTIFICATION);
         resultIntent.putParcelableArrayListExtra(PARAM_SYNCING_VIDEOS, mSyncingVideos);
 
         TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
@@ -302,15 +309,23 @@ public class SyncService extends Service {
             e.printStackTrace();
         }
 
-        if(mSyncingVideos.isEmpty())
-            notifySyncCompleted();
-        else{
-            updateNotifyIntent();
-        }
+
         Intent intent = new Intent();
         intent.setAction(action);
         intent.putExtra(PARAM_RESULT_VIDEO, video);
         sendBroadcast(intent);
+        if(mSyncingVideos.isEmpty()) {
+            notifySyncCompleted();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                stopForeground(true);
+            } else {
+                stopSelf();
+            }
+        }
+        else{
+            updateNotifyIntent();
+        }
+
     }
 
 

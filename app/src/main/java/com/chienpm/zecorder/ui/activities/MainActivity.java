@@ -1,7 +1,6 @@
 package com.chienpm.zecorder.ui.activities;
 
 import android.Manifest;
-import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -34,6 +33,8 @@ import com.google.android.material.tabs.TabLayout;
 import com.takusemba.rtmppublisher.helper.StreamProfile;
 
 import java.util.Objects;
+
+import static com.chienpm.zecorder.ui.utils.MyUtils.isMyServiceRunning;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -144,12 +145,12 @@ public class MainActivity extends AppCompatActivity {
         mImgRec.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(isMyServiceRunning(StreamingService.class))
+                if(isMyServiceRunning(getApplicationContext(), StreamingService.class))
                 {
                     MyUtils.showSnackBarNotification(mImgRec, "You are in Streaming Mode. Please close stream controoller", Snackbar.LENGTH_INDEFINITE);
                     return;
                 }
-                if(isMyServiceRunning(ControllerService.class)){
+                if(isMyServiceRunning(getApplicationContext(), ControllerService.class)){
                     MyUtils.showSnackBarNotification(mImgRec,"Recording service is running!", Snackbar.LENGTH_LONG);
                     return;
                 }
@@ -324,16 +325,6 @@ public class MainActivity extends AppCompatActivity {
                         && Settings.canDrawOverlays(this)
                             && mScreenCaptureIntent != null
                                 && mScreenCaptureResultCode != MyUtils.RESULT_CODE_FAILED;
-    }
-
-    public boolean isMyServiceRunning(Class<?> serviceClass) {
-        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (serviceClass.getName().equals(service.service.getClassName())) {
-                return true;
-            }
-        }
-        return false;
     }
 
     public void setStreamProfile(StreamProfile streamProfile) {

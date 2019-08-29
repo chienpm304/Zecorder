@@ -77,12 +77,12 @@ public class SyncVideoAdapter extends ArrayAdapter<Video> {
         return null;
     }
 
-    public void setSyncingVideos(ArrayList<Video> syncingvideos) {
+    public void setSyncingVideos(ArrayList<Video> videos) {
         mSyncingVideos.clear();
-        for(Video v: syncingvideos){
+        for(Video v: videos){
             mSyncingVideos.add(findVideoByTitle(v));
+            notifyDataSetChanged();
         }
-        notifyDataSetChanged();
     }
 
     public static class ViewHolder {

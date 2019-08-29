@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -90,6 +91,8 @@ public class SyncActivity extends AppCompatActivity {
                 if(action.equals(SyncService.ACTION_FROM_NOTIFICATION)){
                     mSyncingVideos = intent.getParcelableArrayListExtra(SyncService.PARAM_SYNCING_VIDEOS);
                 }
+                else
+                    mSyncingVideos = null;
             }
         }
     }
@@ -252,7 +255,12 @@ public class SyncActivity extends AppCompatActivity {
 
         syncService.putExtra(SyncService.PARAM_GOOGLE_SIGNIN_ACCOUNT, googleSignInAccount);
 
-        startService(syncService);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(syncService);
+        }
+        else{
+            startService(syncService);
+        }
 
     }
 
@@ -450,12 +458,13 @@ public class SyncActivity extends AppCompatActivity {
                             mSyncingVideos.clear();
                         }
                         updateUI();
+
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        Log.i(TAG, "OnQueryFileFromDrive: onFailure: "+e.getMessage());
+                        Log.e(TAG, "OnQueryFileFromDrive: onFailure: "+e.getMessage());
                         updateUI();
                         MyUtils.showSnackBarNotification(mTvEmpty, "Cannot sync video to drive. Please try later!", Snackbar.LENGTH_INDEFINITE);
                     }

@@ -38,6 +38,7 @@ import static com.chienpm.zecorder.ui.services.streaming.StreamingService.NOTIFY
 import static com.chienpm.zecorder.ui.services.streaming.StreamingService.NOTIFY_MSG_ERROR;
 import static com.chienpm.zecorder.ui.services.streaming.StreamingService.NOTIFY_MSG_STREAM_STOPPED;
 import static com.chienpm.zecorder.ui.utils.MyUtils.DEBUG;
+import static com.chienpm.zecorder.ui.utils.MyUtils.isMyServiceRunning;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -295,7 +296,7 @@ public class LocalStreamFragment extends Fragment {
                 mEdUrl.requestFocus();
             }
             else{
-                if(mActivity.isMyServiceRunning(RecordingService.class))
+                if(isMyServiceRunning(getContext(), RecordingService.class))
                 {
                     MyUtils.showSnackBarNotification(mViewRoot, "You are in RECORDING Mode. Please close Recording controller", Snackbar.LENGTH_INDEFINITE);
                     return;
@@ -307,7 +308,7 @@ public class LocalStreamFragment extends Fragment {
                     StreamProfile mStreamProfile = new StreamProfile("", mEdUrl.getText().toString(), "");
                     mActivity.setStreamProfile(mStreamProfile);
 
-                    if(mActivity.isMyServiceRunning(ControllerService.class)){
+                    if(isMyServiceRunning(getContext(), ControllerService.class)){
                         MyUtils.showSnackBarNotification(mViewRoot,"Streaming service is running!", Snackbar.LENGTH_LONG);
                         mActivity.notifyUpdateStreamProfile();
 //                        return;

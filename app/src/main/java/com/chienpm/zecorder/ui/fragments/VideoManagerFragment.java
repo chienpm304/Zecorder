@@ -31,6 +31,7 @@ import com.chienpm.zecorder.data.database.VideoDatabase;
 import com.chienpm.zecorder.data.entities.Video;
 import com.chienpm.zecorder.ui.activities.SyncActivity;
 import com.chienpm.zecorder.ui.adapters.VideoAdapter;
+import com.chienpm.zecorder.ui.services.sync.SyncService;
 import com.chienpm.zecorder.ui.utils.DialogHelper;
 import com.chienpm.zecorder.ui.utils.FileHelper;
 import com.chienpm.zecorder.ui.utils.MyUtils;
@@ -43,6 +44,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
 import static com.chienpm.zecorder.ui.utils.MyUtils.DEBUG;
+import static com.chienpm.zecorder.ui.utils.MyUtils.showSnackBarNotification;
 
 
 /**
@@ -126,8 +128,10 @@ public class VideoManagerFragment extends Fragment{
                 break;
 
             case R.id.action_sync:
-                //todo: refactor to SyncActivity
-                startActivity(new Intent(getContext(), SyncActivity.class));
+                if(SyncService.startedNotification)
+                    showSnackBarNotification(mViewRoot, "Sync Service is running. Please wait!", Snackbar.LENGTH_LONG);
+                else
+                    startActivity(new Intent(getContext(), SyncActivity.class));
                 break;
 
             case R.id.action_rename:
