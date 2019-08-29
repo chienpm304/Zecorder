@@ -88,7 +88,7 @@ public class SyncVideoAdapter extends ArrayAdapter<Video> {
     public static class ViewHolder {
         public TextView title;
         public TextView resolution;
-        public TextView duration;
+//        public TextView duration;
         public TextView size;
         public ImageView thumb;
         public ImageView sync;
@@ -269,8 +269,8 @@ public class SyncVideoAdapter extends ArrayAdapter<Video> {
                 String size = VideoSetting.getFormattedSize(video.getSize());
                 holder.size.setText(size);
 
-                String duration = VideoSetting.getFormattedDuration(video.getDuration());
-                holder.duration.setText(duration);
+//                String duration = VideoSetting.getFormattedDuration(video.getDuration());
+//                holder.duration.setText(duration);
             }
         }
 
@@ -300,7 +300,7 @@ public class SyncVideoAdapter extends ArrayAdapter<Video> {
 
     private void initViewHolder(View viewVideoItem, ViewHolder holder) {
             holder.title = viewVideoItem.findViewById(R.id.sync_tvTitle);
-            holder.duration = viewVideoItem.findViewById(R.id.sync_tvDuration);
+//            holder.duration = viewVideoItem.findViewById(R.id.sync_tvDuration);
             holder.size = viewVideoItem.findViewById(R.id.sync_tvSize);
             holder.resolution = viewVideoItem.findViewById(R.id.sync_tvResolution);
             holder.thumb = viewVideoItem.findViewById(R.id.sync_imgThumbnail);
@@ -309,7 +309,7 @@ public class SyncVideoAdapter extends ArrayAdapter<Video> {
 
             viewVideoItem.setTag(holder);
             viewVideoItem.setTag(R.id.sync_tvTitle, holder.title);
-            viewVideoItem.setTag(R.id.sync_tvDuration, holder.duration);
+//            viewVideoItem.setTag(R.id.sync_tvDuration, holder.duration);
             viewVideoItem.setTag(R.id.sync_tvSize, holder.size);
             viewVideoItem.setTag(R.id.sync_tvResolution, holder.resolution);
             viewVideoItem.setTag(R.id.sync_imgThumbnail, holder.thumb);

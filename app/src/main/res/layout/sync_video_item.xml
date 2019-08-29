@@ -32,53 +32,49 @@
         app:layout_constraintStart_toEndOf="@+id/sync_tvResolution"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
-        android:id="@+id/sync_tvDuration"
-        android:text="Length: 13:12"
-        android:layout_width="wrap_content"
-        android:layout_margin="8dp"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/sync_tvTitle"
-        app:layout_constraintLeft_toRightOf="@id/sync_imgThumbnail"
-        />
+<!--    <TextView-->
+<!--        android:id="@+id/sync_tvDuration"-->
+<!--        android:text="Length: 13:12"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_margin="8dp"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        app:layout_constraintTop_toBottomOf="@id/sync_tvTitle"-->
+<!--        app:layout_constraintLeft_toRightOf="@id/sync_imgThumbnail"-->
+<!--        />-->
 
     <ImageView
         android:id="@+id/sync_imgSync"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"
         android:src="@drawable/ic_download"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/sync_progressBar"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/sync_tvSize" />
+        app:layout_constraintTop_toBottomOf="@+id/sync_tvTitle" />
 
     <ProgressBar
         android:id="@+id/sync_progressBar"
         style="@android:style/Widget.Holo.Light.ProgressBar.Horizontal"
-        android:layout_height="wrap_content"
         android:layout_width="0dp"
+        android:layout_height="wrap_content"
         android:layout_margin="8dp"
-        android:progress="5"
         android:indeterminate="true"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/sync_imgSync"
-        app:layout_constraintStart_toEndOf="@+id/sync_imgThumbnail"
-        app:layout_constraintTop_toBottomOf="@+id/sync_tvDuration"
+        android:progress="5"
         android:visibility="gone"
-        />
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/sync_imgThumbnail"
+        app:layout_constraintTop_toBottomOf="@+id/sync_tvSize" />
 
     <TextView
         android:id="@+id/sync_tvSize"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="8dp"
-        android:layout_marginEnd="8dp"
         android:text="Size: 13MB"
-        app:layout_constraintEnd_toEndOf="parent"
 
+        app:layout_constraintStart_toEndOf="@+id/sync_imgThumbnail"
         app:layout_constraintTop_toBottomOf="@+id/sync_tvTitle" />
     <!--<TextView-->
         <!--android:id="@+id/tvDate"-->
