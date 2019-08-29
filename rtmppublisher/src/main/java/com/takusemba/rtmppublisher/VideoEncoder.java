@@ -18,13 +18,13 @@ import com.takusemba.rtmppublisher.helper.MyUtils;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-class VideoEncoder implements Encoder {
+public class VideoEncoder implements Encoder {
 
     // H.264 Advanced Video Coding
-    private static final String MIME_TYPE = "video/avc";
+    public static final String MIME_TYPE = "video/avc";
     // 5 seconds between I-frames
-    private static final int IFRAME_INTERVAL = 5;
-    private static final String TAG = "VideoEnoder_chienpm";
+    private static final int IFRAME_INTERVAL = 2;
+    private static final String TAG = VideoEncoder.class.getSimpleName();
 
     private static final boolean DEBUG = MyUtils.DEBUG;
 

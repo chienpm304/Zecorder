@@ -8,7 +8,8 @@
         android:id="@+id/camera_preview"
         android:layout_width="90dp"
         android:layout_height="160dp"
-        android:background="@android:color/darker_gray"
+        android:padding="4dp"
+        android:background="@drawable/camera_frame"
         android:orientation="horizontal" />
 
 </FrameLayout>

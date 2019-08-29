@@ -34,6 +34,7 @@ import com.chienpm.zecorder.controllers.settings.VideoSetting;
 import java.io.IOException;
 
 import static com.chienpm.zecorder.ui.utils.MyUtils.DEBUG;
+import static com.takusemba.rtmppublisher.VideoEncoder.MIME_TYPE;
 
 
 public abstract class MediaVideoEncoderBase extends MediaEncoder {
@@ -66,7 +67,7 @@ public abstract class MediaVideoEncoderBase extends MediaEncoder {
 	 */
 	protected MediaFormat create_encoder_format(final String mime, final int frame_rate, final int bitrate) {
 		if (DEBUG) Log.v(TAG, String.format("create_encoder_format:(%d,%d),mime=%s,frame_rate=%d,bitrate=%d", mWidth, mHeight, mime, frame_rate, bitrate));
-        final MediaFormat format = MediaFormat.createVideoFormat(mime, mWidth, mHeight);
+        final MediaFormat format = MediaFormat.createVideoFormat(MIME_TYPE, mWidth, mHeight);
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);	// API >= 18
         format.setInteger(MediaFormat.KEY_BIT_RATE, bitrate > 0 ? bitrate : calcBitRate(frame_rate));
         format.setInteger(MediaFormat.KEY_FRAME_RATE, frame_rate);
