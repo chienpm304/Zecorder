@@ -3,11 +3,6 @@ package com.chienpm.zecorder.controllers.settings;
 import android.annotation.SuppressLint;
 import android.text.TextUtils;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-
 public class VideoSetting {
     public static final int ORIENTATION_PORTRAIT = 0;
     public static final int ORIENTATION_LANDSCAPE = 1;
@@ -28,7 +23,7 @@ public class VideoSetting {
             case 1280: return "HD";
             case 480: return "SD";
         }
-        return "ERR";
+        return "HD";
     }
 
     public VideoSetting(int width, int height, int FPS, int birate, int orientation) {
