@@ -238,7 +238,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void shouldStartControllerService() {
-        if(hasCaptureIntent())
+        if(!hasCaptureIntent())
             requestScreenCaptureIntent();
 
         if(hasPermission()) {
@@ -246,14 +246,14 @@ public class MainActivity extends AppCompatActivity {
         }
         else{
             requestPermissions();
-            if(hasCaptureIntent())
+            if(!hasCaptureIntent())
                 requestScreenCaptureIntent();
 
         }
     }
 
     private boolean hasCaptureIntent() {
-        return mScreenCaptureIntent == null || mScreenCaptureResultCode == MyUtils.RESULT_CODE_FAILED;
+        return mScreenCaptureIntent != null;// || mScreenCaptureResultCode == MyUtils.RESULT_CODE_FAILED;
     }
 
     @Override

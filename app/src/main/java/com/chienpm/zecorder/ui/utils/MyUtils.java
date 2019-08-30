@@ -4,7 +4,6 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Environment;
 import android.util.Base64;
@@ -193,37 +192,38 @@ public class MyUtils {
             String title = file.getName();
 
             String localPath = videoSetting.getOutputPath();
-            int bitrate;
+            int bitrate = videoSetting.getBirate();
             int width = videoSetting.getWidth();
             int height = videoSetting.getHeight();
             int fps = videoSetting.getFPS();
-            long duration;
+            //Todo: fix it
+            long duration = 0;
 
-            MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+//            MediaMetadataRetriever retriever = new MediaMetadataRetriever();
             //use one of overloaded setDataSource() functions to set your data source
-            retriever.setDataSource(file.getAbsolutePath());
-            String time = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
-            String sBitrate = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
+//            retriever.setDataSource(file.getAbsolutePath());
+//            String time = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+//            String sBitrate = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
 //            String sWidth = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
 //            String sHeight = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
 //            String sFps = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_CAPTURE_FRAMERATE);
 
-            try {
-                bitrate = Integer.parseInt(sBitrate);
-            }catch (Exception e){
-                bitrate = videoSetting.getBirate();
-            }
-
-            try {
-                duration = Long.parseLong(time)/1000;
-            } catch (Exception e){
-                duration = 0;
-            }
+//            try {
+//                bitrate = Integer.parseInt(sBitrate);
+//            }catch (Exception e){
+//                bitrate = videoSetting.getBirate();
+//            }
+//
+//            try {
+//                duration = Long.parseLong(time)/1000;
+//            } catch (Exception e){
+//                duration = 0;
+//            }
 
 
             mVideo = new Video(title, duration, bitrate, fps, width, height, size, localPath, 0, "", "");
 
-            retriever.release();
+//            retriever.release();
 
             Log.i(TAG, "tryToExtractVideoInfoFile: "+mVideo.toString());
 
