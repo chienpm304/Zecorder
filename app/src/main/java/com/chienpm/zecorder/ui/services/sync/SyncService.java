@@ -55,10 +55,12 @@ public class SyncService extends Service {
     public static final String PARAM_GOOGLE_SIGNIN_ACCOUNT = "param_google_signin_account";
     public static final String PARAM_SYNCING_VIDEOS = "param_syncing_videos";
     public static final String ACTION_FROM_NOTIFICATION = "sync_action_from_notification";
+    public static final String ACTION_FATAL_ERROR = "fatal error";
+    public static final String PARAM_ERROR_MSG = "error message";
 
     private DriveServiceHelper mDriveServiceHelper;
 
-    private static final String TAG = "chienpm_controller";
+    private static final String TAG = SyncService.class.getSimpleName();
 
     private ArrayList<Video> mSyncingVideos = new ArrayList<>();
 
@@ -93,9 +95,8 @@ public class SyncService extends Service {
         return super.onStartCommand(intent, flags, startId);
     }
 
-    private void checkDriveHelper() {
-        if(mDriveServiceHelper == null)
-            throw new RuntimeException("DriverServiceHelper passed is NULL");
+    private boolean isValidDriver(){
+       return mDriveServiceHelper!=null;
     }
 
     @Override
@@ -109,7 +110,7 @@ public class SyncService extends Service {
         assert intent != null;
         String action = intent.getAction();
         if(TextUtils.isEmpty(action)) {
-            throw new RuntimeException("onHandle a null action");
+           return;
         }
         Video video;
         assert action != null;
@@ -118,16 +119,22 @@ public class SyncService extends Service {
                 Log.i(TAG, "onHandleIntent: started service, creating drive helper");
                 GoogleSignInAccount googleSignInAccount = intent.getParcelableExtra(PARAM_GOOGLE_SIGNIN_ACCOUNT);
                 mDriveServiceHelper = new DriveServiceHelper(getGoogleDriveService(getApplicationContext(), googleSignInAccount, getString(R.string.app_name)));
-                checkDriveHelper();
                 break;
 
             case ACTION_REQUEST_DOWNLOAD:
                 Log.i(TAG, "onHandleIntent: request download");
-                checkDriveHelper();
+
+                if(!isValidDriver()){
+                    handleError("Problem with Google Drive connection. Try later");
+                    return;
+                }
+
                 //get download link
                 video = intent.getParcelableExtra(PARAM_DOWNLOAD_VIDEO);
-                if(video==null)
-                    throw new RuntimeException("handle upload a null video");
+                if(video==null) {
+                    handleError("Video requested is invalid. Try later");
+                    break;
+                }
                 //add syncing video
                 addSyncingVideos(video);
                 //perform download
@@ -136,11 +143,17 @@ public class SyncService extends Service {
 
             case ACTION_REQUEST_UPLOAD:
                 Log.i(TAG, "onHandleIntent: request download");
-                checkDriveHelper();
+                if(!isValidDriver()) {
+                    handleError("Problem with Google Drive connection. Try later");
+                    return;
+                }
+
                 //get video path to upload
                 video = intent.getParcelableExtra(PARAM_UPLOAD_VIDEO);
-                if(video==null)
-                    throw new RuntimeException("handle upload a null video");
+                if(video==null) {
+                    handleError("Video requested is invalid. Try later");
+                    return;
+                }
                 //add syncing video
                 addSyncingVideos(video);
                 //perform upload
@@ -148,6 +161,15 @@ public class SyncService extends Service {
 
                 break;
         }
+    }
+
+    private void handleError(String s) {
+//        throw new RuntimeException(s);
+        Log.e(TAG, "handleError: ", new RuntimeException(s) );
+        Intent intent = new Intent();
+        intent.setAction(ACTION_FATAL_ERROR);
+        intent.putExtra(PARAM_ERROR_MSG, s);
+        sendBroadcast(intent);
     }
 
     private void addSyncingVideos(Video video) {
@@ -167,10 +189,11 @@ public class SyncService extends Service {
         mNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         //create notification builder
         mNotiBuilder = new NotificationCompat.Builder(this, NotificationHelper.CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_download)
-                .setContentTitle("Synchronize Videos")
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setContentTitle("Sync videos to Google Drive")
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setContentIntent(mPendingIntent)
+                .setOngoing(false)
                 .setAutoCancel(false);
 
         //must be call in 5s when onCreate run

@@ -112,6 +112,7 @@ public class SyncActivity extends AppCompatActivity {
         intentFilter.addAction(SyncService.ACTION_UPLOAD_DONE);
         intentFilter.addAction(SyncService.ACTION_DOWNLOAD_FAILED);
         intentFilter.addAction(SyncService.ACTION_UPLOAD_FAILED);
+        intentFilter.addAction(SyncService.ACTION_FATAL_ERROR);
         registerReceiver(mSyncServiceReceiver, intentFilter);
 
     }
@@ -127,6 +128,7 @@ public class SyncActivity extends AppCompatActivity {
 
         checkAuthentication();
     }
+
 
     private void checkAuthentication() {
         Set<Scope> requiredScopes = new HashSet<>(2);
@@ -481,6 +483,13 @@ public class SyncActivity extends AppCompatActivity {
             final Video video;
             if(!TextUtils.isEmpty(action)){
                 switch (action){
+                    case SyncService.ACTION_FATAL_ERROR:
+                        String msg = intent.getStringExtra(SyncService.PARAM_ERROR_MSG);
+                        if(!TextUtils.isEmpty(msg))
+                            MyUtils.showSnackBarNotification(mTvEmpty, msg, Snackbar.LENGTH_INDEFINITE);
+                        else
+                            MyUtils.showSnackBarNotification(mTvEmpty, "Failed to connect to Google Drive. Try later", Snackbar.LENGTH_INDEFINITE);
+                        break;
                     case SyncService.ACTION_UPLOAD_DONE:
                         video = intent.getParcelableExtra(SyncService.PARAM_RESULT_VIDEO);
                         MyUtils.showSnackBarNotification(mTvEmpty, "Uploaded video "+video.getTitle(), Snackbar.LENGTH_LONG);
