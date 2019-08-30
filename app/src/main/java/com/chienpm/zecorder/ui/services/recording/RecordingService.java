@@ -23,6 +23,7 @@ import com.chienpm.zecorder.controllers.encoder.MediaEncoder;
 import com.chienpm.zecorder.controllers.encoder.MediaMuxerWrapper;
 import com.chienpm.zecorder.controllers.encoder.MediaScreenEncoder;
 import com.chienpm.zecorder.controllers.encoder.RenderUtil.CustomDecorator;
+import com.chienpm.zecorder.controllers.encoder.hw.TestMediaScreenEncoder;
 import com.chienpm.zecorder.controllers.settings.SettingManager;
 import com.chienpm.zecorder.controllers.settings.VideoSetting;
 import com.chienpm.zecorder.data.database.VideoDatabase;
@@ -143,8 +144,8 @@ public class RecordingService extends BaseService {
                         List<CustomDecorator> decors = createDecorators();
 
                         //todo: test HWencoder
-                        new MediaScreenEncoder(mMuxer, mMediaEncoderListener, mMediaProjection, mCurrentVideoSetting, mScreenDensity, decors);
-//                        new TestMediaScreenEncoder(mMuxer, mMediaEncoderListener, mMediaProjection, mCurrentVideoSetting, mScreenDensity, decors);
+//                        new MediaScreenEncoder(mMuxer, mMediaEncoderListener, mMediaProjection, mCurrentVideoSetting, mScreenDensity, decors);
+                        new TestMediaScreenEncoder(mMuxer, mMediaEncoderListener, mMediaProjection, mCurrentVideoSetting, mScreenDensity, decors);
                     }
                     if (true) {
                         // for audio capturing
@@ -171,7 +172,7 @@ public class RecordingService extends BaseService {
 
 
         //watermask
-        Bitmap bitmap = BitmapFactory.decodeResource(getResources(),R.drawable.wartermark);
+        Bitmap bitmap = BitmapFactory.decodeResource(getResources(),R.drawable.wartermark_small);
 
 //        Bitmap watermark = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
 //        Canvas canvas = new Canvas(watermark);
@@ -179,7 +180,7 @@ public class RecordingService extends BaseService {
 //        canvas.drawBitmap(bitmap, 0, 0, paint);
 //        bitmap.recycle();
 
-        list.add(new CustomDecorator(bitmap, new Size(240, 240), new Point(0, 0)));
+        list.add(new CustomDecorator(bitmap, new Size(200, 200), new Point(0, 0)));
 
         return list;
     }

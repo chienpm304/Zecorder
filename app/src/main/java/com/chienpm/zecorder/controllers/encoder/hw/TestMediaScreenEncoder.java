@@ -8,6 +8,7 @@ import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.media.MediaFormat;
 import android.media.projection.MediaProjection;
+import android.opengl.GLES20;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
@@ -104,6 +105,7 @@ public class TestMediaScreenEncoder extends MediaVideoEncoderBase {
 		private SurfaceTexture mSourceTexture;
 		private Surface mSourceSurface;
     	private EGLBase.IEglSurface mEncoderSurface;
+
     	private GLDrawer2D mDrawer;
     	private final float[] mTexMatrix = new float[16];
 
@@ -118,12 +120,12 @@ public class TestMediaScreenEncoder extends MediaVideoEncoderBase {
 		    mDrawer = new GLDrawer2D(true);
 
 			mTexId = mDrawer.initTex();
-
-			prepareTextures();
+			Log.i(TAG, "onStart: mTexId = "+mTexId);
+//			prepareTextures();
 
 			mSourceTexture = new SurfaceTexture(mTexId);
 
-			mSourceTexture.setDefaultBufferSize(mWidth, mHeight);	// これを入れないと映像が取れない
+			mSourceTexture.setDefaultBufferSize(mWidth, mHeight);
 
 			mSourceSurface = new Surface(mSourceTexture);
 
@@ -183,7 +185,7 @@ public class TestMediaScreenEncoder extends MediaVideoEncoderBase {
 
 		@Override
 		protected boolean onError(final Exception e) {
-			if (DEBUG) Log.w(TAG, "mScreenCaptureTask:", e);
+			if (DEBUG) Log.e(TAG, "mScreenCaptureTask:", e);
 			return false;
 		}
 
@@ -203,7 +205,7 @@ public class TestMediaScreenEncoder extends MediaVideoEncoderBase {
 				}
 			}
 		};
-		int x = 0, y = 0;
+
 		private final Runnable mDrawTask = new Runnable() {
 			@Override
 			public void run() {
@@ -222,25 +224,27 @@ public class TestMediaScreenEncoder extends MediaVideoEncoderBase {
 				}
 				if (mIsRecording) {
 					if (local_request_draw) {
-						//Todo: draw decorators here
-//						GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
 						mSourceTexture.updateTexImage();
 						mSourceTexture.getTransformMatrix(mTexMatrix);
 					}
 
 					mEncoderSurface.makeCurrent();
 
+					mDrawer.draw(mTexId, mTexMatrix, 0);
 
-					for(CustomDecorator decor: mDecors)
-						decor.updateTexId();
-
-					RenderUtil.renderTextures(mDecors);
-					mEncoderSurface.swap();
-					if(DEBUG) Log.i(TAG, "run check mTexId: "+mTexId);
-					makeCurrent();
-////					GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-////					GLES20.glFlush();
+//					for(CustomDecorator decor: mDecors)
+//						decor.updateTexId();
 //
+//					RenderUtil.renderTextures(mDecors);
+
+					mEncoderSurface.swap();
+
+					makeCurrent();
+
+					GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+
+					GLES20.glFlush();
+
 					frameAvailableSoon();
 					queueEvent(this);
 				} else {

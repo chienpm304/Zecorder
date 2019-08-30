@@ -11,8 +11,11 @@ import android.graphics.RectF;
 import android.opengl.GLES20;
 import android.opengl.GLUtils;
 import android.os.Environment;
+import android.util.Log;
 import android.util.Size;
 import android.util.TypedValue;
+
+import com.takusemba.rtmppublisher.gles.GlUtil;
 
 import java.io.Closeable;
 import java.io.File;
@@ -50,6 +53,7 @@ public class RenderUtil {
     private static final float[] POS_VERTICES = {
             -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f
     };
+    private static final String TAG = RenderUtil.class.getSimpleName();
 
     public static String getOurFolder() {
         File root = Environment.getExternalStorageDirectory();
@@ -79,17 +83,18 @@ public class RenderUtil {
         return dest;
     }
 
-    public static void renderTextures(List<CustomDecorator> decors){//[] textures, int viewWidth, int viewHeight) {
+    public static void renderTextures(List<CustomDecorator> decors){
         RenderContext context = createProgram();
 
         if (context == null) {
             return;
         }
 
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
+//        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
 
         for(CustomDecorator decor: decors){
-
+            int textureId = decor.getTextureId();
+            Log.i(TAG, "renderTextures: "+textureId);
             GLES20.glUseProgram(context.shaderProgram);
 
 
@@ -102,9 +107,11 @@ public class RenderUtil {
             GLES20.glVertexAttribPointer(
                     context.posCoordHandle, 2, GLES20.GL_FLOAT, false, 0, context.posVertices);
             GLES20.glEnableVertexAttribArray(context.posCoordHandle);
+
             // Set the input texture
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, decor.getTextureId());
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId);
+            GlUtil.checkGlError("bindTexture");
 
             GLES20.glUniform1i(context.texSamplerHandle, 0);
             // Draw!
@@ -112,9 +119,9 @@ public class RenderUtil {
 
         }
 
-        GLES20.glFlush();
         // Disable blending
         GLES20.glDisable(GLES20.GL_BLEND);
+
     }
 
 
@@ -209,7 +216,7 @@ public class RenderUtil {
         int texture = textures[0];
 
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture);
-
+        GlUtil.checkGlError("glBindTexture when createTexture from bitmap");
         GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
 
         GLES20.glTexParameteri(
@@ -290,8 +297,10 @@ public class RenderUtil {
         }
 
         public void updateTexId() {
-            if(mBitmap !=null)
+            if(mBitmap != null) {
                 mTextureId = RenderUtil.createTexture(mBitmap);
+            }
+
         }
     }
 }

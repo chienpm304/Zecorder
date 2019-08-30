@@ -177,7 +177,7 @@ public class ControllerService extends Service{
         paramCam.gravity = profile.getParamGravity();
         paramCam.x = 0;
         paramCam.y = 0;
-        mWindowManager.updateViewLayout(mCameraLayout,paramCam);
+        mWindowManager.updateViewLayout(mCameraLayout, paramCam);
     }
 
     private void updateCameraSize() {
@@ -321,14 +321,15 @@ public class ControllerService extends Service{
         }
         if(mScreenWidth > mScreenHeight) {//landscape
             mCameraWidth = mScreenWidth / factor;
-            mCameraHeight = mScreenHeight / factor;
+//            mCameraHeight = mScreenHeight / factor;
+            mCameraHeight = mCameraWidth*3/4;
         }
         else{
             mCameraWidth = mScreenHeight/factor;
-            mCameraHeight = mScreenWidth/factor;
+//            mCameraHeight = mScreenWidth/factor;
+            mCameraHeight = mCameraWidth*3/4;
         }
-        if(DEBUG)
-        Log.i(TAG, "calculateCameraSize: "+mScreenWidth+"x"+mScreenHeight);
+        if(DEBUG) Log.i(TAG, "calculateCameraSize: "+mScreenWidth+"x"+mScreenHeight);
     }
 
 
@@ -340,6 +341,7 @@ public class ControllerService extends Service{
         updateScreenSize();
 
         if(paramViewRoot!=null){
+            paramViewRoot.gravity = Gravity.CENTER_VERTICAL | Gravity.START;
             paramViewRoot.x = 0;
             paramViewRoot.y = 0;
         }
@@ -368,9 +370,9 @@ public class ControllerService extends Service{
         mViewRoot = LayoutInflater.from(this).inflate(R.layout.layout_recording, null);
         View mViewCountdown = LayoutInflater.from(this).inflate(R.layout.layout_countdown, null);
 
-        paramViewRoot.gravity = Gravity.TOP | Gravity.START;
+        paramViewRoot.gravity = Gravity.CENTER_VERTICAL | Gravity.START;
         paramViewRoot.x = 0;
-        paramViewRoot.y = 100;
+        paramViewRoot.y = 0;
 
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         mWindowManager.addView(mViewCountdown, paramCountdown);
