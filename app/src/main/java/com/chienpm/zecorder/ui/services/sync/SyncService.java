@@ -116,6 +116,10 @@ public class SyncService extends Service {
         assert action != null;
         switch (action){
             case ACTION_START_SERVICE:
+                if(isValidDriver()){
+                    Log.w(TAG, "onHandleIntent: Drive is ok, no need create again :((" );
+                    return;
+                }
                 Log.i(TAG, "onHandleIntent: started service, creating drive helper");
                 GoogleSignInAccount googleSignInAccount = intent.getParcelableExtra(PARAM_GOOGLE_SIGNIN_ACCOUNT);
                 mDriveServiceHelper = new DriveServiceHelper(getGoogleDriveService(getApplicationContext(), googleSignInAccount, getString(R.string.app_name)));
@@ -194,7 +198,7 @@ public class SyncService extends Service {
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setContentIntent(mPendingIntent)
                 .setOngoing(false)
-                .setAutoCancel(false);
+                .setAutoCancel(true);
 
         //must be call in 5s when onCreate run
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -349,7 +353,8 @@ public class SyncService extends Service {
         sendBroadcast(intent);
         if(mSyncingVideos.isEmpty()) {
             notifySyncCompleted();
-            stopService();
+            //This cause DriverHelper null when user pending video
+//            stopService();
         }
         else{
             updateNotifyIntent();
