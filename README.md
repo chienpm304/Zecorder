@@ -1,6 +1,7 @@
 # Zecorder
-### Android screen recording and streaming application
-
+```
+ Android screen recording and streaming application
+```
 ## Features
 ### 1. SCREEN RECORDING
 - Record screen with custom settings and advanced media specifications​
