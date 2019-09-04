@@ -219,7 +219,6 @@ public class MediaScreenEncoder extends MediaVideoEncoderBase {
 				}
 				if (mIsRecording) {
 					if (local_request_draw) {
-						//Todo: draw decorators here
 						mSourceTexture.updateTexImage();
 						mSourceTexture.getTransformMatrix(mTexMatrix);
 					}

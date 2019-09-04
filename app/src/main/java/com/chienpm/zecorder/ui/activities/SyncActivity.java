@@ -366,7 +366,6 @@ public class SyncActivity extends AppCompatActivity {
 //                                                    MyUtils.showSnackBarNotification(mTvEmpty, "Downloaded video "+video.getTitle(), Snackbar.LENGTH_SHORT);
 //                                                    //remove video in adapter when downloaded
 //                                                    mSyncAdapter.addSyncedVideos(mVideo);
-//                                                    //todo: update notification
 //
 //                                                }
 //                                            });
@@ -427,7 +426,6 @@ public class SyncActivity extends AppCompatActivity {
         srl.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                //todo: handle refresh
                 if(mSyncAdapter.isSyncCompleted()) {
                     mSyncAdapter.removedSyncedVideos();
                     updateUI();

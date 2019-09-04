@@ -402,7 +402,6 @@ LOOP:	while (mIsEncoding) {
                     // write encoded data to muxer(need to adjust presentationTimeUs.
 					if (!mRequestPause) {
 	                   	mBufferInfo.presentationTimeUs = getPTSUs();
-	                   	//Todo: send these data buffer
 						Log.i(TAG, "drain : "+this.getClass().getName());
 	                   	muxer.writeSampleData(mTrackIndex, encodedData, mBufferInfo);
 						prevOutputPTSUs = mBufferInfo.presentationTimeUs;

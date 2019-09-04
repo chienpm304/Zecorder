@@ -27,7 +27,6 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
 
-import com.chienpm.zecorder.data.entities.Video;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.drive.DriveFolder;
 import com.google.android.gms.tasks.Task;
@@ -371,7 +370,6 @@ public class DriveServiceHelper {
                     root = Collections.singletonList(folderId);
                 }
 
-                //Todo: set properties meta data here
                 File metadata = new File()
                         .setParents(root)
                         .setMimeType(mimeType)
