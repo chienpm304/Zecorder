@@ -78,7 +78,7 @@ cd srs/trunk
 </pre>
 
 <strong>Step 2:</strong> build SRS,
-<strong>Requires Centos6.x/Ubuntu12 32/64bits, for others OS recommend [docker][docker], see Build([CN][v2_CN_Build],[EN][v2_EN_Build]).</strong>
+<strong>Requires Centos6.x/Ubuntu 32/64bits.</strong>
 
 <pre>
 ./configure && make
