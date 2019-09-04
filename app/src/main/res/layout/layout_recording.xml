@@ -47,7 +47,7 @@
             android:id="@+id/imgCapture"
             android:layout_width="@dimen/recording_icon_square"
             android:layout_height="@dimen/recording_icon_square"
-            android:src="@drawable/ic_capture"
+            android:src="@drawable/ic_camera"
             app:layout_constraintCircle="@+id/imgRec"
             app:layout_constraintCircleAngle="90"
             app:layout_constraintCircleRadius="@dimen/recording_button_distance"

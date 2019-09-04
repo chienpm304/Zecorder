@@ -57,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
     private ViewPaperAdapter mAdapter;
 
     private int [] tabIcons = {
-            R.drawable.ic_video,
+            R.drawable.ic_video_24,
             R.drawable.ic_live,
             R.drawable.ic_setting
     };
@@ -147,7 +147,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 if(isMyServiceRunning(getApplicationContext(), StreamingService.class))
                 {
-                    MyUtils.showSnackBarNotification(mImgRec, "You are in Streaming Mode. Please close stream controoller", Snackbar.LENGTH_INDEFINITE);
+                    MyUtils.showSnackBarNotification(mImgRec, "You are in Streaming Mode. Please close stream controller", Snackbar.LENGTH_INDEFINITE);
                     return;
                 }
                 if(isMyServiceRunning(getApplicationContext(), ControllerService.class)){
@@ -232,8 +232,6 @@ public class MainActivity extends AppCompatActivity {
                 }
                 break;
             }
-
-
         }
     }
 
