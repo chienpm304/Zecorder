@@ -50,7 +50,9 @@ public class RecordingControllerService extends Service {
     private Boolean mRecordingServiceBound = false;
 
     private View mViewRoot;
+
     private View mCameraLayout;
+
     private WindowManager mWindowManager;
 
     WindowManager.LayoutParams paramViewRoot;

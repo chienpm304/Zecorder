@@ -144,8 +144,12 @@ public class RecordingService extends BaseService {
                         List<CustomDecorator> decors = createDecorators();
 
                         //todo: test HWencoder
-//                        new MediaScreenEncoder(mMuxer, mMediaEncoderListener, mMediaProjection, mCurrentVideoSetting, mScreenDensity, decors);
-                        new TestMediaScreenEncoder(mMuxer, mMediaEncoderListener, mMediaProjection, mCurrentVideoSetting, mScreenDensity, decors);
+                        if(MyUtils.isRunningOnEmulator()) {
+                            new MediaScreenEncoder(mMuxer, mMediaEncoderListener, mMediaProjection, mCurrentVideoSetting, mScreenDensity, decors);
+                        }
+                        else {
+                            new TestMediaScreenEncoder(mMuxer, mMediaEncoderListener, mMediaProjection, mCurrentVideoSetting, mScreenDensity, decors);
+                        }
                     }
                     if (true) {
                         // for audio capturing
