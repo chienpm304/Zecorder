@@ -1,4 +1,4 @@
-package com.chienpm.zecorder.controllers.encoder.hw;
+package com.chienpm.zecorder.controllers.encoder.test;
 
 
 import android.graphics.Point;
@@ -17,7 +17,6 @@ import android.view.Surface;
 
 import com.chienpm.zecorder.controllers.encoder.MediaMuxerWrapper;
 import com.chienpm.zecorder.controllers.encoder.MediaVideoEncoderBase;
-import com.chienpm.zecorder.controllers.encoder.RenderUtil;
 import com.chienpm.zecorder.controllers.encoder.RenderUtil.CustomDecorator;
 import com.chienpm.zecorder.controllers.settings.VideoSetting;
 import com.serenegiant.glutils.EGLBase;
@@ -29,8 +28,8 @@ import java.util.List;
 
 import static com.chienpm.zecorder.ui.utils.MyUtils.DEBUG;
 
-public class TestMediaScreenEncoder extends MediaVideoEncoderBase {
-	private static final String TAG = TestMediaScreenEncoder.class.getSimpleName();
+public class TestMediaScreenEncoderHard extends MediaVideoEncoderBase {
+	private static final String TAG = TestMediaScreenEncoderHard.class.getSimpleName();
 
 	private static final String MIME_TYPE = MediaFormat.MIMETYPE_VIDEO_AVC;
     private static final int FRAME_RATE = 25;
@@ -42,7 +41,7 @@ public class TestMediaScreenEncoder extends MediaVideoEncoderBase {
     private final Handler mHandler;
 	private List<CustomDecorator> mDecors;
 
-	public TestMediaScreenEncoder(MediaMuxerWrapper muxer, MediaEncoderListener listener, MediaProjection projection, VideoSetting videoSetting, int density, List<CustomDecorator> decorators) {
+	public TestMediaScreenEncoderHard(MediaMuxerWrapper muxer, MediaEncoderListener listener, MediaProjection projection, VideoSetting videoSetting, int density, List<CustomDecorator> decorators) {
 		super(muxer, listener, videoSetting.getWidth(), videoSetting.getHeight(), videoSetting.getOrientation());
 		mMediaProjection = projection;
 		mDensity = density;
@@ -232,10 +231,10 @@ public class TestMediaScreenEncoder extends MediaVideoEncoderBase {
 
 					mDrawer.draw(mTexId, mTexMatrix, 0);
 
-//					for(CustomDecorator decor: mDecors)
-//						decor.updateTexId();
-//
-//					RenderUtil.renderTextures(mDecors);
+					for(CustomDecorator decor: mDecors)
+						decor.updateTexId();
+
+//					TestRenderUtil.renderTextures(mDecors);
 
 					mEncoderSurface.swap();
 

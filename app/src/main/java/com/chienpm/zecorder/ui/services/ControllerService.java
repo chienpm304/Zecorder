@@ -84,8 +84,7 @@ public class ControllerService extends Service{
         String action = intent.getAction();
         if(action!=null) {
             handleIncomeAction(intent);
-            if(DEBUG)
-                Log.i(TAG, "return START_REDELIVER_INTENT" + action);
+            if(DEBUG) Log.i(TAG, "return START_REDELIVER_INTENT" + action);
 
             return START_NOT_STICKY;
         }
@@ -107,8 +106,7 @@ public class ControllerService extends Service{
                 boolean isCamera = intent.getBooleanExtra(MyUtils.KEY_CAMERA_AVAILABLE, false);
 
                 if(isCamera && mCamera ==null) {
-                    if(DEBUG)
-                    Log.i(TAG, "onStartCommand: before initCameraView");
+                    if(DEBUG) Log.i(TAG, "onStartCommand: before initCameraView");
                     initCameraView();
                 }
                 if(mScreenCaptureIntent == null){
@@ -116,8 +114,7 @@ public class ControllerService extends Service{
                     stopService();
                 }
                 else if(!mRecordingServiceBound){
-                    if(DEBUG)
-                    Log.i(TAG, "before run bindStreamService()"+action);
+                    if(DEBUG) Log.i(TAG, "before run bindStreamService()"+action);
                     bindStreamingService();
                 }
                 break;
@@ -198,8 +195,7 @@ public class ControllerService extends Service{
     @Override
     public void onCreate() {
         super.onCreate();
-        if(DEBUG)
-        Log.i(TAG, "StreamingControllerService: onCreate");
+        if(DEBUG)Log.i(TAG, "StreamingControllerService: onCreate");
 
         updateScreenSize();
         if(paramViewRoot==null) {
@@ -229,8 +225,7 @@ public class ControllerService extends Service{
     }
 
     private void initParam() {
-        if(DEBUG)
-        Log.i(TAG, "initParam: ");
+        if(DEBUG) Log.i(TAG, "initParam: ");
         int LAYOUT_FLAG;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             LAYOUT_FLAG = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
@@ -269,8 +264,7 @@ public class ControllerService extends Service{
     }
 
     private void initCameraView() {
-        if(DEBUG)
-        Log.i(TAG, "StreamingControllerService: initializeCamera()");
+        if(DEBUG) Log.i(TAG, "StreamingControllerService: initializeCamera()");
         CameraSetting cameraProfile = SettingManager.getCameraProfile(getApplication());
 
         mCameraLayout = LayoutInflater.from(this).inflate(R.layout.layout_camera_view, null);
@@ -336,8 +330,7 @@ public class ControllerService extends Service{
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
 //        super.onConfigurationChanged(newConfig);
-        if(DEBUG)
-        Log.i(TAG, "onConfigurationChanged: DETECTED" + newConfig.orientation);
+        if(DEBUG) Log.i(TAG, "onConfigurationChanged: DETECTED" + newConfig.orientation);
         updateScreenSize();
 
         if(paramViewRoot!=null){
@@ -365,9 +358,10 @@ public class ControllerService extends Service{
     }
 
     private void initializeViews() {
-        if(DEBUG)
-        Log.i(TAG, "StreamingControllerService: initializeViews()");
+        if(DEBUG) Log.i(TAG, "StreamingControllerService: initializeViews()");
+
         mViewRoot = LayoutInflater.from(this).inflate(R.layout.layout_recording, null);
+
         View mViewCountdown = LayoutInflater.from(this).inflate(R.layout.layout_countdown, null);
 
         paramViewRoot.gravity = Gravity.CENTER_VERTICAL | Gravity.START;
