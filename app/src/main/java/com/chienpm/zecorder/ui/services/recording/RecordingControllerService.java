@@ -2,6 +2,8 @@ package com.chienpm.zecorder.ui.services.recording;
 
 import android.app.Service;
 import android.content.ComponentName;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
@@ -13,6 +15,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.CountDownTimer;
 import android.os.IBinder;
+import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -28,15 +31,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.chienpm.zecorder.R;
+import com.chienpm.zecorder.controllers.settings.CameraSetting;
+import com.chienpm.zecorder.controllers.settings.SettingManager;
 import com.chienpm.zecorder.controllers.settings.VideoSetting;
 import com.chienpm.zecorder.data.database.VideoDatabase;
 import com.chienpm.zecorder.data.entities.Video;
 import com.chienpm.zecorder.ui.activities.MainActivity;
 import com.chienpm.zecorder.ui.services.recording.RecordingService.RecordingBinder;
 import com.chienpm.zecorder.ui.utils.CameraPreview;
-import com.chienpm.zecorder.controllers.settings.CameraSetting;
 import com.chienpm.zecorder.ui.utils.MyUtils;
-import com.chienpm.zecorder.controllers.settings.SettingManager;
 
 import java.io.File;
 
@@ -416,7 +419,11 @@ public class RecordingControllerService extends Service {
                     final VideoSetting videoSetting = mRecordingService.stopRecording();
 
                     if(videoSetting != null ){
+
+                        insertVideoToGallery(videoSetting);
+
                         saveVideoToDatabase(videoSetting);
+
                     }
                     else{
                         MyUtils.toast(getApplicationContext(), "Recording Service Closed", Toast.LENGTH_LONG);
@@ -518,6 +525,24 @@ public class RecordingControllerService extends Service {
             }
         });
     }
+
+    private void insertVideoToGallery(VideoSetting videoSetting) {
+        Log.i(TAG, "insertVideoToGallery: ");
+        //send video to gallery
+        ContentResolver cr = getContentResolver();
+
+        ContentValues values = new ContentValues(2);
+
+        values.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4");
+        values.put(MediaStore.Video.Media.DATA, videoSetting.getOutputPath());
+
+        // Add a new record (identified by uri) without the video, but with the values just set.
+        Uri uri = cr.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values);
+        Log.i(TAG, "insertVideoToGallery: "+uri.getPath());
+
+        sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, uri));
+    }
+
 
     private void saveVideoToDatabase(VideoSetting videoSetting) {
         String outputFile = videoSetting.getOutputPath();

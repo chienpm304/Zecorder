@@ -490,6 +490,7 @@ public class ControllerService extends Service{
                     mService.stopPerformService();
 
                     if(mMode==MyUtils.MODE_RECORDING){
+                        ((RecordingService)mService).insertVideoToGallery();
                         ((RecordingService)mService).saveVideoToDatabase();
                         MyUtils.toast(getApplicationContext(), "Recording Service Closed", Toast.LENGTH_LONG);
                         return;
