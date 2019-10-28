@@ -44,7 +44,7 @@ public class MediaScreenEncoderHard extends MediaVideoEncoderBase {
 		mMediaProjection = projection;
 		mDensity = density;
 		int _fps = videoSetting.getFPS();
-		int _bitrate = videoSetting.getBirate();
+		int _bitrate = videoSetting.getBitrate();
 		fps = (_fps > 0 && _fps <= 30) ? _fps : FRAME_RATE;
 		bitrate = (_bitrate > 0) ? _bitrate : calcBitRate(_fps);
 

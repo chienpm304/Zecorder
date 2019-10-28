@@ -31,7 +31,6 @@ import android.view.Surface;
 
 import com.chienpm.zecorder.controllers.encoder.hw.CodecUtil;
 import com.chienpm.zecorder.controllers.encoder.hw.FormatVideoEncoder;
-import com.chienpm.zecorder.controllers.settings.VideoSetting;
 
 import java.io.IOException;
 import java.util.List;
@@ -51,14 +50,8 @@ public abstract class MediaVideoEncoderBase extends MediaEncoder {
 
 	public MediaVideoEncoderBase(final MediaMuxerWrapper muxer, final MediaEncoderListener listener, final int width, final int height, int orientation) {
 		super(muxer, listener);
-		if(orientation == VideoSetting.ORIENTATION_PORTRAIT) {
-			mWidth = height;
-			mHeight = width;
-		}
-		else{
-			mWidth = width;
-			mHeight = height;
-		}
+		mWidth = width;
+		mHeight = height;
 	}
 
 	/**

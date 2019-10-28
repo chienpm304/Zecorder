@@ -193,7 +193,7 @@ public class MyUtils {
             String title = file.getName();
 
             String localPath = videoSetting.getOutputPath();
-            int bitrate = videoSetting.getBirate();
+            int bitrate = videoSetting.getBitrate();
             int width = videoSetting.getWidth();
             int height = videoSetting.getHeight();
             int fps = videoSetting.getFPS();
@@ -212,7 +212,7 @@ public class MyUtils {
 //            try {
 //                bitrate = Integer.parseInt(sBitrate);
 //            }catch (Exception e){
-//                bitrate = videoSetting.getBirate();
+//                bitrate = videoSetting.getBitrate();
 //            }
 //
 //            try {

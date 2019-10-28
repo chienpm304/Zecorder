@@ -86,12 +86,14 @@ public class SettingManager {
         VideoSetting videoSetting = null;
 
         String resolution = getVideoResolution(context);
-        String orientation = getOrientation(context);
+
 
         switch (resolution){
             case "SD": videoSetting = VideoSetting.VIDEO_PROFILE_SD; break;
             case "HD": videoSetting = VideoSetting.VIDEO_PROFILE_HD; break;
             case "FHD": videoSetting =  VideoSetting.VIDEO_PROFILE_FHD; break;
+            default: //fit device
+                videoSetting = VideoSetting.getFitDeviceResolution(context);
         }
 
         int fps = getVideoFPS(context);
@@ -101,9 +103,15 @@ public class SettingManager {
         if(bitrate != -1) // not auto
             videoSetting.setBitrate(bitrate);
 
+
+        String orientation = getOrientation(context);
         if(orientation.equals("Portrait")){ //DEFAULT IS LANDSCAPE
             videoSetting.setOrientation(VideoSetting.ORIENTATION_PORTRAIT);
         }
+        else
+            videoSetting.setOrientation(VideoSetting.ORIENTATION_LANDSCAPE);
+
+        videoSetting.swapResolutionMatchToOrientation();
 
         videoSetting.setFPS(fps);
         if( MyUtils.DEBUG) Log.i("chienpm", "getVideoProfile: "+ videoSetting.toString());

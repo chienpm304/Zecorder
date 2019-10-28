@@ -553,7 +553,7 @@ public class RecordingControllerService extends Service {
             long size = file.length();
             String title = file.getName();
 
-            int bitrate = videoSetting.getBirate();
+            int bitrate = videoSetting.getBitrate();
             int fps = videoSetting.getFPS();
             int width = videoSetting.getWidth();
             int height = videoSetting.getHeight();

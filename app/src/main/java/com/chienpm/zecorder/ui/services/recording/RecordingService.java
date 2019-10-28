@@ -139,6 +139,7 @@ public class RecordingService extends BaseService {
                         // for screen capturing
                         //todo: setting video parameter here
                         VideoSetting videoSetting = SettingManager.getVideoProfile(getApplicationContext());
+                        Log.i(TAG, "Video config: "+videoSetting.toString());
                         mCurrentVideoSetting = videoSetting;
 
                         List<CustomDecorator> decors = createDecorators();

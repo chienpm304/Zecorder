@@ -23,15 +23,15 @@
     <string name="setting_common_countdown">setting_common_countdown</string>
 
     <!--Default setting-->
-    <string name="default_setting_resolution">HD</string>
+    <string name="default_setting_resolution">Default</string>
     <string name="default_setting_bitrate">-1</string>
-    <string name="default_setting_fps">15</string>
+    <string name="default_setting_fps">30</string>
     <string name="default_setting_countdown">3</string>
     <string name="default_setting_orientation">Auto</string>
     <string name="default_camera_mode">Front</string>
     <string name="default_camera_position">Bottom Right</string>
     <string name="default_camera_size">Medium</string>
-    <string name="default_audio_source">Internal Sound</string>
+    <string name="default_audio_source">Microphone</string>
     <string name="file_created">File created</string>
     <string name="file_create_error">File create error</string>
     <string name="pref_drive_folderId">pref_drive_folderId</string>
