@@ -52,6 +52,7 @@ public class MyUtils {
     public static final String KEY_STREAM_LOG = "Stream log";
     public static final String KEY_STREAM_IS_TESTED = "KEY_STREAM_IS_TESTED";
     public static final String ACTION_UPDATE_STREAM_PROFILE = "ACTION_UPDATE_STREAM_PROFILE";
+    public static final String ACTION_START_CAPTURE_NOW = "ACTION_START_CAPTURE_NOW";
 
     private static final String TAG = "chienpm_utils";
     public static final int MODE_STREAMING = 101;

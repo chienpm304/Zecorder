@@ -294,7 +294,7 @@ public class LiveStreamFragment extends Fragment {
 
         @Override
         public void onCancel() {
-            // App code
+            // com.chienpm.zecorder.App code
 
             MyUtils.showSnackBarNotification(mViewRoot, "Signed in Canceled!", Snackbar.LENGTH_LONG);
             toggleAccountProfileInfo(false);
@@ -303,7 +303,7 @@ public class LiveStreamFragment extends Fragment {
 
         @Override
         public void onError(FacebookException exception) {
-            // App code
+            // com.chienpm.zecorder.App code
             MyUtils.showSnackBarNotification(mViewRoot, "Signed in ERROR: " + exception.getMessage(), Snackbar.LENGTH_LONG);
             toggleAccountProfileInfo(false);
         }

@@ -212,7 +212,7 @@ public class ControllerService extends Service{
                 NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, NotificationHelper.CHANNEL_ID);
                 Notification notification = notificationBuilder.setOngoing(true)
                         .setSmallIcon(R.drawable.ic_launcher_foreground)
-                        .setContentTitle("App is running in background")
+                        .setContentTitle("com.chienpm.zecorder.App is running in background")
                         .setPriority(NotificationManager.IMPORTANCE_MIN)
                         .setCategory(Notification.CATEGORY_SERVICE)
                         .build();

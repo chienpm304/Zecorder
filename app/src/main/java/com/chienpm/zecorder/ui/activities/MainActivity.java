@@ -115,6 +115,9 @@ public class MainActivity extends AppCompatActivity {
                 case MyUtils.ACTION_OPEN_VIDEO_MANAGER_ACTIVITY:
                     mTabLayout.getTabAt(0).select();
                     break;
+                case MyUtils.ACTION_START_CAPTURE_NOW:
+                    mImgRec.performClick();
+                    break;
             }
         }
     }
@@ -349,5 +352,7 @@ public class MainActivity extends AppCompatActivity {
             startService(controller);
         }
     }
+
+
 }
 
