@@ -108,11 +108,11 @@ git clone https://github.com/1612052/Zecorder.git
 - Tap "Connect" button
 - Enjoy!!!
 
-### * Video guides:
+### * Video guide/demo:
 
-- <strong>Build server: </strong> [server side](https://studenthcmusedu-my.sharepoint.com/:v:/g/personal/1612052_student_hcmus_edu_vn/Eeu8QSy_Yf1IsQ2ZPaejOY0BMgh2FNM0L_Tr9li7rk5KPQ?e=7bcfhq)
+- <strong>Server: </strong> [server side](https://studenthcmusedu-my.sharepoint.com/:v:/g/personal/1612052_student_hcmus_edu_vn/Ec0BYU6ZfVpLluCufBeL8lcBnr9yVoRiXp-EKN6Z-UAdmg?e=rmi8TO)
 
-- <strong>Application : </strong> [client side](https://studenthcmusedu-my.sharepoint.com/:v:/g/personal/1612052_student_hcmus_edu_vn/ERT_kjRyh8RPkTNUKlHMjgIBarxF24enu1Mdps7nJ5j6Vw?e=JTEaOm)
+- <strong>App : </strong> [client side](https://studenthcmusedu-my.sharepoint.com/:v:/g/personal/1612052_student_hcmus_edu_vn/EUvwFO83bc9Dp7TRqRS3glwBWG7AC_dvyB3VcS8zEshL5g?e=6JGrNw)
 
 
 
